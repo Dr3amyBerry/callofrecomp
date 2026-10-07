@@ -105,6 +105,12 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Fixed CI paths so changes under `src/**` trigger source compilation/testing.
 - [x] Independently mapped the four numeric `FS_FOpenFile` branches in original `CoDSP.exe`, leaving their semantic mode names unverified.
 - [x] Documented this phase in `analysis/filesystem_vfs_phase.md`.
+- [x] Implemented native read-only `ReadOnlyHostAdapter`: connects VFS to `cod_host_services_t` callbacks (`fs_open`/`fs_read`/`fs_close`).
+- [x] Added opaque host handles, independent read cursors, partial read/EOF handling, error checks and mutex-protected handle state.
+- [x] Exposed a caller-provided accepted read mode; **did not** guess or hardcode the original game's numeric mode semantics.
+- [x] Kept write/rename/list/console host callbacks disabled until their semantics are verified.
+- [x] Added `tests/host_adapter_smoke.cpp` and CTest target; local test and GitHub CI completed successfully.
+- [x] Updated `analysis/filesystem_vfs_phase.md` with the host interface versus original VM ABI distinction.
 
 ### Confirmed module ABI data
 
@@ -228,6 +234,17 @@ See [`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wr
 
 See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 
+## Host service adapter checkpoint (2026-10-07)
+
+- The independently tested native VFS is now wired to a separate, functioning read-only host callback layer with opaque handles.
+- `ReadOnlyHostAdapter` loads VFS contents on open (bounded to 64 MiB), tracks cursor and allows partial reads and EOF, and frees the associated buffer when closed.
+- Thread safety is limited to adapter-owned handle/cursor state. The VFS mount list must not be modified concurrently.
+- This is **not** a reconstruction of the original game module's callback ABI or an ARM64 build: there is no conversion of untrusted legacy 32-bit pointers into host pointers, and original file-open modes remain unverified.
+- Test coverage now includes synthetic ZIP fixtures and host callback semantics; local checks against two original PK3 archives were also successful.
+- The updated CMake job passed on GitHub Actions: `https://github.com/Dr3amyBerry/callofrecomp/actions/runs/37559079417`.
+- **Next task:** verify original file mode semantics and package precedence, then implement a validated VM→host bridge; follow with streaming seek and writable save/config support only once their behaviors are understood.
+- **Active blockers:** none for continued static analysis and native host scaffolding. Android NDK and real-device validation will be needed later.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -263,7 +280,8 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - [ ] Implement 32-bit VM word to native host-pointer/handle resolution with validation (bridge not yet written).
 - [ ] Verify `FS_GETFILELIST` list-buffer encoding and directory precedence against the original engine.
 - [ ] Recover native caller-level data types and filesystem error semantics before implementing platform I/O.
-- [ ] Connect the functioning VFS to the host-services interface via a validated VM-word-to-pointer/handle adapter.
+- [x] Connect the functioning VFS to **native host** open/read/close callbacks, preserving host-width pointers.
+- [ ] Implement and validate the **legacy VM-to-native host** bridge, including 32-bit input pointer resolution and handle lifetime checks.
 - [ ] Reconstruct the minimum filesystem/cvar/command/memory interfaces needed for module startup.
 - [ ] Build a host-side test harness that can call reconstructed module interfaces without launching the full game.
 
