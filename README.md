@@ -32,7 +32,9 @@ Verified baseline from the supplied installation:
 - `gamex86.dll`, `cgamex86.dll`, `uix86.dll`: PE32 / x86 modules exporting `dllEntry` and `vmMain`.
 - The engine contains OpenGL initialization/extension strings and loads several Windows-specific system/audio APIs.
 
-See [`analysis/initial_findings.md`](analysis/initial_findings.md), [`analysis/vm_abi_findings.md`](analysis/vm_abi_findings.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+See [`PROGRESS.md`](PROGRESS.md) for the living project status, autonomy rules, blockers, and tool requirements.
+
+Technical references: [`analysis/initial_findings.md`](analysis/initial_findings.md), [`analysis/vm_abi_findings.md`](analysis/vm_abi_findings.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Tools
 
