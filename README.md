@@ -195,6 +195,37 @@ Reads PK3/ZIP metadata without extracting the archive:
 python tools/pk3_inventory.py originals/main/pak0.pk3 --json analysis/local/pak0.json
 ```
 
+## Read-only virtual filesystem and PK3 support
+
+The C++17 library `codrecomp_vfs` mounts loose-file directories and ZIP32/PK3
+archives **without extracting proprietary game assets to disk**. It supports
+ZIP stored/DEFLATE members (zlib), CRC-32 and size verification, case-insensitive
+PK3 keys, bounded read sizes and unsafe-path rejection.
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+```
+
+The `codrecomp_vfs_smoke` test generates synthetic PK3 archives and needs no
+original data. To additionally test with user-owned game archives:
+
+```bash
+./build/codrecomp_vfs_smoke /path/to/originals/main/pakb.pk3
+./build/codrecomp_vfs_smoke /path/to/originals/main/localized_spanish_pak4.pk3
+```
+
+Both archives were mounted and their known sample members read successfully,
+including CRC validation, using the original files supplied through Drive.
+
+**Limitations:** the search priority is currently last-mounted-wins by explicit
+design, not a verified Call of Duty priority rule. The original numeric file
+open modes (0–3), file-handle bridge, writing/savegames, streaming seeks and
+Android NDK runtime integration are pending. This is a read-only data loader,
+not a runnable game. The current [technical VFS analysis](analysis/filesystem_vfs_phase.md)
+records evidence, limits and further steps.
+
 ## Development rule
 
 Analysis output must be reproducible. Do not rename guessed functions as facts: recovered names must record whether they are **observed**, **matched**, or **inferred**. This matters because the final native port will be built from reconstructed behavior rather than copied proprietary source.
