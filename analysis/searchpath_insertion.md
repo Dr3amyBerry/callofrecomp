@@ -25,8 +25,7 @@ produce `A,C,B`, not `C,B,A`. With a later `(D,0)`, the order becomes
 The code in `src/searchpath_order.cpp` is an **independent behavioral model**
 of this one function, NOT a claim that all original mount discovery, package
 priority, language selection, loose-file handling, or startup rules are mapped.
-The field at `+0x0C` is deliberately named `class_flag` rather than
-`localized`: its meaning still requires verification.
+**Actualización verificada:** `+0x0C` es el indicador **localized**, respaldado por los constructores de PK3/directorios y mensajes explícitos del binario; `+0x10` es el índice de idioma. Se mantiene el nombre `class_flag` en la API C++ actual por compatibilidad, pero ya no es una semántica desconocida. Véase [localization_searchpath.md](localization_searchpath.md). La prioridad completa de la instalación sigue pendiente.
 
 To reproduce the routine fingerprint without distributing original code bytes:
 

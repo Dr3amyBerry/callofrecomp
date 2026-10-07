@@ -9,10 +9,10 @@ bool SearchpathOrder::insert(SearchpathEntry candidate) {
             return item.id == candidate.id;
         })) return false;
 
-    // Exact model of CoDSP.exe 0x4248B0:
-    // zero-valued class -> prepend;
-    // nonzero class with existing head -> advance from that head over each
-    // immediately succeeding zero-class node, and insert after that run.
+    // CoDSP.exe 0x4248B0, with class now identified as localization:
+    // non-localized (zero) -> prepend; localized (nonzero) -> insert after
+    // the first node and its immediately succeeding non-localized nodes.
+    // This function alone does not establish active-language filtering.
     if (!candidate.class_flag || items_.empty()) {
         items_.insert(items_.begin(), candidate);
     } else {

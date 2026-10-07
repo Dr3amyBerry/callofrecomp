@@ -277,6 +277,18 @@ then scans indices **13 down to 0** with another selector. This does not
 establish complete PK3 mount priority or locale overlay behavior.
 See [the startup scan evidence](analysis/searchpath_startup_scan.md).
 
+### Localized PK3 and language metadata (verified)
+
+The new `tools/searchpath_localization_probe.py` extracts the exact 14-entry
+language table from the pinned PC 1.5 SP binary. It independently confirms
+that searchpath node `+0x0C` marks localized content and `+0x10` holds
+a language index (**Spanish = 4**). PK3/directory object pointers occupy
+distinct node fields. See
+[`analysis/localization_searchpath.md`](analysis/localization_searchpath.md).
+
+This does **not** yet establish the *complete* PK3/loose-file precedence or
+runtime selected-language filtering, so the VFS remains unchanged.
+
 ## Development rule
 
 Analysis output must be reproducible. Do not rename guessed functions as facts: recovered names must record whether they are **observed**, **matched**, or **inferred**. This matters because the final native port will be built from reconstructed behavior rather than copied proprietary source.

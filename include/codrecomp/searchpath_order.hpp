@@ -8,7 +8,9 @@
 namespace codrecomp::fs {
 
 // Evidence-based insertion algorithm at CoDSP.exe VA 0x004248B0.
-// class_flag mirrors node+0x0C; its semantic meaning is NOT yet established.
+// class_flag mirrors node+0x0C, now verified as the localized flag.
+// Preserve the field name for source compatibility; full mount priority is
+// unresolved until language selection and discovery order are recovered.
 // Entries are listed head-first, matching the original traversal order.
 struct SearchpathEntry {
     std::uint64_t id;

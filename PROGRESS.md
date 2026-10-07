@@ -297,6 +297,18 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - **Verification:** GitHub Actions workflow `37564560085` completed successfully with all **7/7 CTest targets passing**, including the new seek fixtures and startup scan unit tests. Latest test evidence: https://github.com/Dr3amyBerry/callofrecomp/actions/runs/37564560085.
 - **Open risk:** stream seeking is O(target offset) for compressed ZIP entries because it replays DEFLATE to preserve CRC; this is safe but may be costly for large map resources. No seek syscall is yet mapped into the original 32-bit VM bridge.
 
+## Localization table and source-node identification checkpoint (2026-10-07 UTC)
+
+- Decoded all **14** language-table entries at `CoDSP.exe` VA `0x00564B08` (English/French/German/Italian/**Spanish index 4**/British/Russian/Polish/Korean/Taiwanese/Japanese/Chinese/Thai/Leet).
+- Independently established the original 20-byte searchpath-node fields: `+0` next, `+4` PK3 object pointer, `+8` directory pointer, `+0x0C` **localized flag**, `+0x10` language index. Verified through five SHA-pinned original instruction ranges and localization diagnostics.
+- Matched the list-insertion model's previously unknown `class_flag` to the localized boolean without renaming/breaking the existing API. Added a focused mixed-entry regression test.
+- Verified the supplied `main/` inventory includes **six localized Spanish PK3s** (`localized_spanish_pak0..5`) and **eleven plain pak* archives**. Two inspected sample PK3s have Spanish/plain menu variants, but this does not prove actual active-language selection.
+- Added `tools/searchpath_localization_probe.py` to export table, prefixes, node offsets, evidence fingerprints and filename **candidates**, plus **six unit tests** (one optional real-input test). All six passed locally using the exact original executable; tests without originals skip the exact-input check.
+- **Remaining unknowns:** language activation and filters, PK3 discovery order, `sp_`/`mp_`/`zz_` filename handling and directory-vs-PK3 collision behavior. The VFS mount ordering remains unchanged pending full verification.
+- **No new external dependencies** for this analysis.
+
+See [`analysis/localization_searchpath.md`](analysis/localization_searchpath.md).
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -345,7 +357,8 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - [ ] Identify formats required before the first menu/map boot.
 - [x] Build and test an independent, read-only PK3/loose-file loader; **does not yet reproduce original mount priority**.
 - [x] Model the original engine's **one verified searchpath insertion routine** and fingerprint the exact original code region.
-- [ ] Reconstruct PK3 search/load precedence (node creation, classification, language selection and all insertion paths) before integrating this isolated model into VFS.
+- [x] Recover searchpath node type/classification and the 14-language lookup table (including Spanish index 4).
+- [ ] Recover active-language selection/filtering and all startup discovery rules; then integrate the verified precedence into the VFS.
 - [x] Implement bounded-memory sequential reads of loose files, ZIP-stored and raw-DEFLATE PK3 members, with end-of-stream integrity checks.
 - [ ] Implement verified seek behavior and precise error mapping; keep original mount selection unresolved.
 - [ ] Reconstruct configuration and localization loading.

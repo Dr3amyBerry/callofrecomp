@@ -29,5 +29,12 @@ int main() {
     assert(nonzero.insert({10, true}));
     assert(nonzero.insert({20, false}));
     expect(nonzero, {20, 10});
+    // With both kinds present, plain (non-localized) entries precede
+    // newly added localized entries in the observed insertion model.
+    SearchpathOrder mixed;
+    assert(mixed.insert({101, true}));
+    assert(mixed.insert({102, false}));
+    assert(mixed.insert({103, true}));
+    expect(mixed, {102, 103, 101});
     return 0;
 }
