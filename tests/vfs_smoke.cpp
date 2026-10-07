@@ -3,6 +3,7 @@
 #include <zlib.h>
 #include <cassert>
 #include <algorithm>
+#include <limits>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -194,6 +195,53 @@ int main(int argc, char** argv) {
     assert(vfs.open_stream("../other").error == Error::invalid_path);
     assert(vfs.open_stream("textures/hello.txt", 4).error == Error::too_large);
 
+    // Seek without consuming the whole member into host memory; negative/EOF
+    // offsets and stream corruption must not produce unsafe cursor changes.
+    auto seeking = vfs.open_stream("textures/hello.txt");
+    assert(seeking);
+    using codrecomp::vfs::SeekOrigin;
+    assert(seeking.stream->seek(6, SeekOrigin::begin) == Error::none);
+    char seekbuf[32] = {};
+    const auto seek_part = seeking.stream->read(seekbuf, 4);
+    assert(seek_part && seek_part.bytes == 4);
+    assert(std::string(seekbuf, 4) == "from");
+    assert(seeking.stream->position() == 10);
+    assert(seeking.stream->seek(-4, SeekOrigin::current) == Error::none);
+    assert(seeking.stream->position() == 6);
+    assert(seeking.stream->seek(-5, SeekOrigin::end) == Error::none);
+    const auto seek_tail = seeking.stream->read(seekbuf, 5);
+    assert(seek_tail && seek_tail.bytes == 5 && seek_tail.eof);
+    assert(std::string(seekbuf, 5) == "patch");
+    assert(seeking.stream->seek(0, SeekOrigin::begin) == Error::none);
+    assert(seeking.stream->read(seekbuf, 5).bytes == 5);
+    assert(std::string(seekbuf, 5) == "hello");
+    const auto pos_before_invalid = seeking.stream->position();
+    assert(seeking.stream->seek(-1, SeekOrigin::begin) == Error::invalid_seek);
+    assert(seeking.stream->seek(1, SeekOrigin::end) == Error::invalid_seek);
+    assert(seeking.stream->seek(std::numeric_limits<std::int64_t>::min(),
+                                SeekOrigin::current) == Error::invalid_seek);
+    assert(seeking.stream->position() == pos_before_invalid);
+    assert(seeking.stream->seek(0, SeekOrigin::end) == Error::none);
+    assert(seeking.stream->read(seekbuf, 5).eof);
+
+    Vfs stored_only;
+    assert(stored_only.mount_pk3(test_dir / "base.pk3"));
+    auto stored_seek = stored_only.open_stream("scripts/hello.cfg");
+    assert(stored_seek);
+    assert(stored_seek.stream->seek(7, SeekOrigin::begin) == Error::none);
+    const auto stored_part = stored_seek.stream->read(seekbuf, 4);
+    assert(stored_part && stored_part.bytes == 4);
+    assert(std::string(seekbuf, 4) == "from");
+    assert(stored_seek.stream->seek(0, SeekOrigin::end) == Error::none);
+    assert(stored_seek.stream->seek(0, SeekOrigin::begin) == Error::none);
+    assert(stored_seek.stream->read(seekbuf, 5).bytes == 5);
+    assert(std::string(seekbuf, 5) == "hello");
+    auto loose_seek = vfs.open_stream("scripts/hello.cfg");
+    assert(loose_seek);
+    assert(loose_seek.stream->seek(-5, SeekOrigin::end) == Error::none);
+    assert(loose_seek.stream->read(seekbuf, 5).bytes == 5);
+    assert(std::string(seekbuf, 5) == "loose");
+
     // Over 150 KiB of incompressible source: multiple input and output refills.
     Vfs big;
     assert(big.mount_pk3(test_dir / "large.pk3"));
@@ -209,12 +257,31 @@ int main(int argc, char** argv) {
         cursor += read_result.bytes;
     }
     assert(cursor == recovered.size() && recovered == large);
+    // Incompressible data spans several 32-KiB refill blocks. Test backward
+    // rewinds, forward seeks and end-relative offsets against source bytes.
+    auto random_seek = big.open_stream("raw/huge.bin");
+    assert(random_seek);
+    assert(random_seek.stream->seek(90000, SeekOrigin::begin) == Error::none);
+    char large_probe[1024]{};
+    assert(random_seek.stream->read(large_probe, 1024).bytes == 1024);
+    assert(std::memcmp(large_probe, large.data() + 90000, 1024) == 0);
+    assert(random_seek.stream->seek(-100, SeekOrigin::current) == Error::none);
+    assert(random_seek.stream->read(large_probe, 100).bytes == 100);
+    assert(std::memcmp(large_probe, large.data() + 90924, 100) == 0);
+    assert(random_seek.stream->seek(-512, SeekOrigin::end) == Error::none);
+    const auto end_check = random_seek.stream->read(large_probe, 512);
+    assert(end_check && end_check.bytes == 512 && end_check.eof);
+    assert(std::memcmp(large_probe, large.data() + large.size() - 512, 512) == 0);
+    assert(random_seek.stream->seek(0, SeekOrigin::begin) == Error::none);
+    assert(random_seek.stream->read(large_probe, 1024).bytes == 1024);
+    assert(std::memcmp(large_probe, large.data(), 1024) == 0);
     assert(big_stream.stream->read(&recovered[0], 1).eof);
     assert(big.mount_pk3(test_dir / "bad-deflated-crc.pk3"));
     auto bad_deflate = big.open_stream("broken_compressed.cfg");
     assert(bad_deflate);
     assert(bad_deflate.stream->read(&recovered[0], recovered.size()).error == Error::invalid_archive);
     assert(bad_deflate.stream->read(&recovered[0], 1).error == Error::invalid_archive);
+    assert(bad_deflate.stream->seek(0, SeekOrigin::begin) == Error::invalid_archive);
 
     std::error_code ec;
     fs::create_symlink(test_dir / "base.pk3", test_dir / "loose" / "scripts" / "escape.cfg", ec);
