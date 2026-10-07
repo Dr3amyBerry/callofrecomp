@@ -119,6 +119,23 @@ python tools/syscall_handler_edges.py originals/CoDSP.exe \
 
 See [`analysis/game_syscall_edges_20_43.md`](analysis/game_syscall_edges_20_43.md).
 
+### SP syscall ABI signature probe
+
+For the verified 1.5 single-player baseline, this reads the numbered engine
+dispatcher handlers and records **direct argument-slot references** and
+**conservative EAX return shapes**, without guessing types or hidden arguments.
+
+```bash
+python tools/syscall_signature_probe.py originals/CoDSP.exe \
+  --callback-va 0x0044A2F0 \
+  --start-id 20 --end-id 43 \
+  --json analysis/local/game_sp_abi_20_43.json
+```
+
+This phase documents seven independently matched syscall IDs while retaining
+unknown identifiers for the others. See
+[`analysis/sp_game_syscall_signatures_20_43.md`](analysis/sp_game_syscall_signatures_20_43.md).
+
 ### Static-analysis regression tests
 
 ```bash
