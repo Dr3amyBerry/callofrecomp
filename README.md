@@ -136,6 +136,45 @@ This phase documents seven independently matched syscall IDs while retaining
 unknown identifiers for the others. See
 [`analysis/sp_game_syscall_signatures_20_43.md`](analysis/sp_game_syscall_signatures_20_43.md).
 
+### Recovered game module wrappers
+
+For the exact supplied SP game DLL, this tool recovers the canonical wrapper
+addresses and the **order of data words** passed from module registers/stack
+through its engine syscall callback. It does *not* claim the higher-level C
+calling convention is known.
+
+```bash
+python tools/module_wrapper_probe.py originals/gamex86.dll \
+  --ids 21,22,23,36,37,40,41 \
+  --require-sha256 27930aa3f663d0af39a90e6956c980be1e599e0f0c98191a9fb7eaba61481577 \
+  --json analysis/local/game_wrapper_provenance.json
+```
+
+Alternatively, after verifying all four original binaries, generate that report
+alongside the other baseline JSON files in one step:
+
+```bash
+python tools/analyze_baseline.py --originals originals --with-wrapper-provenance
+```
+
+The optional wrapper pass uses GNU `objdump`. Without the option,
+`analyze_baseline.py` keeps its previous tool dependencies and output behavior.
+
+For the seven analyzed syscalls, the callback receives 1–4 data words. ID 40
+is especially important: its four origins are **caller stack word 0, EDX, ECX,
+EAX**, not just the three registers. See
+[`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wrapper_provenance.md).
+
+### Portable native host services
+
+The new [`include/codrecomp/host_services.h`](include/codrecomp/host_services.h)
+defines pointer-width-safe filesystem/console services for a future reconstructed
+engine. It is a new host **contract, not yet a runtime implementation** or
+a claim that native CoD 1.5 callers use the same C prototypes.
+
+`tests/host_services_smoke.c` covers the interface and native pointer handling
+through CTest on the existing CI workflow.
+
 ### Static-analysis regression tests
 
 ```bash
