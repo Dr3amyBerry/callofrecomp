@@ -93,6 +93,8 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Added `tests/host_services_smoke.c` and registered it in CTest/CMake to verify calling through the new host boundary without pointer truncation.
 - [x] GitHub Actions succeeded for wrapper tests and host-services compilation/CTest registration.
 - [x] Documented source addresses and exact argument order in `analysis/module_syscall_wrapper_provenance.md`.
+- [x] Extended the one-command verified baseline analyzer with the optional `--with-wrapper-provenance` flag; the existing default pipeline remains unchanged.
+- [x] Updated the README to document provenance recovery and pointer-width-safe host service contracts.
 
 ### Confirmed module ABI data
 
@@ -198,7 +200,7 @@ The word order is **observed**, but does **not** establish each wrapper's higher
 
 **Validation:** an implementation prototype ran the five wrapper-provenance checks against the original local binary (passed); the same narrow logic and synthetic fixtures were committed. GitHub Actions successfully ran the new tests and the new host-services CMake target. The host interface is currently a compiled/tested **contract**, not a working filesystem implementation or native Android binary.
 
-**No active external blockers.** Remaining work: trace caller/callee parameter types, filesystem modes, directory policy and handles, then implement a safe 32-bit VM-to-native host bridge with runtime validation. Do not confuse the new native host-service prototypes with original x86 exports.
+**No active external blockers.** The existing GitHub Actions CI also passed the opt-in baseline analyzer change. Remaining work: trace caller/callee parameter types, filesystem modes, directory policy and handles, then implement a safe 32-bit VM-to-native host bridge with runtime validation. Do not confuse the new native host-service prototypes with original x86 exports.
 
 See [`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wrapper_provenance.md).
 
@@ -235,6 +237,8 @@ See [`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wr
 - [ ] Expand portable ABI declarations as additional syscall/export ranges are verified.
 - [x] Define the first portable host-side filesystem/console command function-pointer contract (interface only, without guessed legacy ABI).
 - [ ] Implement 32-bit VM word to native host-pointer/handle resolution with validation (bridge not yet written).
+- [ ] Verify `FS_GETFILELIST` list-buffer encoding and directory precedence against the original engine.
+- [ ] Recover native caller-level data types and filesystem error semantics before implementing platform I/O.
 - [ ] Reconstruct the minimum filesystem/cvar/command/memory interfaces needed for module startup.
 - [ ] Build a host-side test harness that can call reconstructed module interfaces without launching the full game.
 
