@@ -17,6 +17,8 @@ from types import SimpleNamespace
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from pe_inspect import PEFile, PEFormatError, Section  # noqa: E402
+from syscall_handler_edges import decoded_direct_edges  # noqa: E402
+from unittest.mock import patch  # noqa: E402
 from vm_abi_probe import (  # noqa: E402
     _find_dispatch_limit, recover_dllentry_callback,
     recover_syscall_sites, recover_vm_dispatch,
@@ -113,6 +115,27 @@ class TestVmAbi(unittest.TestCase):
         self.assertEqual([entry["command"] for entry in report["commands"]], [5, 200])
         self.assertEqual(report["unresolved_call_rvas"], [0x1016])
         self.assertEqual(report["sites"][0]["call_rva"], 0x1002)
+
+
+class TestSyscallEdgeDecoder(unittest.TestCase):
+    def test_direct_branch_decoding(self):
+        sample = (
+            "Disassembly of section .text:\n"
+            "0044a47a <.text+0x4947a>:\n"
+            "  44a47a: e8 31 07 fe ff        call   0x42abb0\n"
+            "  44a47f: 5f                    pop    edi\n"
+            "  44a480: ff 24 85 10 b3 44 00 jmp DWORD PTR [eax*4+0x44b310]\n"
+        )
+        with patch("syscall_handler_edges.subprocess.run") as runner:
+            runner.return_value.stdout = sample
+            edges = decoded_direct_edges(
+                Path("/not/opened/in/mock.exe"), 0x44A47A, 0x44A486, "objdump"
+            )
+            self.assertEqual(
+                edges,
+                [{"source_va": 0x44A47A, "kind": "call", "target_va": 0x42ABB0}],
+            )
+            self.assertTrue(runner.call_args.kwargs["check"])
 
 
 class TestOriginalBinaryRegression(unittest.TestCase):
