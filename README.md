@@ -269,6 +269,14 @@ against user-owned original PK3 archives. The guest bridge still validates
 32-bit guest memory and copies from a staging buffer, and game asset data
 remains outside Git.
 
+### Startup searchpath discovery (partial)
+
+`tools/searchpath_startup_probe.py` fingerprints an original CoD 1.5 SP
+function which first calls an engine helper with zero-valued selectors and
+then scans indices **13 down to 0** with another selector. This does not
+establish complete PK3 mount priority or locale overlay behavior.
+See [the startup scan evidence](analysis/searchpath_startup_scan.md).
+
 ## Development rule
 
 Analysis output must be reproducible. Do not rename guessed functions as facts: recovered names must record whether they are **observed**, **matched**, or **inferred**. This matters because the final native port will be built from reconstructed behavior rather than copied proprietary source.

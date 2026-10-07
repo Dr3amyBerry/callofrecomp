@@ -289,6 +289,12 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - Synthetic tests cover backward/forward/end-relative seeks, bad ranges, large DEFLATE refills, CRC sticky errors and host EOF recovery. The VFS is still read-only; full mount precedence and locale classification are **not yet reconstructed**.
 - **Next:** inspect original startup/locale searchpath node constructors; reduce remaining filesystem compatibility gaps and optimize seek when evidence permits.
 
+## Startup indexed searchpath discovery checkpoint (2026-10-07 UTC)
+
+- Fingerprinted the exact original `CoDSP.exe` function at `0x004250E0`. Its first call invokes helper `0x00424E10` with two zero immediate inputs. A subsequent loop invokes the same helper with selector `1` and index values `13` down to `0` (14 calls).
+- Added `tools/searchpath_startup_probe.py`, synthetic unit tests and [analysis/searchpath_startup_scan.md](analysis/searchpath_startup_scan.md), preserving the uncertainty around register arguments and the meaning of package/language flags.
+- This is **not the full PK3/locale search-order mapping**; node creation and classification are still under investigation, and the provisional VFS search priority is unchanged.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
