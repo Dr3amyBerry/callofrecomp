@@ -23,4 +23,17 @@ if(CODRECOMP_BUILD_TESTS)
     )
 
     add_test(NAME abi_smoke COMMAND codrecomp_abi_smoke)
+
+    # Offline unit tests cover the PE parser and VM probe using synthetic
+    # fixtures. CI already invokes CTest, so no workflow edit is required.
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if(Python3_Interpreter_FOUND)
+        add_test(
+            NAME static_analysis_python
+            COMMAND ${Python3_EXECUTABLE} -m unittest discover
+                -s ${CMAKE_CURRENT_SOURCE_DIR}/tests
+                -p "test_*.py"
+                -v
+        )
+    endif()
 endif()
