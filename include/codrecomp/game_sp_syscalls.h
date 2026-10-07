@@ -3,8 +3,8 @@
 
 /*
  * Evidence-backed prefix of the Call of Duty 1.5 single-player game-module
- * syscall ABI. Values after 19 remain intentionally unnamed until independently
- * verified against the supplied SP executable.
+ * syscall ABI. Verified later slots are named individually; gaps remain
+ * intentionally unnamed until independently supported by SP evidence.
  */
 typedef enum cod_sp_game_syscall_e {
     COD_SP_G_PRINT = 0,
@@ -27,6 +27,18 @@ typedef enum cod_sp_game_syscall_e {
     COD_SP_G_HUNK_ALLOC_LOW_ALIGN = 17,
     COD_SP_G_HUNK_ALLOC_TEMP = 18,
     COD_SP_G_HUNK_FREE_TEMP = 19,
+
+    /* Verified non-contiguous SP syscall IDs. Do not invent names for
+     * unverified slots (including ID 20 and 24-35).
+     * See analysis/sp_game_syscall_signatures_20_43.md.
+     */
+    COD_SP_G_FS_FOPEN_FILE = 21,
+    COD_SP_G_FS_READ = 22,
+    COD_SP_G_FS_WRITE = 23,
+    COD_SP_G_FS_RENAME = 36,
+    COD_SP_G_FS_FCLOSE_FILE = 37,
+    COD_SP_G_FS_GETFILELIST = 40,
+    COD_SP_G_SEND_CONSOLE_COMMAND = 41,
 
     COD_SP_G_KNOWN_PREFIX_MAX = 19,
     COD_SP_G_DISPATCH_MAX = 211
