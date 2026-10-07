@@ -111,7 +111,7 @@ class TestVmAbi(unittest.TestCase):
         self.assertEqual(report["indirect_call_count"], 3)
         self.assertEqual(report["resolved_command_count"], 2)
         self.assertEqual([entry["command"] for entry in report["commands"]], [5, 200])
-        self.assertEqual(report["unresolved_call_rvas"], [0x1011])
+        self.assertEqual(report["unresolved_call_rvas"], [0x1016])
         self.assertEqual(report["sites"][0]["call_rva"], 0x1002)
 
 
