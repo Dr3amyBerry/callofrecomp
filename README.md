@@ -219,6 +219,14 @@ original data. To additionally test with user-owned game archives:
 Both archives were mounted and their known sample members read successfully,
 including CRC validation, using the original files supplied through Drive.
 
+The optional C++ `ReadOnlyHostAdapter` connects VFS reads to
+`cod_host_services_t` native callbacks with opaque handles:
+`fs_open`, `fs_read`, `fs_close`. It supports independent cursors and
+EOF; an explicit adapter-configured read mode prevents accidentally
+claiming the unknown COD1 mode semantics. All write, rename, list and
+console callbacks remain disabled. The VM x86 32-bit word/pointer
+translation is **not** implemented.
+
 **Limitations:** the search priority is currently last-mounted-wins by explicit
 design, not a verified Call of Duty priority rule. The original numeric file
 open modes (0–3), file-handle bridge, writing/savegames, streaming seeks and
