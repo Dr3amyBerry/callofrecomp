@@ -21,6 +21,15 @@ add_library(codrecomp_read_only_host STATIC src/read_only_host_adapter.cpp)
 target_link_libraries(codrecomp_read_only_host PUBLIC codrecomp_vfs)
 target_compile_features(codrecomp_read_only_host PUBLIC cxx_std_17)
 
+# Explicit guest-memory map and legacy read-only syscall bridge. Host memory
+# stays native width even when the guest address format is 32-bit.
+add_library(codrecomp_legacy_vm_fs STATIC
+    src/guest_memory.cpp
+    src/legacy_fs_read_bridge.cpp
+)
+target_link_libraries(codrecomp_legacy_vm_fs PUBLIC codrecomp_read_only_host)
+target_compile_features(codrecomp_legacy_vm_fs PUBLIC cxx_std_17)
+
 option(CODRECOMP_BUILD_TESTS "Build host-side reconstruction tests" ON)
 
 if(CODRECOMP_BUILD_TESTS)
@@ -56,6 +65,10 @@ if(CODRECOMP_BUILD_TESTS)
     add_executable(codrecomp_host_adapter_smoke tests/host_adapter_smoke.cpp)
     target_link_libraries(codrecomp_host_adapter_smoke PRIVATE codrecomp_read_only_host)
     add_test(NAME host_adapter_smoke COMMAND codrecomp_host_adapter_smoke)
+
+    add_executable(codrecomp_guest_vm_bridge_smoke tests/guest_vm_bridge_smoke.cpp)
+    target_link_libraries(codrecomp_guest_vm_bridge_smoke PRIVATE codrecomp_legacy_vm_fs)
+    add_test(NAME guest_vm_bridge_smoke COMMAND codrecomp_guest_vm_bridge_smoke)
 
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.
