@@ -4,6 +4,7 @@
 #include <cassert>
 #include <algorithm>
 #include <limits>
+#include <cstring>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -228,7 +229,7 @@ int main(int argc, char** argv) {
     assert(stored_only.mount_pk3(test_dir / "base.pk3"));
     auto stored_seek = stored_only.open_stream("scripts/hello.cfg");
     assert(stored_seek);
-    assert(stored_seek.stream->seek(7, SeekOrigin::begin) == Error::none);
+    assert(stored_seek.stream->seek(6, SeekOrigin::begin) == Error::none);
     const auto stored_part = stored_seek.stream->read(seekbuf, 4);
     assert(stored_part && stored_part.bytes == 4);
     assert(std::string(seekbuf, 4) == "from");
