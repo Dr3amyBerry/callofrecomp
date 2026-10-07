@@ -65,28 +65,35 @@ CoDSP.exe
 
 ## UI export alignment
 
-The first UI export IDs have a strong structural match to the public Return to Castle Wolfenstein SP UI ABI, which is an id Tech 3-family reference and is used here only as a comparison source.
+The SP UI export table was rechecked directly against `uix86.dll` after a Call of Duty-specific public reconstruction became available. This corrected an earlier RTCW-only assumption for IDs 9 and 10.
 
-Reference:
-`https://github.com/id-Software/RTCW-SP/blob/70951bc71b730efe6bcb07db7ae76ef0c4ae7c14/src/ui/ui_public.h`
+References used only as comparison sources:
 
-The supplied CoD UI module and engine provide independent evidence for the following mapping:
+- RTCW SP UI ABI:
+  `https://github.com/id-Software/RTCW-SP/blob/70951bc71b730efe6bcb07db7ae76ef0c4ae7c14/src/ui/ui_public.h`
+- OpenCoD1 multiplayer reconstruction:
+  `https://github.com/opencod1/opencod1/blob/718e994af62ca2cbc79d911bab73c445637b94e7/src/ui_mp/ui_public.h`
+
+The supplied SP binary provides the deciding evidence:
 
 | ID | Working symbol | Evidence |
 |---:|---|---|
-| 0 | `UI_GETAPIVERSION` | **matched** — module returns constant `6`; engine calls command 0 and checks result against 6. |
-| 1 | `UI_INIT` | **matched** — engine invokes command 1 immediately after API validation; signature/control flow aligns with reference ordering. |
-| 2 | `UI_SHUTDOWN` | **matched** — engine invokes command 2 during UI teardown before unloading the VM. |
-| 3 | `UI_KEY_EVENT` | **matched** — module dispatch target consumes two arguments; ordering aligns with the inherited UI ABI. |
-| 4 | `UI_MOUSE_EVENT` | **matched** — module dispatch target consumes two arguments; ordering aligns with the inherited UI ABI. |
-| 5 | `UI_REFRESH` | **matched** — module dispatch target consumes one argument and engine calls it from UI refresh paths. |
-| 6 | `UI_IS_FULLSCREEN` | **matched** — zero-argument dispatch path returns a value. |
+| 0 | `UI_GETAPIVERSION` | **matched** — module returns constant `6`; engine validates command 0 against 6. |
+| 1 | `UI_INIT` | **matched** — engine invokes command 1 immediately after API validation. |
+| 2 | `UI_SHUTDOWN` | **matched** — engine invokes command 2 during UI teardown before unloading the VM; the SP module implementation is effectively empty. |
+| 3 | `UI_KEY_EVENT` | **matched** — dispatch target consumes two arguments and matches the inherited input slot. |
+| 4 | `UI_MOUSE_EVENT` | **matched** — dispatch target consumes two arguments and matches the inherited input slot. |
+| 5 | `UI_REFRESH` | **matched** — one-argument dispatch and engine refresh call sites. |
+| 6 | `UI_IS_FULLSCREEN` | **matched** — zero-argument boolean query over active menu state. |
 | 7 | `UI_SET_ACTIVE_MENU` | **matched** — one-argument command heavily used by engine menu transitions. |
-| 8 | `UI_GET_ACTIVE_MENU` | **matched** — zero-argument path returns a stored UI state value. |
-| 9 | `UI_CONSOLE_COMMAND` | **matched** — engine calls command 9 from console-command fallback handling and tests the return value. |
-| 10 | `UI_DRAW_CONNECT_SCREEN` | **matched** — engine passes one overlay/state argument from screen drawing paths. |
+| 8 | `UI_GET_ACTIVE_MENU` | **matched** — returns the stored active-menu value. |
+| 9 | unknown SP UI boolean query | **observed** — zero-argument boolean query over menu state; the engine tests the result in an input/menu path. It is deliberately not named yet. |
+| 10 | `UI_CONSOLE_COMMAND` | **matched** — engine passes its realtime value; the target obtains command arguments and recognizes UI console commands including `ui_test`, `ui_report`, `ui_load`, and `ui_cache`. |
+| 11 | `UI_DRAW_CONNECT_SCREEN` | **matched** — the target finds the menu named `Connect` and routes it through the menu drawing path. |
+| 12 | `UI_LOAD_SCRIPT_MENU` | **matched** — two-argument target references `ui/scriptmenus/`, `.menu`, `loadmenu`, and `cl_language`; an engine call supplies image-track value 5. |
+| 13 | `UI_GET_FONT_INFO` | **matched** — target converts the second integer argument by multiplying it by `0.01f` before calling the font-selection routine, matching the CoD UI ABI's percentage-scale convention. |
 
-The alignment is intentionally stopped at ID 10. CoD 1.5 has additional UI exports and its ID 11 behavior does not simply mirror the RTCW SP `UI_HASUNIQUECDKEY` implementation, so IDs 11–13 remain unlabelled until independently recovered.
+This SP table is therefore **not** a verbatim RTCW table and is also shorter/differently ordered than the known CoD multiplayer UI table. The project must continue treating each executable/module pair as authoritative.
 
 ## Immediate next analysis
 
