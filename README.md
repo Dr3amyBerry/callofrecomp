@@ -219,20 +219,28 @@ original data. To additionally test with user-owned game archives:
 Both archives were mounted and their known sample members read successfully,
 including CRC validation, using the original files supplied through Drive.
 
-The optional C++ `ReadOnlyHostAdapter` connects VFS reads to
-`cod_host_services_t` native callbacks with opaque handles:
-`fs_open`, `fs_read`, `fs_close`. It supports independent cursors and
-EOF; an explicit adapter-configured read mode prevents accidentally
-claiming the unknown COD1 mode semantics. All write, rename, list and
-console callbacks remain disabled. The VM x86 32-bit word/pointer
-translation is **not** implemented.
+The C++ `ReadOnlyHostAdapter` exposes native host-width callbacks for
+`fs_open`, `fs_read` and `fs_close`. The new
+[`GuestMemory`](include/codrecomp/guest_memory.hpp) +
+[`LegacyFsReadBridge`](include/codrecomp/legacy_fs_read_bridge.hpp) then
+bridges **only three verified SP game syscall IDs** (21 open, 22 read,
+37 close) using validated guest 32-bit addresses, permissions and handles.
+It accepts original read mode **0**; write/append modes **1–3** are blocked.
 
-**Limitations:** the search priority is currently last-mounted-wins by explicit
-design, not a verified Call of Duty priority rule. The original numeric file
-open modes (0–3), file-handle bridge, writing/savegames, streaming seeks and
-Android NDK runtime integration are pending. This is a read-only data loader,
-not a runnable game. The current [technical VFS analysis](analysis/filesystem_vfs_phase.md)
-records evidence, limits and further steps.
+The original `CoDSP.exe` has now been independently matched against
+file-mode strings: `0=rb`, `1=wb`, `2=ab`, `3=ab` with an extra post-write
+sync flag. Details: [FS mode and searchpath evidence](analysis/fs_modes_and_searchpath_evidence.md).
+
+The bridge is exercised in the host-only `guest_vm_bridge_smoke` CTest.
+All six current CTest targets passed in GitHub Actions. This is **not**
+an x86 emulator or a playable Android port: reconstructed game-module
+code is not yet connected, streaming/seek and writable saves are missing,
+and the original engine's linked-list PK3 search ordering is only partly
+understood. Our VFS's last-mounted-wins lookup is provisional.
+
+See the [VM filesystem bridge contract](docs/LEGACY_FS_BRIDGE.md) and
+[technical VFS analysis](analysis/filesystem_vfs_phase.md) for evidence,
+limits and next steps.
 
 ## Development rule
 
