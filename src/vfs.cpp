@@ -147,7 +147,8 @@ MountResult Vfs::mount_pk3(const std::filesystem::path& archive) {
         const auto crc = u32(c + 16);
         const auto compressed = u32(c + 20), uncompressed = u32(c + 24);
         const auto name_length = u16(c + 28), extra = u16(c + 30), comment = u16(c + 32);
-        const auto starting_disk = u16(c + 34), local_offset = u32(c + 42);
+        const auto starting_disk = u16(c + 34);
+        const auto local_offset = u32(c + 42);
         const std::uint64_t record_size = 46ull + name_length + extra + comment;
         if (record_size > directory.size() - pos || starting_disk != 0 ||
             compressed == 0xffffffffu || uncompressed == 0xffffffffu ||
