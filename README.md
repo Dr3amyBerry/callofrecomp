@@ -32,7 +32,7 @@ Verified baseline from the supplied installation:
 - `gamex86.dll`, `cgamex86.dll`, `uix86.dll`: PE32 / x86 modules exporting `dllEntry` and `vmMain`.
 - The engine contains OpenGL initialization/extension strings and loads several Windows-specific system/audio APIs.
 
-See [`analysis/initial_findings.md`](analysis/initial_findings.md) for the first binary-level findings and [`docs/ROADMAP.md`](docs/ROADMAP.md) for the implementation plan.
+See [`analysis/initial_findings.md`](analysis/initial_findings.md), [`analysis/vm_abi_findings.md`](analysis/vm_abi_findings.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Tools
 
@@ -48,6 +48,20 @@ python tools/pe_inspect.py \
   originals/uix86.dll \
   --json analysis/local/pe_report.json
 ```
+
+### Module ABI probe
+
+Recovers the observed `dllEntry` callback slot, `vmMain` indexed dispatch table, and direct-immediate syscall IDs from the native single-player modules.
+
+```bash
+python tools/vm_abi_probe.py \
+  originals/gamex86.dll \
+  originals/cgamex86.dll \
+  originals/uix86.dll \
+  --json analysis/local/vm_abi.json
+```
+
+The syscall-ID pass is deliberately conservative: call sites that cannot be resolved with the supported patterns remain unresolved instead of being guessed.
 
 ### PK3 inventory
 
