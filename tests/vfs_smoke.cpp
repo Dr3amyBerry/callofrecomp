@@ -152,6 +152,12 @@ int main(int argc, char** argv) {
             const auto real_dll = original_vfs.read_file("ui_mp_x86.dll");
             assert(real_dll && real_dll.bytes.size() == 274432);
             std::cout << "real pakb contents and CRC verified\n";
+        } else if (original.filename() == "localized_spanish_pak4.pk3") {
+            const auto create_menu = original_vfs.read_file("ui_mp/spanish/createserver.menu");
+            const auto join_menu = original_vfs.read_file("UI_MP/SPANISH/JOINserver.MENU");
+            assert(create_menu && create_menu.bytes.size() == 15193);
+            assert(join_menu && join_menu.bytes.size() == 35057);
+            std::cout << "real localization PK3 contents and CRC verified\n";
         }
         std::cout << "original PK3 mounted: " << mount.entries << " entries\n";
     }
