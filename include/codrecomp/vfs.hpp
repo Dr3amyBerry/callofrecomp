@@ -19,6 +19,7 @@ enum class Error {
     invalid_archive,
     unsupported_entry,
     too_large,
+    invalid_seek,
 };
 
 struct Result {
@@ -35,6 +36,12 @@ struct MountResult {
     explicit operator bool() const noexcept { return error == Error::none; }
 };
 
+enum class SeekOrigin {
+    begin,
+    current,
+    end,
+};
+
 struct StreamReadResult {
     Error error = Error::none;
     std::size_t bytes = 0;
@@ -43,7 +50,8 @@ struct StreamReadResult {
 };
 
 // Sequential read cursor over a loose file or PK3 member.
-// No full-file allocation, no seek support yet. CRC is checked at end-of-stream.
+// No full-file allocation. Seek replays ZIP data to preserve end-to-end CRC.
+// Random seeks into compressed ZIP members are O(uncompressed offset).
 class ReadStream {
 public:
     ~ReadStream();
@@ -52,6 +60,7 @@ public:
     std::uint64_t size() const noexcept;
     std::uint64_t position() const noexcept;
     StreamReadResult read(void* output, std::size_t max_bytes);
+    Error seek(std::int64_t delta, SeekOrigin origin);
 private:
     struct State;
     std::unique_ptr<State> state_;
