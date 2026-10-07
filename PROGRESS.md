@@ -95,6 +95,16 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Documented source addresses and exact argument order in `analysis/module_syscall_wrapper_provenance.md`.
 - [x] Extended the one-command verified baseline analyzer with the optional `--with-wrapper-provenance` flag; the existing default pipeline remains unchanged.
 - [x] Updated the README to document provenance recovery and pointer-width-safe host service contracts.
+- [x] Implemented a **working read-only C++17 VFS** for loose files and ZIP32/PK3 members with zlib.
+- [x] Added central-directory indexing, stored/DEFLATE extraction, CRC-32 and file-size validation.
+- [x] Added traversal/absolute path/symlink escape checks, 64 MiB per-file read caps, and ZIP32-only fail-closed behavior.
+- [x] Added `tests/vfs_smoke.cpp` with generated stored/deflated PK3 fixtures, invalid CRC/ZIP, mount order and traversal checks.
+- [x] Verified original `main/pakb.pk3` can be mounted and its two known binary/menu members read and CRC-validated (24 indexed files).
+- [x] Verified original Spanish localization PK3 `localized_spanish_pak4.pk3` mounts and both menu files can be read and CRC-validated (2 indexed files).
+- [x] Integrated `codrecomp_vfs` with zlib and CTest in CMake; corrected a compilation error found by CI and confirmed a subsequent GitHub Actions run succeeded.
+- [x] Fixed CI paths so changes under `src/**` trigger source compilation/testing.
+- [x] Independently mapped the four numeric `FS_FOpenFile` branches in original `CoDSP.exe`, leaving their semantic mode names unverified.
+- [x] Documented this phase in `analysis/filesystem_vfs_phase.md`.
 
 ### Confirmed module ABI data
 
@@ -204,6 +214,20 @@ The word order is **observed**, but does **not** establish each wrapper's higher
 
 See [`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wrapper_provenance.md).
 
+## Read-only VFS/PK3 checkpoint (2026-10-07)
+
+- A C++17/zlib VFS now compiles and **reads real game data**, not just PK3 metadata.
+- The independently supplied `main/pakb.pk3` indexed 24 unique non-directory files; `ui_mp/createserver.menu` (27,514 bytes) and `ui_mp_x86.dll` (274,432 bytes) were decompressed with matching CRC-32.
+- The original Spanish localization archive `localized_spanish_pak4.pk3` indexed 2 non-directory entries; `ui_mp/spanish/createserver.menu` (15,193 bytes) and `ui_mp/spanish/joinserver.menu` (35,057 bytes) passed the same read/CRC checks.
+- Synthetic tests cover stored + deflated entries, empty files, case-insensitive PK3 lookup, path traversal, invalid archives, invalid CRC, symlink escape and explicit mount priority.
+- The original engine's `FS_FOpenFile` routine at `0x00425FD0` dispatches numeric modes **0–3**, but these modes do not yet have independently proven semantics or names. The VFS does **not** implement original filesystem modes.
+- The provisional precedence used here is **most recently mounted source wins**; original COD1 priority, paths and localization behavior remain to be mapped.
+- Source and tests are committed only to `main`; original EXE/DLL/PK3 assets remain external. GitHub CI passed after correcting a C++ compilation mistake. The failed intermediate runs are historical and not counted as successful tests.
+- **Scope remains M1 + early M2:** there is no engine/VM adapter, savegame write support, streaming/seek, Android NDK executable, menu or playable campaign yet.
+- **Next autonomous task:** trace original PK3 precedence and file-open mode behavior, then implement a validated read-only VM/host bridge and streaming handle operations.
+
+See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -239,6 +263,7 @@ See [`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wr
 - [ ] Implement 32-bit VM word to native host-pointer/handle resolution with validation (bridge not yet written).
 - [ ] Verify `FS_GETFILELIST` list-buffer encoding and directory precedence against the original engine.
 - [ ] Recover native caller-level data types and filesystem error semantics before implementing platform I/O.
+- [ ] Connect the functioning VFS to the host-services interface via a validated VM-word-to-pointer/handle adapter.
 - [ ] Reconstruct the minimum filesystem/cvar/command/memory interfaces needed for module startup.
 - [ ] Build a host-side test harness that can call reconstructed module interfaces without launching the full game.
 
@@ -246,6 +271,7 @@ See [`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wr
 
 - [ ] Deep-inventory required PK3 contents.
 - [ ] Identify formats required before the first menu/map boot.
+- [x] Build and test an independent, read-only PK3/loose-file loader; **does not yet reproduce original mount priority**.
 - [ ] Reconstruct PK3 search/load precedence.
 - [ ] Reconstruct configuration and localization loading.
 - [ ] Trace single-player startup from process entry to first rendered frame.
