@@ -15,6 +15,12 @@ target_link_libraries(codrecomp_vfs PUBLIC ZLIB::ZLIB)
 target_link_libraries(codrecomp_vfs PUBLIC codrecomp_abi)
 target_compile_features(codrecomp_vfs PUBLIC cxx_std_17)
 
+# Host-services reader with explicit accepted mode and opaque native handles.
+# This is a new host interface, not the original 32-bit x86 VM-word bridge.
+add_library(codrecomp_read_only_host STATIC src/read_only_host_adapter.cpp)
+target_link_libraries(codrecomp_read_only_host PUBLIC codrecomp_vfs)
+target_compile_features(codrecomp_read_only_host PUBLIC cxx_std_17)
+
 option(CODRECOMP_BUILD_TESTS "Build host-side reconstruction tests" ON)
 
 if(CODRECOMP_BUILD_TESTS)
@@ -46,6 +52,10 @@ if(CODRECOMP_BUILD_TESTS)
     add_executable(codrecomp_vfs_smoke tests/vfs_smoke.cpp)
     target_link_libraries(codrecomp_vfs_smoke PRIVATE codrecomp_vfs)
     add_test(NAME vfs_smoke COMMAND codrecomp_vfs_smoke)
+
+    add_executable(codrecomp_host_adapter_smoke tests/host_adapter_smoke.cpp)
+    target_link_libraries(codrecomp_host_adapter_smoke PRIVATE codrecomp_read_only_host)
+    add_test(NAME host_adapter_smoke COMMAND codrecomp_host_adapter_smoke)
 
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.
