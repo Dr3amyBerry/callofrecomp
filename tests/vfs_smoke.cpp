@@ -99,6 +99,23 @@ std::string text(const codrecomp::vfs::Result& result) {
     return std::string(result.bytes.begin(), result.bytes.end());
 }
 
+std::vector<std::uint8_t> stream_all(Vfs& archive, const std::string& logical_path) {
+    auto opened = archive.open_stream(logical_path);
+    assert(opened);
+    std::vector<std::uint8_t> output(static_cast<std::size_t>(opened.stream->size()));
+    std::size_t cursor = 0;
+    while (cursor < output.size()) {
+        const auto result = opened.stream->read(
+            output.data() + cursor, std::min<std::size_t>(191, output.size() - cursor));
+        assert(result && result.bytes != 0);
+        cursor += result.bytes;
+    }
+    std::uint8_t probe = 0;
+    const auto eof = opened.stream->read(&probe, 1);
+    assert(eof && eof.eof && eof.bytes == 0);
+    return output;
+}
+
 int main(int argc, char** argv) {
     const fs::path test_dir = fs::temp_directory_path() /
         ("cod_vfs_smoke_" +
@@ -182,7 +199,7 @@ int main(int argc, char** argv) {
     assert(big.mount_pk3(test_dir / "large.pk3"));
     auto big_stream = big.open_stream("RAW/HUGE.BIN");
     assert(big_stream && big_stream.stream->size() == large.size());
-    std::string recovered(large.size(), ' ');
+    std::string recovered(large.size(), char{0});
     std::size_t cursor = 0;
     for (const std::size_t step : {1u, 7u, 65537u, 32768u, 33000u, 100000u}) {
         if (cursor == recovered.size()) break;
@@ -213,6 +230,7 @@ int main(int argc, char** argv) {
         if (original.filename() == "pakb.pk3") {
             const auto real_menu = original_vfs.read_file("ui_mp/createserver.menu");
             assert(real_menu && real_menu.bytes.size() == 27514);
+            assert(stream_all(original_vfs, "ui_mp/createserver.menu") == real_menu.bytes);
             const auto real_dll = original_vfs.read_file("ui_mp_x86.dll");
             assert(real_dll && real_dll.bytes.size() == 274432);
             std::cout << "real pakb contents and CRC verified\n";
@@ -221,6 +239,7 @@ int main(int argc, char** argv) {
             const auto join_menu = original_vfs.read_file("UI_MP/SPANISH/JOINserver.MENU");
             assert(create_menu && create_menu.bytes.size() == 15193);
             assert(join_menu && join_menu.bytes.size() == 35057);
+            assert(stream_all(original_vfs, "ui_mp/spanish/joinserver.menu") == join_menu.bytes);
             std::cout << "real localization PK3 contents and CRC verified\n";
         }
         std::cout << "original PK3 mounted: " << mount.entries << " entries\n";
