@@ -31,10 +31,11 @@ Verified baseline from the supplied installation:
 - `CoDSP.exe`: PE32 / x86 executable.
 - `gamex86.dll`, `cgamex86.dll`, `uix86.dll`: PE32 / x86 modules exporting `dllEntry` and `vmMain`.
 - The engine contains OpenGL initialization/extension strings and loads several Windows-specific system/audio APIs.
+- The native VM loader, VM call wrapper, and all three module-to-engine syscall dispatchers have now been located and mapped.
 
 See [`PROGRESS.md`](PROGRESS.md) for the living project status, autonomy rules, blockers, and tool requirements.
 
-Technical references: [`analysis/initial_findings.md`](analysis/initial_findings.md), [`analysis/vm_abi_findings.md`](analysis/vm_abi_findings.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Technical references: [`analysis/initial_findings.md`](analysis/initial_findings.md), [`analysis/vm_abi_findings.md`](analysis/vm_abi_findings.md), [`analysis/engine_vm_findings.md`](analysis/engine_vm_findings.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Tools
 
@@ -64,6 +65,24 @@ python tools/vm_abi_probe.py \
 ```
 
 The syscall-ID pass is deliberately conservative: call sites that cannot be resolved with the supported patterns remain unresolved instead of being guessed.
+
+### Engine VM probe
+
+Maps both directions of the VM boundary inside `CoDSP.exe`: engine→module `VM_Call` command sites and module→engine syscall callback jump tables.
+
+For the verified 1.5 baseline:
+
+```bash
+python tools/engine_vm_probe.py originals/CoDSP.exe \
+  --vm-call-va 0x44f270 \
+  --handle game=0x13f9db8 \
+  --handle cgame=0x14bd620 \
+  --handle ui=0x14bd648 \
+  --callback game=0x44a2f0 \
+  --callback cgame=0x401a50 \
+  --callback ui=0x410b00 \
+  --json analysis/local/engine_vm.json
+```
 
 ### PK3 inventory
 
