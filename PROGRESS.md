@@ -4,7 +4,7 @@
 >
 > **Rule:** this file must be updated whenever a meaningful phase starts, completes, changes direction, discovers a blocker, or requires a new external tool.
 
-**Last updated:** 2026-10-06  
+**Last updated:** 2026-10-07  
 **Primary branch:** `main`  
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
@@ -59,7 +59,14 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Added an engine VM probe that emits reproducible JSON for both directions of the ABI.
 - [x] Extended the PE inspector to record import IAT addresses.
 - [x] Confirmed the dynamic OpenGL/WGL loader path: `LoadLibraryA("opengl32.dll")` + `GetProcAddress` and renderer function-pointer population.
-- [x] Matched UI export commands 0–10 against an id Tech 3-family public reference with independent binary evidence.
+- [x] Corrected and completed the current SP UI export map: IDs 0–8 and 10–13 are matched; ID 9 remains deliberately unnamed.
+- [x] Mapped the evidence-backed SP game syscall prefix 0–19, including SP-only `G_ENDGAME` and `G_CVAR_SETVAR` insertions.
+- [x] Added a verified build profile containing hashes and recovered VM addresses for this exact CoD 1.5 SP baseline.
+- [x] Added a one-command baseline analyzer that verifies the binary hashes before generating PE/module/engine VM reports.
+- [x] Added a portable 32-bit legacy VM word ABI header and the first reconstructed SP game syscall enum.
+- [x] Added CMake host-build scaffolding and a first ABI smoke test.
+- [x] Added CI that compiles/smoke-tests analysis tools and builds/runs the host ABI test.
+- [x] Documented the external-reference verification/licensing policy; public reconstruction code without a declared license is not copied into this repository.
 - [x] Established an evidence ledger using `observed`, `matched`, and `inferred` confidence levels.
 
 ### Confirmed module ABI data
@@ -105,11 +112,19 @@ The narrow scanner intentionally leaves non-immediate/register-driven cases unre
 
 ### UI export commands matched so far
 
-Commands 0–10 now have evidence-backed working names:
+The supplied SP UI binary now has evidence-backed working names for IDs 0–8 and 10–13:
 
-`UI_GETAPIVERSION`, `UI_INIT`, `UI_SHUTDOWN`, `UI_KEY_EVENT`, `UI_MOUSE_EVENT`, `UI_REFRESH`, `UI_IS_FULLSCREEN`, `UI_SET_ACTIVE_MENU`, `UI_GET_ACTIVE_MENU`, `UI_CONSOLE_COMMAND`, and `UI_DRAW_CONNECT_SCREEN`.
+`UI_GETAPIVERSION`, `UI_INIT`, `UI_SHUTDOWN`, `UI_KEY_EVENT`, `UI_MOUSE_EVENT`, `UI_REFRESH`, `UI_IS_FULLSCREEN`, `UI_SET_ACTIVE_MENU`, `UI_GET_ACTIVE_MENU`, `UI_CONSOLE_COMMAND`, `UI_DRAW_CONNECT_SCREEN`, `UI_LOAD_SCRIPT_MENU`, and `UI_GET_FONT_INFO`.
 
-IDs 11–13 remain intentionally unnamed.
+ID 9 is an observed zero-argument menu-state boolean query but remains intentionally unnamed instead of inheriting an incorrect RTCW/MP label.
+
+### SP game syscall semantic recovery
+
+The game-module dispatcher range is `0..211`. IDs `0..19` now have independently verified working semantics:
+
+`G_PRINT`, `G_ERROR`, `G_ERROR_NOPREFIX`, `G_ENDGAME`, `G_MILLISECONDS`, the VM-cvar register/update/set/setvar/query group, `G_ARGC`, `G_ARGV`, and the first hunk allocation/temp-allocation group.
+
+The SP table is not a drop-in copy of the known multiplayer enum: `G_ENDGAME` is inserted at ID 3 and a VM-cvar set-by-handle operation is also present.
 
 ---
 
@@ -121,18 +136,21 @@ IDs 11–13 remain intentionally unnamed.
 - [ ] Recover syscall wrappers with argument-count / argument-shape evidence.
 - [x] Add first direct-call recovery around the engine `VM_Call` boundary.
 - [ ] Expand direct/indirect call-target recovery beyond the current narrow patterns.
-- [ ] Add string-reference indexing.
+- [x] Add first reproducible absolute string-reference scanner.
+- [ ] Extend string/xref recovery with instruction-aware decoding and broader reference forms.
 - [ ] Add broader cross-reference output suitable for machine processing.
 - [x] Produce reproducible JSON reports for the PE, module ABI, and engine VM boundary.
 - [x] Map engine code responsible for loading the game/cgame/ui modules.
 - [x] Confirm the dynamic OpenGL loader path rather than only inferring it from strings.
 - [ ] Inventory the renderer GL/WGL function-pointer table and classify Android replacement requirements.
-- [ ] Recover engine-side semantic names for syscall IDs with independent evidence.
+- [ ] Recover engine-side semantic names for remaining syscall IDs with independent evidence.
+- [x] Map SP game syscall IDs 0–19.
 
 ### Phase B — reconstruct interfaces
 
-- [ ] Define portable C/C++ declarations for the observed engine ↔ module ABI.
-- [ ] Build explicit enums/tables only after syscall and `vmMain` semantics are sufficiently verified.
+- [x] Define the first portable C declarations for the observed 32-bit VM word/call representation.
+- [x] Codify the verified SP game syscall prefix 0–19 without naming unverified IDs.
+- [ ] Expand portable ABI declarations as additional syscall/export ranges are verified.
 - [ ] Reconstruct the minimum filesystem/cvar/command/memory interfaces needed for module startup.
 - [ ] Build a host-side test harness that can call reconstructed module interfaces without launching the full game.
 
@@ -146,8 +164,9 @@ IDs 11–13 remain intentionally unnamed.
 
 ### Phase D — native implementation
 
-- [ ] Start portable engine scaffolding in C/C++.
-- [ ] Add deterministic unit/regression tests for recovered parsers and dispatch behavior.
+- [x] Start portable C/C++ host scaffolding with CMake and an ABI interface target.
+- [x] Add the first deterministic host ABI smoke test.
+- [ ] Add regression tests for recovered parsers, dispatch tables, and reconstructed subsystem behavior.
 - [ ] Replace Win32 filesystem/time/thread/input dependencies with portable interfaces.
 - [ ] Replace Miles/Windows-specific audio integration with a portable backend.
 - [ ] Adapt rendering to an Android-supported graphics path.
@@ -296,7 +315,7 @@ Do not request these merely because they could be useful. Request them only when
 
 Complete when the executable/module boundaries, startup path, `vmMain` commands, syscall interfaces, major engine subsystems, and necessary asset formats have usable evidence-backed maps.
 
-The native VM boundary is now mapped and the Win32 OpenGL dynamic-loader seam is confirmed; semantic recovery of command/syscall IDs, renderer dispatch classification, startup subsystems, and required data formats remain.
+The native VM boundary is now mapped, the Win32 OpenGL dynamic-loader seam is confirmed, the SP UI export table is mostly named, the SP game syscall prefix 0–19 is mapped, and portable host scaffolding has started. Remaining M1 work is dominated by the rest of the syscall/export semantics, startup/subsystem maps, renderer dispatch classification, and required data formats.
 
 ### M2 — Portable host harness
 
