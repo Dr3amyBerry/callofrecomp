@@ -111,6 +111,14 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Kept write/rename/list/console host callbacks disabled until their semantics are verified.
 - [x] Added `tests/host_adapter_smoke.cpp` and CTest target; local test and GitHub CI completed successfully.
 - [x] Updated `analysis/filesystem_vfs_phase.md` with the host interface versus original VM ABI distinction.
+- [x] Verified original FS open modes against the exact CoD 1.5 SP binary: `0=rb/read`, `1=wb/write`, `2=ab/append`, `3=ab/append with post-write sync flag`.
+- [x] Located the original filesystem searchpath head at `0x013F9E3C`, its linked-list traversal from the read helper, and a conditional insertion routine; full package/localization priority remains **unresolved**.
+- [x] Added `analysis/fs_modes_and_searchpath_evidence.md` with original VAs and reproducible disassembly commands.
+- [x] Implemented `GuestMemory` as bounded explicit 32-bit address regions with mapping permissions, NUL-bounded string reads, overflow checks and little-endian u32 access.
+- [x] Added `LegacyFsReadBridge` for observed SP syscall IDs `21` (mode 0 open), `22` (read) and `37` (close). The bridge never casts a guest address to a native pointer.
+- [x] Added guest-memory, handle, bounds, error, EOF and forbidden-write regression tests in `tests/guest_vm_bridge_smoke.cpp`, integrated into CMake/CTest.
+- [x] Confirmed **6/6 CTest targets passed** in GitHub Actions for commit `8a1f743`, including the new VM bridge. No original game binary was bundled.
+- [x] Documented contract, confidence limits and test instructions in `docs/LEGACY_FS_BRIDGE.md`.
 
 ### Confirmed module ABI data
 
@@ -245,6 +253,17 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - **Next task:** verify original file mode semantics and package precedence, then implement a validated VM→host bridge; follow with streaming seek and writable save/config support only once their behaviors are understood.
 - **Active blockers:** none for continued static analysis and native host scaffolding. Android NDK and real-device validation will be needed later.
 
+## Verified file modes and read-only guest VM bridge checkpoint (2026-10-07 UTC)
+
+- The original `CoDSP.exe` dispatches `FS_FOpenFile` mode **0** to an `rb` path, **1** to `wb`, and **2/3** to `ab`; mode 3 additionally sets a flag tested by the write/flush path. See [mode evidence](analysis/fs_modes_and_searchpath_evidence.md).
+- The **linked-list searchpath implementation** is observed (head `0x013F9E3C`; read helper `0x004226A0`; conditional insertion `0x004248B0`), but exact PK3 priority is still not reconstructed. Do not silently switch the current provisional last-mounted-wins VFS rule.
+- `GuestMemory` maps host-provided bytes into explicit bounded guest 32-bit VA ranges, checks write permissions, rejects overlaps/overflow and provides NUL-terminated strings and little-endian word access. Host pointers are never truncated.
+- `LegacyFsReadBridge` now calls the native host service table only for **21 FS_FOPEN_FILE (read mode 0)**, **22 FS_READ** and **37 FS_FCLOSE_FILE**; all write/rename/list/console syscalls remain unsupported. Open handles are tracked, stale/invalid handles rejected, and incomplete reads never partially copy into guest RAM.
+- Synthetic regression tests validate the bridge without original proprietary EXE/DLL/PK3 files. GitHub CI compiled the C++ library and ran **6/6 CTest targets successfully**: `https://github.com/Dr3amyBerry/callofrecomp/actions/runs/37560393331`.
+- This is a **portable host-side ABI harness**, not native execution of CoD game/cgame/ui modules. No Android build, renderer or playable menu is yet present.
+- **Next autonomous phase:** complete original mount order and file-read error/handle semantics; add safe streaming/seek and a writable sandbox separately, then integrate the bridge into a reconstructed module host.
+- **External blockers:** none for immediate static/host work; Android NDK and a runnable emulator/device will eventually be needed for ARM64 validation.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -277,11 +296,13 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - [x] Codify the verified SP game syscall prefix 0–19 without naming unverified IDs.
 - [ ] Expand portable ABI declarations as additional syscall/export ranges are verified.
 - [x] Define the first portable host-side filesystem/console command function-pointer contract (interface only, without guessed legacy ABI).
-- [ ] Implement 32-bit VM word to native host-pointer/handle resolution with validation (bridge not yet written).
+- [x] Implement validated 32-bit guest address resolution and a **read-only** VM→native host filesystem bridge for IDs 21/22/37.
 - [ ] Verify `FS_GETFILELIST` list-buffer encoding and directory precedence against the original engine.
 - [ ] Recover native caller-level data types and filesystem error semantics before implementing platform I/O.
 - [x] Connect the functioning VFS to **native host** open/read/close callbacks, preserving host-width pointers.
-- [ ] Implement and validate the **legacy VM-to-native host** bridge, including 32-bit input pointer resolution and handle lifetime checks.
+- [x] Validate legacy x86 pointer/handle translation for **read-only** game FS syscalls 21/22/37 with synthetic host/file inputs.
+- [ ] Extend beyond the read-only subset (seek, list, mode 1–3 writable save/config sandbox) only after verifying original behavior.
+- [ ] Integrate this bridge with reconstructed game-module/engine dispatch logic; original x86 code is **not** executed by the bridge.
 - [ ] Reconstruct the minimum filesystem/cvar/command/memory interfaces needed for module startup.
 - [ ] Build a host-side test harness that can call reconstructed module interfaces without launching the full game.
 
