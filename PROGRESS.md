@@ -52,6 +52,12 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Recovered the module-global syscall callback slots installed by `dllEntry`.
 - [x] Recovered indexed `vmMain` dispatch tables.
 - [x] Began recovering numeric module → engine syscall IDs.
+- [x] Located the native module loader / VM creation path in `CoDSP.exe`.
+- [x] Located the engine `VM_Call` wrapper and all three VM-handle globals.
+- [x] Located the game/cgame/ui module→engine syscall callbacks.
+- [x] Recovered all three engine-side syscall jump tables and their numeric ranges.
+- [x] Added an engine VM probe that emits reproducible JSON for both directions of the ABI.
+- [x] Matched UI export commands 0–10 against an id Tech 3-family public reference with independent binary evidence.
 - [x] Established an evidence ledger using `observed`, `matched`, and `inferred` confidence levels.
 
 ### Confirmed module ABI data
@@ -62,7 +68,20 @@ I should not stop merely because a task is large. Work should be split into phas
 | `cgamex86.dll` | 26 (`0..25`) | `0x000657E8` | `0x00018F3C` |
 | `uix86.dll` | 14 (`0..13`) | `0x00034030` | `0x00007A50` |
 
-### First syscall recovery pass
+### Confirmed engine VM boundary
+
+| Module | engine VM-handle slot | module→engine callback | syscall range |
+|---|---:|---:|---:|
+| `game` | `0x013F9DB8` | `0x0044A2F0` | `0..211` |
+| `cgame` | `0x014BD620` | `0x00401A50` | `0..252` |
+| `ui` | `0x014BD648` | `0x00410B00` | `0..84` |
+
+Observed engine VM functions:
+
+- native VM loader / creation path: `0x0044F0E0`
+- VM call wrapper: `0x0044F270`
+
+### First module syscall recovery pass
 
 | Module | indirect callback calls | distinct immediate IDs recovered | unresolved sites |
 |---|---:|---:|---:|
@@ -72,6 +91,24 @@ I should not stop merely because a task is large. Work should be split into phas
 
 These IDs are numeric evidence only. Semantic names are not assigned until supported by additional evidence.
 
+### First engine→module command recovery pass
+
+| Module | classified `VM_Call` sites | distinct immediate command IDs |
+|---|---:|---:|
+| `game` | 43 | 19 |
+| `cgame` | 33 | 23 |
+| `ui` | 37 | 13 |
+
+The narrow scanner intentionally leaves non-immediate/register-driven cases unresolved rather than guessing.
+
+### UI export commands matched so far
+
+Commands 0–10 now have evidence-backed working names:
+
+`UI_GETAPIVERSION`, `UI_INIT`, `UI_SHUTDOWN`, `UI_KEY_EVENT`, `UI_MOUSE_EVENT`, `UI_REFRESH`, `UI_IS_FULLSCREEN`, `UI_SET_ACTIVE_MENU`, `UI_GET_ACTIVE_MENU`, `UI_CONSOLE_COMMAND`, and `UI_DRAW_CONNECT_SCREEN`.
+
+IDs 11–13 remain intentionally unnamed.
+
 ---
 
 ## 3. Current work queue
@@ -80,12 +117,14 @@ These IDs are numeric evidence only. Semantic names are not assigned until suppo
 
 - [ ] Recover every `vmMain` target and produce deterministic function maps.
 - [ ] Recover syscall wrappers with argument-count / argument-shape evidence.
-- [ ] Detect direct and indirect call targets around high-value entry points.
+- [x] Add first direct-call recovery around the engine `VM_Call` boundary.
+- [ ] Expand direct/indirect call-target recovery beyond the current narrow patterns.
 - [ ] Add string-reference indexing.
-- [ ] Add cross-reference output suitable for machine processing.
-- [ ] Produce JSON reports that can be regenerated from the original binaries.
-- [ ] Map engine code responsible for loading the game/cgame/ui modules.
+- [ ] Add broader cross-reference output suitable for machine processing.
+- [x] Produce reproducible JSON reports for the PE, module ABI, and engine VM boundary.
+- [x] Map engine code responsible for loading the game/cgame/ui modules.
 - [ ] Confirm the dynamic OpenGL loader path rather than only inferring it from strings.
+- [ ] Recover engine-side semantic names for syscall IDs with independent evidence.
 
 ### Phase B — reconstruct interfaces
 
@@ -250,7 +289,11 @@ Do not request these merely because they could be useful. Request them only when
 
 ### M1 — Static architecture mapped
 
+**Status: in progress.**
+
 Complete when the executable/module boundaries, startup path, `vmMain` commands, syscall interfaces, major engine subsystems, and necessary asset formats have usable evidence-backed maps.
+
+The native VM boundary itself is now mapped; semantic recovery of command/syscall IDs and startup subsystems remains.
 
 ### M2 — Portable host harness
 
