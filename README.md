@@ -251,6 +251,20 @@ This **does not yet define full PK3 loading precedence**, so it is not wired
 into the VFS until all node constructors and classification rules are mapped.
 See [searchpath insertion evidence](analysis/searchpath_insertion.md).
 
+### Sequential PK3 streaming
+
+`Vfs::open_stream` reads loose files and PK3 ZIP store/DEFLATE members
+through bounded 32 KiB refills rather than buffering entire resources.
+`ReadOnlyHostAdapter` now holds these stream cursors for native opaque
+handles. ZIP CRC/declared sizes are verified when the cursor reaches EOF;
+a corrupted stream becomes permanently failed. No seeking yet.
+
+Synthetic CTest coverage includes large incompressible ZIP data, partial
+reads, invalid CRC and EOF; the implementation was also locally validated
+against user-owned original PK3 archives. The guest bridge still validates
+32-bit guest memory and copies from a staging buffer, and game asset data
+remains outside Git.
+
 ## Development rule
 
 Analysis output must be reproducible. Do not rename guessed functions as facts: recovered names must record whether they are **observed**, **matched**, or **inferred**. This matters because the final native port will be built from reconstructed behavior rather than copied proprietary source.

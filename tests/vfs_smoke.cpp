@@ -2,6 +2,7 @@
 
 #include <zlib.h>
 #include <cassert>
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -109,6 +110,19 @@ int main(int argc, char** argv) {
               {"scripts/hello.cfg", "hello-from-archive", false}});
     make_pk3(test_dir / "patch.pk3", {{"textures/hello.txt", "hello-from-patch", true}});
     make_pk3(test_dir / "bad-crc.pk3", {{"textures/bad.txt", "data", false}}, true);
+    make_pk3(test_dir / "bad-deflated-crc.pk3",
+             {{"broken_compressed.cfg", "baddeflate", true}}, true);
+    std::string large;
+    large.reserve(151111);
+    std::uint32_t seed = 0x9385f873;
+    for (std::size_t i = 0; i < 151111; ++i) {
+        seed ^= seed << 13;
+        seed ^= seed >> 17;
+        seed ^= seed << 5;
+        large.push_back(static_cast<char>(seed & 255u));
+    }
+    make_pk3(test_dir / "large.pk3", {{"raw/huge.bin", large, true}});
+
     make_pk3(test_dir / "traversal.pk3", {{"../escaping.txt", "oops", false}});
     { std::ofstream bad(test_dir / "invalid.pk3"); bad << "not zip"; }
     { std::ofstream loose(test_dir / "loose" / "scripts" / "hello.cfg"); loose << "hello-from-loose"; }
@@ -134,6 +148,56 @@ int main(int argc, char** argv) {
     assert(text(vfs.read_file("textures/hello.txt")) == "hello-from-patch");
     assert(vfs.mount_pk3(test_dir / "bad-crc.pk3"));
     assert(vfs.read_file("textures/bad.txt").error == Error::invalid_archive);
+
+    // Sequential streaming over ZIP32 stored/deflated entries and loose files.
+    auto streamed = vfs.open_stream("textures/hello.txt");
+    assert(streamed && streamed.stream->size() == std::string("hello-from-patch").size());
+    char streamed_data[48] = {};
+    auto r1 = streamed.stream->read(streamed_data, 3);
+    auto r2 = streamed.stream->read(streamed_data + 3, 8);
+    auto r3 = streamed.stream->read(streamed_data + 11, 32);
+    assert(r1 && r1.bytes == 3 && !r1.eof);
+    assert(r2 && r2.bytes == 8 && !r2.eof);
+    assert(r3 && r3.bytes == 5 && r3.eof);
+    assert(std::string(streamed_data, 16) == "hello-from-patch");
+    assert(streamed.stream->read(streamed_data, sizeof(streamed_data)).bytes == 0);
+    auto stored = vfs.open_stream("scripts/empty.cfg");
+    assert(stored && stored.stream->size() == 0);
+    assert(stored.stream->read(streamed_data, 2).eof);
+    auto bad_crc = vfs.open_stream("textures/bad.txt");
+    assert(bad_crc);
+    assert(bad_crc.stream->read(streamed_data, sizeof(streamed_data)).error == Error::invalid_archive);
+    // A failed stream stays failed; cannot resume silently after bad CRC.
+    assert(bad_crc.stream->read(streamed_data, 1).error == Error::invalid_archive);
+    auto loose_stream = vfs.open_stream("scripts/hello.cfg");
+    assert(loose_stream);
+    auto loose_read = loose_stream.stream->read(streamed_data, 30);
+    assert(loose_read && loose_read.bytes == 16 && loose_read.eof);
+    assert(std::string(streamed_data, 16) == "hello-from-loose");
+    assert(vfs.open_stream("../other").error == Error::invalid_path);
+    assert(vfs.open_stream("textures/hello.txt", 4).error == Error::too_large);
+
+    // Over 150 KiB of incompressible source: multiple input and output refills.
+    Vfs big;
+    assert(big.mount_pk3(test_dir / "large.pk3"));
+    auto big_stream = big.open_stream("RAW/HUGE.BIN");
+    assert(big_stream && big_stream.stream->size() == large.size());
+    std::string recovered(large.size(), ' ');
+    std::size_t cursor = 0;
+    for (const std::size_t step : {1u, 7u, 65537u, 32768u, 33000u, 100000u}) {
+        if (cursor == recovered.size()) break;
+        auto read_result = big_stream.stream->read(&recovered[cursor],
+            std::min(step, recovered.size() - cursor));
+        assert(read_result && read_result.bytes > 0);
+        cursor += read_result.bytes;
+    }
+    assert(cursor == recovered.size() && recovered == large);
+    assert(big_stream.stream->read(&recovered[0], 1).eof);
+    assert(big.mount_pk3(test_dir / "bad-deflated-crc.pk3"));
+    auto bad_deflate = big.open_stream("broken_compressed.cfg");
+    assert(bad_deflate);
+    assert(bad_deflate.stream->read(&recovered[0], recovered.size()).error == Error::invalid_archive);
+    assert(bad_deflate.stream->read(&recovered[0], 1).error == Error::invalid_archive);
 
     std::error_code ec;
     fs::create_symlink(test_dir / "base.pk3", test_dir / "loose" / "scripts" / "escape.cfg", ec);

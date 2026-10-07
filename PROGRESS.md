@@ -272,6 +272,15 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - The `+0x0C` flag semantics and **full engine startup/mount precedence are still unconfirmed**. The model deliberately stays separate from the working VFS until discovery calls and class assignments are traced.
 - No additional user action is required. Next: trace node construction and connect the recovered behavior to actual PK3/locale discovery; continue streaming I/O development.
 
+## Bounded-memory sequential VFS streaming checkpoint (2026-10-07 UTC)
+
+- Added `Vfs::open_stream` with persistent `ReadStream` cursors for loose files, ZIP-stored members and raw-DEFLATE PK3 members. Input is refilled in fixed **32 KiB** blocks instead of allocating the complete uncompressed member.
+- The existing `Vfs::read_file` API remains unchanged for compatibility. The new stream validates ZIP headers/names, bounds and CRC/declared lengths upon reaching EOF; failed integrity checks remain latched for the lifetime of the cursor.
+- Updated `ReadOnlyHostAdapter` to retain one streaming cursor per opaque handle instead of an entire decompressed file. The guest VM bridge continues to stage requested bytes atomically before copying them into guest memory.
+- Synthetic tests cover partial reads, EOF, empty files, loose files, CRC failures and >150 KiB DEFLATE data spanning multiple input/output refills. The streaming implementation also passed local tests using supplied real PK3 archives. 
+- **Limitations:** seeking is not yet implemented; ZIP CRC cannot be known until the stream is fully consumed. Loose-file opens remain vulnerable to a path-replacement race between path canonicalization and opening on filesystems modified concurrently; Android sandbox hardening is still needed. The VFS searchpath order remains provisional.
+- No original binaries or archives are included in commits.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -321,6 +330,8 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - [x] Build and test an independent, read-only PK3/loose-file loader; **does not yet reproduce original mount priority**.
 - [x] Model the original engine's **one verified searchpath insertion routine** and fingerprint the exact original code region.
 - [ ] Reconstruct PK3 search/load precedence (node creation, classification, language selection and all insertion paths) before integrating this isolated model into VFS.
+- [x] Implement bounded-memory sequential reads of loose files, ZIP-stored and raw-DEFLATE PK3 members, with end-of-stream integrity checks.
+- [ ] Implement verified seek behavior and precise error mapping; keep original mount selection unresolved.
 - [ ] Reconstruct configuration and localization loading.
 - [ ] Trace single-player startup from process entry to first rendered frame.
 

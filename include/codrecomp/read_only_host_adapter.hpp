@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -28,8 +29,7 @@ public:
 
 private:
     struct OpenFile {
-        std::vector<std::uint8_t> bytes;
-        std::size_t cursor = 0;
+        std::unique_ptr<ReadStream> stream;
     };
     const Vfs& vfs_;
     std::int32_t accepted_read_mode_;

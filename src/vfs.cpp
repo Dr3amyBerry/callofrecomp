@@ -264,4 +264,6 @@ Result Vfs::read_file(const std::string& logical_path, std::size_t max_bytes) co
     return failure(Error::not_found, "logical path not found in mounted sources");
 }
 
+#include "vfs_stream_impl.inc"
+
 } // namespace codrecomp::vfs
