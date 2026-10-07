@@ -9,7 +9,7 @@ Public source/reconstruction projects are allowed to accelerate analysis, but th
 Repository:
 `https://github.com/opencod1/opencod1`
 
-OpenCoD1 is a public reverse-engineering/reconstruction effort focused largely on Call of Duty 1.x multiplayer. It contains recovered engine/module interfaces, subsystem reconstructions, function-address notes, and CoD-specific ABI information.
+OpenCoD1 is a public reverse-engineering/reconstruction effort focused largely on Call of Duty 1.x multiplayer. It contains recovered engine/module interfaces, subsystem reconstructions, function-address notes, and CoD-specific ABI information. At the time of this review the repository metadata exposes no declared license and no root `LICENSE`, `LICENSE.md`, or `COPYING` file was found, so this project must **not copy or vendor OpenCoD1 source code**. It is used only as a research/indexing reference whose claims are independently checked against the supplied binaries.
 
 High-value reference areas:
 
