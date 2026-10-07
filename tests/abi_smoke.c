@@ -17,6 +17,13 @@ int main(void) {
     assert(COD_SP_G_ENDGAME == 3);
     assert(COD_SP_G_MILLISECONDS == 4);
     assert(COD_SP_G_HUNK_FREE_TEMP == 19);
+    assert(COD_SP_G_FS_FOPEN_FILE == 21);
+    assert(COD_SP_G_FS_READ == 22);
+    assert(COD_SP_G_FS_WRITE == 23);
+    assert(COD_SP_G_FS_RENAME == 36);
+    assert(COD_SP_G_FS_FCLOSE_FILE == 37);
+    assert(COD_SP_G_FS_GETFILELIST == 40);
+    assert(COD_SP_G_SEND_CONSOLE_COMMAND == 41);
     assert(COD_SP_G_DISPATCH_MAX == 211);
 
     return 0;
