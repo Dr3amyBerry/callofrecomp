@@ -35,7 +35,27 @@ Verified baseline from the supplied installation:
 
 See [`PROGRESS.md`](PROGRESS.md) for the living project status, autonomy rules, blockers, and tool requirements.
 
-Technical references: [`analysis/initial_findings.md`](analysis/initial_findings.md), [`analysis/vm_abi_findings.md`](analysis/vm_abi_findings.md), [`analysis/engine_vm_findings.md`](analysis/engine_vm_findings.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+Technical references: [`analysis/initial_findings.md`](analysis/initial_findings.md), [`analysis/vm_abi_findings.md`](analysis/vm_abi_findings.md), [`analysis/engine_vm_findings.md`](analysis/engine_vm_findings.md), [`analysis/game_syscall_findings.md`](analysis/game_syscall_findings.md), [`analysis/opengl_loader_findings.md`](analysis/opengl_loader_findings.md), and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+## Reproduce the verified baseline
+
+For the exact supplied CoD 1.5 SP binaries, the preferred analysis entry point is now:
+
+```bash
+python tools/analyze_baseline.py --originals originals
+```
+
+The command first verifies all four SHA-256 fingerprints against `analysis/baselines/cod1_sp_pc_1_5.json`. It refuses to continue on a mismatched binary, then regenerates the PE, module-ABI, and engine-VM JSON reports under `analysis/local/`.
+
+A small portable host scaffold is also available:
+
+```bash
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+The current C layer contains only evidence-backed VM word/ABI definitions and the verified SP game syscall prefix; unverified syscall names are intentionally absent.
 
 ## Tools
 
