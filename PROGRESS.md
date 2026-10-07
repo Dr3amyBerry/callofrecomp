@@ -77,6 +77,13 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Added an evidence-only engine syscall-handler edge inventory tool using bounded `objdump` disassembly.
 - [x] Recorded the first direct branch targets for all 24 SP game syscall handler entries 20–43 in `analysis/game_syscall_edges_20_43.md`.
 - [x] Added a decoded-branch regression test for the new edge tool.
+- [x] Recovered direct argument-slot references and return shapes for SP game syscall IDs 20–43 against the original `CoDSP.exe`.
+- [x] Added `tools/syscall_signature_probe.py` with deterministic JSON export and conservative confidence terminology.
+- [x] Verified the result categories for all 24 cases: **12 forced-zero EAX**, **6 tail-jumps**, and **6 EAX-not-cleared**.
+- [x] Added five synthetic unit tests covering argument indexing, explicit zero returns, tail returns, untouched EAX and out-of-range instruction windows.
+- [x] Added seven independently matched non-contiguous SP syscall names (21–23, 36–37, 40–41) to `include/codrecomp/game_sp_syscalls.h`.
+- [x] Added numeric ABI assertions to the C host smoke test and verified GitHub CI success for the test/header changes.
+- [x] Documented signatures, addresses, evidence and unverified cases in `analysis/sp_game_syscall_signatures_20_43.md`.
 
 ### Confirmed module ABI data
 
@@ -146,7 +153,21 @@ The SP table is not a drop-in copy of the known multiplayer enum: `G_ENDGAME` is
 - GitHub CI for the Python/CTest regression integration and subsequent edge-tool update completed successfully. This verifies repository checks, not Android playability.
 - A change to `.github/workflows/tools-ci.yml` was not accepted by the integration; the necessary test registration was instead made through the existing `CMakeLists.txt`/CTest path. No workflow override was needed.
 - The edge analysis is evidence-only: entries 20–43 have decoded direct branch destinations, **not** fully identified syscall semantics.
-- **Next task:** map input/output ABI signatures and evidence-backed semantic labels for these new dispatch entries; continue tracking unknowns rather than guessing.
+- **Next task (superseded by the signature pass below):** signature/return categories and selected evidence-backed semantic names are now recovered. Full callee argument/ownership tracing remains open.
+
+## Signature-analysis checkpoint (2026-10-07)
+
+**Inputs verified:** the pinned original `CoDSP.exe` SHA-256 matches `analysis/baselines/cod1_sp_pc_1_5.json`. All 24 dispatcher cases (20–43) were parsed from binary disassembly, and their direct `[EBP + offset]` references were decoded to argument indices.
+
+- EBP points to the syscall word array; slot `[EBP+0]` is the syscall ID, not a user argument.
+- 12 handlers force EAX=0; 6 delegate via a tail jump; 6 do not reset EAX. These are **low-level shapes**, not finalized C types or behavior claims.
+- Matched working names: `G_FS_FOPEN_FILE` (21), `G_FS_READ` (22), `G_FS_WRITE` (23), `G_FS_RENAME` (36), `G_FS_FCLOSE_FILE` (37), `G_FS_GETFILELIST` (40), `G_SEND_CONSOLE_COMMAND` (41).
+- ID 20 and the other unnamed IDs remain intentionally **unknown**; an adjacent `Hunk_Clear` diagnostic is **not enough** to name ID 20 because it belongs to a different entry address.
+- Five new synthetic tests passed locally. The corresponding tool and enum/smoke-test CI runs have completed successfully on GitHub.
+- No new external tool is needed yet. A full decompiler (e.g. Ghidra) will be requested only when materially necessary to recover unverified callee semantics/ownership.
+- **Next autonomous work:** trace the module-side syscall wrappers for the seven matched IDs, strengthen argument/return signatures, and implement portable filesystem/Cbuf interface contracts without relying on C casts from 64-bit pointers to 32-bit legacy VM words.
+
+Reference: [`analysis/sp_game_syscall_signatures_20_43.md`](analysis/sp_game_syscall_signatures_20_43.md).
 
 ## 3. Current work queue
 
@@ -166,7 +187,10 @@ The SP table is not a drop-in copy of the known multiplayer enum: `G_ENDGAME` is
 - [ ] Recover engine-side semantic names for remaining syscall IDs with independent evidence.
 - [x] Map SP game syscall IDs 0–19.
 - [x] Extract first bounded direct `call` / `jmp` edges for SP game syscalls 20–43 (addresses only; semantic names remain unverified).
-- [ ] Recover argument shapes, side effects, and independently supported names for syscall handlers 20–43.
+- [x] Recover direct argument-slot references and EAX-return shapes for syscall handlers 20–43.
+- [x] Identify seven evidence-backed filesystem/console SP syscall names in the 20–43 range.
+- [ ] Recover full argument semantics, indirect inputs, ownership and side effects for remaining unknown IDs in 20–43.
+- [ ] Verify module-side wrapper signatures before adopting any C function prototypes as authoritative.
 - [ ] Harden the binary parsers' bounds checks against malformed PE files and add failure-mode tests.
 
 ### Phase B — reconstruct interfaces
