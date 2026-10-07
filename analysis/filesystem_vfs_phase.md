@@ -41,11 +41,40 @@ El despachador en `VA 0x00425FD0` compara el modo con 3; si es mayor usa la ruta
 
 Estos cuatro valores **todavía no tienen nombres de modo confirmados**, por lo que deliberadamente no se han fijado en un enum como si fueran equivalentes directos a APIs conocidas. Hace falta verificar también semántica de retornos, errores y handles.
 
+## Adaptador nativo de lectura para el contrato host
+
+Se añadió una implementación independiente `ReadOnlyHostAdapter`
+(`include/codrecomp/read_only_host_adapter.hpp` y
+`src/read_only_host_adapter.cpp`) que conecta el VFS con las
+funciones de `cod_host_services_t`:
+
+- `fs_open`: recibe una ruta lógica y un **modo de lectura configurado
+  explícitamente** al construir el adaptador; devuelve un handle opaco
+  distinto de cero y, por convención propia, la longitud del archivo.
+- `fs_read`: mantiene un cursor por handle, admite lecturas parciales,
+  devuelve 0 al alcanzar EOF y -1 en handles o buffers inválidos.
+- `fs_close`: invalida el handle y libera el buffer cargado.
+- Cada archivo abierto mantiene un buffer independiente; se usan mutexes
+  para proteger el mapa de handles y los cursores.
+
+Las funciones de escritura, renombrado, enumeración y comandos de consola
+se dejan a `nullptr` **intencionadamente**. No se simula el comportamiento
+original sin suficiente evidencia. El adaptador también evita convertir
+punteros nativos de 64 bits a palabras x86 de 32 bits.
+
+La prueba `tests/host_adapter_smoke.cpp` ejercita modos incorrectos,
+rutas rechazadas, lecturas sucesivas, EOF, archivos vacíos,
+handles independientes y cierre/invalidez. Es **una interfaz host
+funcional**, pero todavía NO hay puente desde el dispatcher de
+`gamex86.dll` ni Android funcional. El número de modo de la prueba
+(`77`) es inventado a propósito como convenio de prueba, NO es
+un código original del juego.
+
 ## Por integrar
 
 1. Identificar nombres y comportamiento de los modos de apertura contra llamadores y rutinas internas.
 2. Recuperar prioridad de los PK3 originales, localización y overlays de archivos sueltos.
-3. Implementar el adaptador entre palabras VM x86 de 32 bits y punteros/handles nativos sin truncar ARM64.
+3. Completar el puente **VM x86 de 32 bits → servicio host** validando punteros/handles; el adaptador de servicio host nativo ya existe.
 4. Recuperar el formato real de listas de archivos de `FS_GETFILELIST`.
 5. Añadir lectura fragmentada/seek y escritura aislada para configuraciones y guardados.
 6. Validar compilación Android NDK y arranque del motor.
