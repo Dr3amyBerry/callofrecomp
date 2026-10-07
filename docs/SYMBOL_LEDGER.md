@@ -26,20 +26,21 @@ Initial entries:
 
 ## UI export command ledger
 
-These names are **matched**, not original symbols recovered from the proprietary binary.
+These names are **matched**, not original symbols recovered from the proprietary binary. The SP table has been validated against the supplied `uix86.dll`; it must not be assumed to equal RTCW or CoD multiplayer ordering.
 
 | ID | Working symbol | Evidence | Notes |
 |---:|---|---|---|
 | 0 | `UI_GETAPIVERSION` | matched | CoD UI returns 6; engine validates command 0 against 6. |
 | 1 | `UI_INIT` | matched | Called immediately after version validation. |
-| 2 | `UI_SHUTDOWN` | matched | Called during teardown before VM unload. |
-| 3 | `UI_KEY_EVENT` | matched | Two-argument dispatch signature and inherited ordering. |
-| 4 | `UI_MOUSE_EVENT` | matched | Two-argument dispatch signature and inherited ordering. |
-| 5 | `UI_REFRESH` | matched | One-argument dispatch; called from refresh paths. |
-| 6 | `UI_IS_FULLSCREEN` | matched | No-argument result-returning dispatch. |
+| 2 | `UI_SHUTDOWN` | matched | Called during teardown; SP target is effectively empty. |
+| 3 | `UI_KEY_EVENT` | matched | Two-argument input dispatch. |
+| 4 | `UI_MOUSE_EVENT` | matched | Two-argument input dispatch. |
+| 5 | `UI_REFRESH` | matched | One-argument refresh dispatch. |
+| 6 | `UI_IS_FULLSCREEN` | matched | Zero-argument menu-state boolean query. |
 | 7 | `UI_SET_ACTIVE_MENU` | matched | One-argument command used by menu transitions. |
 | 8 | `UI_GET_ACTIVE_MENU` | matched | Returns stored active-menu state. |
-| 9 | `UI_CONSOLE_COMMAND` | matched | Engine invokes it from console-command fallback and checks result. |
-| 10 | `UI_DRAW_CONNECT_SCREEN` | matched | One-argument command called from screen/connect drawing. |
-
-IDs 11–13 remain intentionally unnamed.
+| 9 | unknown SP UI boolean query | observed | Zero-argument menu-state query; intentionally unnamed. |
+| 10 | `UI_CONSOLE_COMMAND` | matched | Engine passes realtime; target parses UI console commands. |
+| 11 | `UI_DRAW_CONNECT_SCREEN` | matched | Finds menu `Connect` and invokes its draw path. |
+| 12 | `UI_LOAD_SCRIPT_MENU` | matched | References script-menu paths/extensions and receives an image-track argument. |
+| 13 | `UI_GET_FONT_INFO` | matched | Converts integer scale percent with `* 0.01f` before font selection. |
