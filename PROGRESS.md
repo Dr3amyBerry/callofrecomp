@@ -84,6 +84,15 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Added seven independently matched non-contiguous SP syscall names (21–23, 36–37, 40–41) to `include/codrecomp/game_sp_syscalls.h`.
 - [x] Added numeric ABI assertions to the C host smoke test and verified GitHub CI success for the test/header changes.
 - [x] Documented signatures, addresses, evidence and unverified cases in `analysis/sp_game_syscall_signatures_20_43.md`.
+- [x] Identified all seven canonical game-module syscall wrappers (21/22/23/36/37/40/41) at their exact 1.5 SP virtual addresses.
+- [x] Independently confirmed the DLL callback pointer slot at `0x200A4834` and reconstructed ordered wrapper argument origins.
+- [x] Provenanced ID 40's *fourth* callback argument to a preserved `EAX` value and its first to the caller's stack word; avoided a three-argument ABI mistake.
+- [x] Added `tools/module_wrapper_probe.py` with optional SHA-256 guard, bounded scanning, deterministic JSON output and fail-closed parsing.
+- [x] Added wrapper-provenance regression tests (four synthetic + one optional exact-original DLL check).
+- [x] Added portable native-pointer-width filesystem/command service contract `include/codrecomp/host_services.h` (interface only; runtime bridge not yet implemented).
+- [x] Added `tests/host_services_smoke.c` and registered it in CTest/CMake to verify calling through the new host boundary without pointer truncation.
+- [x] GitHub Actions succeeded for wrapper tests and host-services compilation/CTest registration.
+- [x] Documented source addresses and exact argument order in `analysis/module_syscall_wrapper_provenance.md`.
 
 ### Confirmed module ABI data
 
@@ -169,6 +178,30 @@ The SP table is not a drop-in copy of the known multiplayer enum: `G_ENDGAME` is
 
 Reference: [`analysis/sp_game_syscall_signatures_20_43.md`](analysis/sp_game_syscall_signatures_20_43.md).
 
+## Module-wrapper and native host-interface checkpoint (2026-10-07)
+
+**Verified original DLL:** `gamex86.dll` SHA-256 `27930aa3f663d0af39a90e6956c980be1e599e0f0c98191a9fb7eaba61481577`; `dllEntry` stores callback at `0x200A4834`.
+
+Canonical native wrappers recovered directly from the original DLL:
+
+| ID | Wrapper VA | Data words supplied to engine callback |
+|---:|---:|---|
+| 21 | `0x20042840` | `EDX, ECX, EAX` |
+| 22 | `0x20042850` | `EDX, ECX, EAX` |
+| 23 | `0x20042860` | `EDX, ECX, EAX` |
+| 36 | `0x20042940` | `ECX, EAX` |
+| 37 | `0x20042950` | `EAX` |
+| 40 | `0x20042980` | `stack_arg_0, EDX, ECX, EAX` |
+| 41 | `0x200429A0` | `ECX, EAX` |
+
+The word order is **observed**, but does **not** establish each wrapper's higher-level C calling convention. This is a bounded and deliberately conservative analysis. Code that accesses unmodeled instructions fails rather than inventing sources.
+
+**Validation:** an implementation prototype ran the five wrapper-provenance checks against the original local binary (passed); the same narrow logic and synthetic fixtures were committed. GitHub Actions successfully ran the new tests and the new host-services CMake target. The host interface is currently a compiled/tested **contract**, not a working filesystem implementation or native Android binary.
+
+**No active external blockers.** Remaining work: trace caller/callee parameter types, filesystem modes, directory policy and handles, then implement a safe 32-bit VM-to-native host bridge with runtime validation. Do not confuse the new native host-service prototypes with original x86 exports.
+
+See [`analysis/module_syscall_wrapper_provenance.md`](analysis/module_syscall_wrapper_provenance.md).
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -190,7 +223,9 @@ Reference: [`analysis/sp_game_syscall_signatures_20_43.md`](analysis/sp_game_sys
 - [x] Recover direct argument-slot references and EAX-return shapes for syscall handlers 20–43.
 - [x] Identify seven evidence-backed filesystem/console SP syscall names in the 20–43 range.
 - [ ] Recover full argument semantics, indirect inputs, ownership and side effects for remaining unknown IDs in 20–43.
-- [ ] Verify module-side wrapper signatures before adopting any C function prototypes as authoritative.
+- [x] Recover observed module-wrapper argument word order for the seven matched IDs (21–23, 36, 37, 40, 41).
+- [ ] Trace every caller of these wrappers to determine higher-level register/stack calling conventions and actual input types.
+- [ ] Independently recover filesystem modes, pointer ownership, path normalization and output-buffer semantics before adopting final C prototypes.
 - [ ] Harden the binary parsers' bounds checks against malformed PE files and add failure-mode tests.
 
 ### Phase B — reconstruct interfaces
@@ -198,6 +233,8 @@ Reference: [`analysis/sp_game_syscall_signatures_20_43.md`](analysis/sp_game_sys
 - [x] Define the first portable C declarations for the observed 32-bit VM word/call representation.
 - [x] Codify the verified SP game syscall prefix 0–19 without naming unverified IDs.
 - [ ] Expand portable ABI declarations as additional syscall/export ranges are verified.
+- [x] Define the first portable host-side filesystem/console command function-pointer contract (interface only, without guessed legacy ABI).
+- [ ] Implement 32-bit VM word to native host-pointer/handle resolution with validation (bridge not yet written).
 - [ ] Reconstruct the minimum filesystem/cvar/command/memory interfaces needed for module startup.
 - [ ] Build a host-side test harness that can call reconstructed module interfaces without launching the full game.
 
