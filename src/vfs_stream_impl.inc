@@ -23,6 +23,62 @@ ReadStream::~ReadStream() = default;
 std::uint64_t ReadStream::size() const noexcept { return state_->length; }
 std::uint64_t ReadStream::position() const noexcept { return state_->position; }
 
+Error ReadStream::seek(std::int64_t delta, SeekOrigin origin) {
+    auto& s = *state_;
+    if (s.sticky_error != Error::none) return s.sticky_error;
+    std::uint64_t base = 0;
+    switch (origin) {
+        case SeekOrigin::begin: base = 0; break;
+        case SeekOrigin::current: base = s.position; break;
+        case SeekOrigin::end: base = s.length; break;
+        default: return Error::invalid_seek;
+    }
+
+    // Compute signed offsets without negating INT64_MIN or wrapping uint64_t.
+    std::uint64_t target = base;
+    if (delta < 0) {
+        const std::uint64_t magnitude = std::uint64_t{0} - static_cast<std::uint64_t>(delta);
+        if (magnitude > base) return Error::invalid_seek;
+        target = base - magnitude;
+    } else {
+        const auto magnitude = static_cast<std::uint64_t>(delta);
+        if (magnitude > s.length - base) return Error::invalid_seek;
+        target = base + magnitude;
+    }
+    if (target > s.length) return Error::invalid_seek;
+    if (target == s.position) return Error::none;
+
+    if (target < s.position) {
+        if (s.method == 8) {
+            if (inflateReset(&s.inflater) != Z_OK) {
+                s.sticky_error = Error::io_error;
+                return s.sticky_error;
+            }
+            s.inflater.next_in = nullptr;
+            s.inflater.avail_in = 0;
+        }
+        s.position = 0;
+        s.supplied = 0;
+        s.crc = ::crc32(0L, Z_NULL, 0);
+        s.finished = false;
+    }
+
+    // Replaying through read() retains CRC verification even if a caller
+    // seeks past data it never directly requests. Memory remains bounded.
+    std::array<std::uint8_t, 32768> discard{};
+    while (s.position < target) {
+        const auto amount = static_cast<std::size_t>(
+            std::min<std::uint64_t>(discard.size(), target - s.position));
+        const auto result = read(discard.data(), amount);
+        if (!result) return result.error;
+        if (result.bytes == 0) {
+            s.sticky_error = Error::invalid_archive;
+            return s.sticky_error;
+        }
+    }
+    return Error::none;
+}
+
 StreamReadResult ReadStream::read(void* output, std::size_t count) {
     auto& s = *state_;
     if (s.sticky_error != Error::none) return {s.sticky_error, 0, false};
