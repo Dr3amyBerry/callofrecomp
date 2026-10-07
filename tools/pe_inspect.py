@@ -159,8 +159,13 @@ class PEFile:
                     value = self._u32(thunk_off + idx * 4)
                     if value == 0:
                         break
+                    iat_rva = first_thunk + idx * 4
+                    location = {
+                        "iat_rva": iat_rva,
+                        "iat_va": self.image_base + iat_rva,
+                    }
                     if value & 0x80000000:
-                        functions.append({"ordinal": value & 0xFFFF})
+                        functions.append({"ordinal": value & 0xFFFF, **location})
                     else:
                         hint_name_off = self.rva_to_offset(value)
                         hint = self._u16(hint_name_off)
@@ -168,10 +173,16 @@ class PEFile:
                         if end < 0:
                             break
                         name = self.data[hint_name_off + 2:end].decode("ascii", errors="replace")
-                        functions.append({"name": name, "hint": hint})
+                        functions.append({"name": name, "hint": hint, **location})
             except PEFormatError:
                 pass
-            result.append({"dll": dll_name, "functions": functions})
+            result.append({
+                "dll": dll_name,
+                "lookup_table_rva": thunk_rva,
+                "iat_rva": first_thunk,
+                "iat_va": self.image_base + first_thunk,
+                "functions": functions,
+            })
         return result
 
     def exports(self) -> list[dict]:
