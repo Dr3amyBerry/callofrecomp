@@ -68,6 +68,15 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Added CI that compiles/smoke-tests analysis tools and builds/runs the host ABI test.
 - [x] Documented the external-reference verification/licensing policy; public reconstruction code without a declared license is not copied into this repository.
 - [x] Established an evidence ledger using `observed`, `matched`, and `inferred` confidence levels.
+- [x] Audited the current `main` tree before editing; preserved the newer engine/renderer/reference findings and existing build files.
+- [x] Rechecked SHA-256 fingerprints for all four private single-player binaries; they match the pinned baseline.
+- [x] Reproduced module `vmMain` limits and callback-slot RVAs using the original binaries.
+- [x] Verified existing CI runs pass before expanding tools.
+- [x] Added six offline Python regression tests covering synthetic PE structure, malformed input, ASCII extraction, dispatch limits, immediate syscall sites, and an optional exact-binary check.
+- [x] Registered those Python regressions with CTest; existing GitHub Actions executes them without requiring a workflow rewrite.
+- [x] Added an evidence-only engine syscall-handler edge inventory tool using bounded `objdump` disassembly.
+- [x] Recorded the first direct branch targets for all 24 SP game syscall handler entries 20–43 in `analysis/game_syscall_edges_20_43.md`.
+- [x] Added a decoded-branch regression test for the new edge tool.
 
 ### Confirmed module ABI data
 
@@ -128,6 +137,17 @@ The SP table is not a drop-in copy of the known multiplayer enum: `G_ENDGAME` is
 
 ---
 
+## Verification checkpoint (2026-10-07)
+
+- Inspected the repository `main` tree and current commit before changes. Existing analysis and source were not overwritten.
+- Recomputed SHA-256 hashes of the four exact private PC 1.5 SP binaries and independently confirmed the stored fingerprints.
+- Re-ran the PE32 metadata collector and initial VM ABI probe against all four originals; observed the original module-command and immediate-call counts.
+- Ran the new synthetic/optional-real binary tests locally before publishing; **6 passed** with `CODRECOMP_ORIGINALS` set. Without original files, **5 passed + 1 expected skip**.
+- GitHub CI for the Python/CTest regression integration and subsequent edge-tool update completed successfully. This verifies repository checks, not Android playability.
+- A change to `.github/workflows/tools-ci.yml` was not accepted by the integration; the necessary test registration was instead made through the existing `CMakeLists.txt`/CTest path. No workflow override was needed.
+- The edge analysis is evidence-only: entries 20–43 have decoded direct branch destinations, **not** fully identified syscall semantics.
+- **Next task:** map input/output ABI signatures and evidence-backed semantic labels for these new dispatch entries; continue tracking unknowns rather than guessing.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -145,6 +165,9 @@ The SP table is not a drop-in copy of the known multiplayer enum: `G_ENDGAME` is
 - [ ] Inventory the renderer GL/WGL function-pointer table and classify Android replacement requirements.
 - [ ] Recover engine-side semantic names for remaining syscall IDs with independent evidence.
 - [x] Map SP game syscall IDs 0–19.
+- [x] Extract first bounded direct `call` / `jmp` edges for SP game syscalls 20–43 (addresses only; semantic names remain unverified).
+- [ ] Recover argument shapes, side effects, and independently supported names for syscall handlers 20–43.
+- [ ] Harden the binary parsers' bounds checks against malformed PE files and add failure-mode tests.
 
 ### Phase B — reconstruct interfaces
 
