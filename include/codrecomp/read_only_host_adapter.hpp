@@ -40,10 +40,13 @@ private:
     static std::int32_t open_callback(void*, const char*, cod_host_fs_handle_t*, std::int32_t);
     static std::ptrdiff_t read_callback(void*, void*, std::size_t, cod_host_fs_handle_t);
     static void close_callback(void*, cod_host_fs_handle_t);
+    static std::int32_t seek_callback(void*, cod_host_fs_handle_t,
+                                      std::int64_t, cod_host_seek_origin_t);
 
     std::int32_t open(const char*, cod_host_fs_handle_t*, std::int32_t);
     std::ptrdiff_t read(void*, std::size_t, cod_host_fs_handle_t);
     void close(cod_host_fs_handle_t);
+    std::int32_t seek(cod_host_fs_handle_t, std::int64_t, cod_host_seek_origin_t);
 };
 
 } // namespace codrecomp::vfs

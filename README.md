@@ -257,7 +257,11 @@ See [searchpath insertion evidence](analysis/searchpath_insertion.md).
 through bounded 32 KiB refills rather than buffering entire resources.
 `ReadOnlyHostAdapter` now holds these stream cursors for native opaque
 handles. ZIP CRC/declared sizes are verified when the cursor reaches EOF;
-a corrupted stream becomes permanently failed. No seeking yet.
+a corrupted stream becomes permanently failed. `ReadStream::seek` now
+supports begin/current/end offsets with bounded rewind/replay; it preserves
+ZIP CRC integrity, but compressed-file backward seeks are O(file offset).
+`ReadOnlyHostAdapter` exposes an optional **host-only** `fs_seek` callback;
+no unverified original game syscall ID has been assigned.
 
 Synthetic CTest coverage includes large incompressible ZIP data, partial
 reads, invalid CRC and EOF; the implementation was also locally validated

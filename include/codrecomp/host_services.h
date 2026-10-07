@@ -23,6 +23,14 @@ extern "C" {
 /* Logical engine-managed file handle, NOT a native OS file descriptor. */
 typedef uint32_t cod_host_fs_handle_t;
 
+/* New portable host contract. Values are NOT original game syscall IDs. */
+typedef enum cod_host_seek_origin_e {
+    COD_HOST_SEEK_BEGIN = 0,
+    COD_HOST_SEEK_CURRENT = 1,
+    COD_HOST_SEEK_END = 2
+} cod_host_seek_origin_t;
+
+
 typedef struct cod_host_services_s {
     /* Passed unmodified to every callback; may be NULL. */
     void *context;
@@ -60,6 +68,13 @@ typedef struct cod_host_services_s {
     /* exec_when numeric semantics are not hard-coded here. */
     void (*execute_console_text)(void *context, int32_t exec_when,
                                   const char *text);
+
+    /* New host-side feature only. There is no verified CoD SP syscall
+     * mapping yet. Returns 0 on success and -1 on invalid seek/handle.
+     * Unsupported providers leave this callback NULL.
+     */
+    int32_t (*fs_seek)(void *context, cod_host_fs_handle_t handle,
+                       int64_t delta, cod_host_seek_origin_t origin);
 } cod_host_services_t;
 
 #ifdef __cplusplus

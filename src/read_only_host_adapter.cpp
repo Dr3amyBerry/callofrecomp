@@ -13,6 +13,7 @@ cod_host_services_t ReadOnlyHostAdapter::services() noexcept {
     host.fs_open = &ReadOnlyHostAdapter::open_callback;
     host.fs_read = &ReadOnlyHostAdapter::read_callback;
     host.fs_close = &ReadOnlyHostAdapter::close_callback;
+    host.fs_seek = &ReadOnlyHostAdapter::seek_callback;
     // Write, rename, enumerate and console methods remain unimplemented.
     return host;
 }
@@ -27,6 +28,12 @@ std::ptrdiff_t ReadOnlyHostAdapter::read_callback(
 }
 void ReadOnlyHostAdapter::close_callback(void* context, cod_host_fs_handle_t handle) {
     static_cast<ReadOnlyHostAdapter*>(context)->close(handle);
+}
+
+std::int32_t ReadOnlyHostAdapter::seek_callback(
+    void* context, cod_host_fs_handle_t handle,
+    std::int64_t delta, cod_host_seek_origin_t origin) {
+    return static_cast<ReadOnlyHostAdapter*>(context)->seek(handle, delta, origin);
 }
 
 std::int32_t ReadOnlyHostAdapter::open(
@@ -64,6 +71,22 @@ std::ptrdiff_t ReadOnlyHostAdapter::read(void* output, std::size_t count,
 void ReadOnlyHostAdapter::close(cod_host_fs_handle_t handle) {
     std::lock_guard<std::mutex> guard(mutex_);
     open_files_.erase(handle);
+}
+
+
+std::int32_t ReadOnlyHostAdapter::seek(
+    cod_host_fs_handle_t handle, std::int64_t delta, cod_host_seek_origin_t origin) {
+    std::lock_guard<std::mutex> guard(mutex_);
+    const auto it = open_files_.find(handle);
+    if (it == open_files_.end()) return -1;
+    SeekOrigin translated;
+    switch (origin) {
+        case COD_HOST_SEEK_BEGIN: translated = SeekOrigin::begin; break;
+        case COD_HOST_SEEK_CURRENT: translated = SeekOrigin::current; break;
+        case COD_HOST_SEEK_END: translated = SeekOrigin::end; break;
+        default: return -1;
+    }
+    return it->second.stream->seek(delta, translated) == Error::none ? 0 : -1;
 }
 
 } // namespace codrecomp::vfs

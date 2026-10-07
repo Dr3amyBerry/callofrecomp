@@ -281,6 +281,14 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - **Limitations:** seeking is not yet implemented; ZIP CRC cannot be known until the stream is fully consumed. Loose-file opens remain vulnerable to a path-replacement race between path canonicalization and opening on filesystems modified concurrently; Android sandbox hardening is still needed. The VFS searchpath order remains provisional.
 - No original binaries or archives are included in commits.
 
+## Stream seek + host callback checkpoint (2026-10-07 UTC)
+
+- Added `ReadStream::seek(delta, origin)` using begin/current/end origins with overflow-safe signed offset calculations and strict file bounds. Nonzero negative deltas and `INT64_MIN` are handled without signed overflow.
+- For DEFLATE streams, a backward seek resets the inflater and replays through bounded 32 KiB buffers from the beginning; forward seeks discard through `read` so CRC coverage remains correct. The same bounded replay strategy validates ZIP-stored members. This is **correctness-first**, not fast random access.
+- Added host-only optional `fs_seek` to `cod_host_services_t`, implemented for `ReadOnlyHostAdapter` with verified native handles. Host origin values 0/1/2 **are new adapter conventions**, not CoD syscall IDs. The 32-bit legacy bridge deliberately does not expose an unverified seek syscall.
+- Synthetic tests cover backward/forward/end-relative seeks, bad ranges, large DEFLATE refills, CRC sticky errors and host EOF recovery. The VFS is still read-only; full mount precedence and locale classification are **not yet reconstructed**.
+- **Next:** inspect original startup/locale searchpath node constructors; reduce remaining filesystem compatibility gaps and optimize seek when evidence permits.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline

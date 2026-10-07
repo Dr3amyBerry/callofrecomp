@@ -23,6 +23,7 @@ int main() {
     cod_host_services_t host = adapter.services();
     assert(host.context == &adapter);
     assert(host.fs_read && host.fs_open && host.fs_close);
+    assert(host.fs_seek);
     assert(!host.fs_write && !host.fs_rename &&
            !host.fs_getfilelist && !host.execute_console_text);
 
@@ -40,6 +41,21 @@ int main() {
     assert(std::memcmp(buffer, "0123456789", 10) == 0);
     assert(host.fs_read(host.context, buffer, 5, handle) == 0);
     assert(host.fs_read(host.context, nullptr, 5, handle) == -1);
+    assert(host.fs_seek(host.context, handle, -4, COD_HOST_SEEK_END) == 0);
+    assert(host.fs_read(host.context, buffer, 4, handle) == 4);
+    assert(std::memcmp(buffer, "6789", 4) == 0);
+    assert(host.fs_seek(host.context, handle, 0, COD_HOST_SEEK_BEGIN) == 0);
+    assert(host.fs_read(host.context, buffer, 3, handle) == 3);
+    assert(std::memcmp(buffer, "012", 3) == 0);
+    assert(host.fs_seek(host.context, handle, 1, COD_HOST_SEEK_CURRENT) == 0);
+    assert(host.fs_read(host.context, buffer, 2, handle) == 2);
+    assert(std::memcmp(buffer, "45", 2) == 0);
+    assert(host.fs_seek(host.context, handle, 1, COD_HOST_SEEK_END) == -1);
+    assert(host.fs_seek(host.context, handle, 0,
+                        static_cast<cod_host_seek_origin_t>(99)) == -1);
+    assert(host.fs_read(host.context, buffer, 2, handle) == 2);
+    assert(std::memcmp(buffer, "67", 2) == 0);
+
 
     cod_host_fs_handle_t empty_handle = 0;
     assert(host.fs_open(host.context, "empty.cfg", &empty_handle, 77) == 0);
@@ -54,6 +70,7 @@ int main() {
     assert(std::memcmp(buffer, "01", 2) == 0);
     host.fs_close(host.context, handle);
     assert(host.fs_read(host.context, buffer, 2, handle) == -1);
+    assert(host.fs_seek(host.context, handle, 0, COD_HOST_SEEK_BEGIN) == -1);
     assert(host.fs_read(host.context, buffer, 0, second) == 0);
     host.fs_close(host.context, second);
     fs::remove_all(temp);
