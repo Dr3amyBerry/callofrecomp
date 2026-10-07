@@ -104,6 +104,33 @@ python tools/engine_vm_probe.py originals/CoDSP.exe \
   --json analysis/local/engine_vm.json
 ```
 
+### Engine syscall-handler edge inventory
+
+Disassembles bounded jump-table handler cases using `objdump`, recording direct
+`call` and `jmp` destinations as address evidence. This does **not** infer syscall names.
+
+```bash
+python tools/syscall_handler_edges.py originals/CoDSP.exe \
+  --callback-va 0x0044A2F0 \
+  --start-id 20 \
+  --end-id 43 \
+  --json analysis/local/game_syscall_edges_20_43.json
+```
+
+See [`analysis/game_syscall_edges_20_43.md`](analysis/game_syscall_edges_20_43.md).
+
+### Static-analysis regression tests
+
+```bash
+python -m unittest discover -s tests -p 'test_*.py' -v
+
+# Optional: also validate the exact private PC 1.5 binaries locally
+CODRECOMP_ORIGINALS=originals python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+The tests use synthetic PE fixtures in CI; proprietary game files are never
+required or committed. The Python tests are also registered with CTest.
+
 ### PK3 inventory
 
 Reads PK3/ZIP metadata without extracting the archive:
