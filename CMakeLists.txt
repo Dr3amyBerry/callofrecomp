@@ -30,6 +30,12 @@ add_library(codrecomp_legacy_vm_fs STATIC
 target_link_libraries(codrecomp_legacy_vm_fs PUBLIC codrecomp_read_only_host)
 target_compile_features(codrecomp_legacy_vm_fs PUBLIC cxx_std_17)
 
+# Model a confirmed 55-byte SP engine searchpath insertion routine.
+# Independent of actual VFS mount selection until the remaining flags are traced.
+add_library(codrecomp_searchpath_order STATIC src/searchpath_order.cpp)
+target_link_libraries(codrecomp_searchpath_order PUBLIC codrecomp_abi)
+target_compile_features(codrecomp_searchpath_order PUBLIC cxx_std_17)
+
 option(CODRECOMP_BUILD_TESTS "Build host-side reconstruction tests" ON)
 
 if(CODRECOMP_BUILD_TESTS)
@@ -69,6 +75,10 @@ if(CODRECOMP_BUILD_TESTS)
     add_executable(codrecomp_guest_vm_bridge_smoke tests/guest_vm_bridge_smoke.cpp)
     target_link_libraries(codrecomp_guest_vm_bridge_smoke PRIVATE codrecomp_legacy_vm_fs)
     add_test(NAME guest_vm_bridge_smoke COMMAND codrecomp_guest_vm_bridge_smoke)
+
+    add_executable(codrecomp_searchpath_order_smoke tests/searchpath_order_smoke.cpp)
+    target_link_libraries(codrecomp_searchpath_order_smoke PRIVATE codrecomp_searchpath_order)
+    add_test(NAME searchpath_order_smoke COMMAND codrecomp_searchpath_order_smoke)
 
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.

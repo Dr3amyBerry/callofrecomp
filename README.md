@@ -242,6 +242,15 @@ See the [VM filesystem bridge contract](docs/LEGACY_FS_BRIDGE.md) and
 [technical VFS analysis](analysis/filesystem_vfs_phase.md) for evidence,
 limits and next steps.
 
+### Observed searchpath insertion order (partial)
+
+The portable `codrecomp_searchpath_order` library independently models one
+verified searchpath insertion function from the original executable. It is
+fingerprinted by `tools/searchpath_order_probe.py` and covered by CTest.
+This **does not yet define full PK3 loading precedence**, so it is not wired
+into the VFS until all node constructors and classification rules are mapped.
+See [searchpath insertion evidence](analysis/searchpath_insertion.md).
+
 ## Development rule
 
 Analysis output must be reproducible. Do not rename guessed functions as facts: recovered names must record whether they are **observed**, **matched**, or **inferred**. This matters because the final native port will be built from reconstructed behavior rather than copied proprietary source.

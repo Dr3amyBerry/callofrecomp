@@ -264,6 +264,14 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - **Next autonomous phase:** complete original mount order and file-read error/handle semantics; add safe streaming/seek and a writable sandbox separately, then integrate the bridge into a reconstructed module host.
 - **External blockers:** none for immediate static/host work; Android NDK and a runnable emulator/device will eventually be needed for ARM64 validation.
 
+## Searchpath insertion checkpoint (2026-10-07 UTC)
+
+- Confirmed the byte fingerprint of the **55-byte** searchpath insertion function at `CoDSP.exe` VA `0x004248B0`; its SHA-256 is `51a41202f498c49d4e8c7d001c8ac647d531882c324f220c57fc7bb6ebe07683`. Verification is tied to the original known-good executable hash.
+- Modeled its conditional linked-list behavior in portable C++: zero-class nodes prepend; nonzero-class nodes insert after the head and its consecutive zero-class successors. The model includes unusual nonzero-only ordering that simple priority sorting would get wrong.
+- Added `tools/searchpath_order_probe.py` and portable C++ regression fixtures; no proprietary executable bytes are committed.
+- The `+0x0C` flag semantics and **full engine startup/mount precedence are still unconfirmed**. The model deliberately stays separate from the working VFS until discovery calls and class assignments are traced.
+- No additional user action is required. Next: trace node construction and connect the recovered behavior to actual PK3/locale discovery; continue streaming I/O development.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -311,7 +319,8 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - [ ] Deep-inventory required PK3 contents.
 - [ ] Identify formats required before the first menu/map boot.
 - [x] Build and test an independent, read-only PK3/loose-file loader; **does not yet reproduce original mount priority**.
-- [ ] Reconstruct PK3 search/load precedence.
+- [x] Model the original engine's **one verified searchpath insertion routine** and fingerprint the exact original code region.
+- [ ] Reconstruct PK3 search/load precedence (node creation, classification, language selection and all insertion paths) before integrating this isolated model into VFS.
 - [ ] Reconstruct configuration and localization loading.
 - [ ] Trace single-player startup from process entry to first rendered frame.
 
