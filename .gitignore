@@ -13,6 +13,22 @@ dumps/
 # Local generated analysis can be regenerated.
 analysis/local/
 
+# Build trees and native artifacts
+build/
+build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.pdb
+
 # Python
 __pycache__/
 *.py[cod]
