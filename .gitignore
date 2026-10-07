@@ -1,0 +1,34 @@
+# Original game files must never be committed.
+originals/
+input/
+dumps/
+
+# Common proprietary/binary inputs.
+*.exe
+*.dll
+*.pk3
+*.pak
+*.dmp
+
+# Local generated analysis can be regenerated.
+analysis/local/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Reverse-engineering workspaces
+*.gpr
+*.rep/
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
