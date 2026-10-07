@@ -294,6 +294,8 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - Fingerprinted the exact original `CoDSP.exe` function at `0x004250E0`. Its first call invokes helper `0x00424E10` with two zero immediate inputs. A subsequent loop invokes the same helper with selector `1` and index values `13` down to `0` (14 calls).
 - Added `tools/searchpath_startup_probe.py`, synthetic unit tests and [analysis/searchpath_startup_scan.md](analysis/searchpath_startup_scan.md), preserving the uncertainty around register arguments and the meaning of package/language flags.
 - This is **not the full PK3/locale search-order mapping**; node creation and classification are still under investigation, and the provisional VFS search priority is unchanged.
+- **Verification:** GitHub Actions workflow `37564560085` completed successfully with all **7/7 CTest targets passing**, including the new seek fixtures and startup scan unit tests. Latest test evidence: https://github.com/Dr3amyBerry/callofrecomp/actions/runs/37564560085.
+- **Open risk:** stream seeking is O(target offset) for compressed ZIP entries because it replays DEFLATE to preserve CRC; this is safe but may be costly for large map resources. No seek syscall is yet mapped into the original 32-bit VM bridge.
 
 ## 3. Current work queue
 
