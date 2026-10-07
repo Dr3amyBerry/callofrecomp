@@ -14,6 +14,7 @@ from pathlib import Path
 
 from engine_vm_probe import analyze as analyze_engine_vm
 from pe_inspect import PEFile
+from module_wrapper_probe import inspect as analyze_game_wrappers
 from vm_abi_probe import analyze as analyze_module_vm
 
 
@@ -84,6 +85,11 @@ def main() -> int:
         default=PROJECT_ROOT / "analysis" / "local",
         help="generated report directory",
     )
+    parser.add_argument(
+        "--with-wrapper-provenance",
+        action="store_true",
+        help="also recover observed SP game syscall wrapper argument origins (requires GNU objdump)",
+    )
     args = parser.parse_args()
 
     profile = json.loads(args.profile.read_text(encoding="utf-8"))
@@ -127,6 +133,18 @@ def main() -> int:
         encoding="utf-8",
     )
 
+    if args.with_wrapper_provenance:
+        # Reuse the already SHA-256-verified DLL from this exact build.
+        # Keep the default baseline working without objdump by opting in.
+        wrapper_report = analyze_game_wrappers(
+            PEFile(args.originals / "gamex86.dll"),
+            [21, 22, 23, 36, 37, 40, 41],
+        )
+        (args.out / "game_wrapper_provenance.json").write_text(
+            json.dumps(wrapper_report, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
     summary = {
         "schema_version": 1,
         "profile_id": profile["id"],
@@ -138,6 +156,9 @@ def main() -> int:
             "engine_vm": "engine_vm.json",
         },
     }
+    if args.with_wrapper_provenance:
+        summary["reports"]["game_wrappers"] = "game_wrapper_provenance.json"
+
     (args.out / "baseline_report.json").write_text(
         json.dumps(summary, indent=2) + "\n",
         encoding="utf-8",
