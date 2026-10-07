@@ -82,7 +82,8 @@ class TestLocalization(unittest.TestCase):
         self.assertEqual(result["language_count"], 14)
         self.assertEqual(result["languages"][4]["language"], "spanish")
         self.assertEqual(result["filename_candidates"][0]["language_index"], 4)
-        self.assertEqual(len(result["fingerprints"]), 5)
+        self.assertEqual(len(result["fingerprints"]), 7)
+        self.assertEqual(result["lookup_language_filter"]["global_value_offset"], 32)
 
 
 if __name__ == "__main__":

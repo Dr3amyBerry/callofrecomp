@@ -71,9 +71,22 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 Requisitos: Python 3.11+; el parser PE interno no tiene dependencias externas. `CODRECOMP_ORIGINALS=originals` activa pruebas opcionales contra el ejecutable original; los originales nunca se incorporan al repositorio.
 
+## Filtro por idioma activo confirmado en las búsquedas
+
+En dos ramas de búsqueda real dentro de `CoDSP.exe` se repite el mismo control:
+
+1. **VA `0x004226E7`**: consulta el indicador `[nodo+0x0C]`. Cuando es cero, no exige coincidencia de idioma. Si está localizado, carga el DWORD de `[(*0x014DBA84)+0x20]` y omite el nodo cuando es distinto de cero. De lo contrario, compara `[nodo+0x10]` con `[(*0x014BD624)+0x20]` y también omite los índices distintos. La rama que omite el nodo avanza al siguiente elemento.
+2. **VA `0x00422848`**: reproduce el mismo control en otra ruta de acceso a archivos.
+
+Ambas ventanas se validan ahora con hashes SHA-256 (`0x004226E7`, 41 bytes; `0x00422848`, 46 bytes). Las dos variables globales son punteros a estructuras con un valor en `+0x20`; **todavía no se conoce con seguridad su nombre, quién configura la primera bandera ni la política de fallbacks**.
+
+Se añadió `SearchpathOrder::eligible(active_language_index, reject_localized)` como un **modelo separado** que conserva el orden existente y descarta fuentes localizadas que fallan ese filtro. Por ejemplo, cuando el idioma activo es `spanish=4`, puede conservar fuentes generales más fuentes con índice 4, omitiendo fuentes localizadas con índice 0 (inglés). Con la bandera de rechazo activa, omite todas las fuentes localizadas. Esto representa las condiciones binarias observadas; **no determina todavía la prioridad final entre PK3, directorios y distintos niveles de parches**.
+
+La función no está integrada en `Vfs` porque falta la inicialización completa del orden y del estado del idioma. `tests/searchpath_locale_filter_smoke.cpp` comprueba el comportamiento mixto sin distribuir archivos propietarios.
+
 ## Pendientes concretos
 
 1. Rastrear completamente las funciones de descubrimiento `0x004248F0` y `0x00424E10`, incluidas sus banderas de gamedir.
-2. Determinar dónde se configura el idioma activo y cómo se filtran los nodos localizados en búsquedas individuales.
+2. **Filtro de las dos rutas principales recuperado**. Determinar dónde se inicializan y actualizan los globals de idioma activo y rechazo de archivos localizados, y confirmar las demás rutas de búsqueda.
 3. Recuperar precedencia exacta entre `sp_`, `mp_`, `zz_`, paquetes generales y directorios sueltos en el arranque SP.
 4. Solo entonces conectar `SearchpathOrder` al VFS con tests de colisión, overlays y diferentes idiomas.

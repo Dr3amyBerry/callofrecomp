@@ -309,6 +309,13 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 
 See [`analysis/localization_searchpath.md`](analysis/localization_searchpath.md).
 
+## Active-language searchpath filter checkpoint (2026-10-07 UTC)
+
+- Recovered **two distinct runtime lookup branches** that consult the verified `node+0x0C` localized flag, a global rejection check from `(*0x014DBA84)+0x20`, and the current-language index from `(*0x014BD624)+0x20` versus `node+0x10`. Both instruction windows are SHA-256 fingerprinted in the localization probe.
+- Added an evidence-based `SearchpathOrder::eligible(active_language_index, reject_localized)` filter, maintaining the original insertion order and preserving the existing `class_flag` API. Added C++ tests with Spanish, English and nonlocalized nodes, plus a test for rejecting all localized nodes.
+- Verified Python probe tests against the original executable and tested C++ filtering locally with strict compiler warnings. The node ordering/filter model remains **independent from the VFS** until complete startup order and global initialization semantics are known.
+- **Next:** identify creators and update paths for both global settings, all path-discovery/PK3-level precedence and the exact search behaviors for unmatched language resources. No Android runtime yet.
+
 ## 3. Current work queue
 
 ### Phase A — strengthen the static-analysis pipeline
@@ -358,7 +365,8 @@ See [`analysis/localization_searchpath.md`](analysis/localization_searchpath.md)
 - [x] Build and test an independent, read-only PK3/loose-file loader; **does not yet reproduce original mount priority**.
 - [x] Model the original engine's **one verified searchpath insertion routine** and fingerprint the exact original code region.
 - [x] Recover searchpath node type/classification and the 14-language lookup table (including Spanish index 4).
-- [ ] Recover active-language selection/filtering and all startup discovery rules; then integrate the verified precedence into the VFS.
+- [x] Recover the observed per-node language acceptance checks in two filesystem lookup branches; independent model and tests added.
+- [ ] Recover initialization/updates of language and rejection globals, the complete startup discovery sequence and only then integrate it with the VFS.
 - [x] Implement bounded-memory sequential reads of loose files, ZIP-stored and raw-DEFLATE PK3 members, with end-of-stream integrity checks.
 - [ ] Implement verified seek behavior and precise error mapping; keep original mount selection unresolved.
 - [ ] Reconstruct configuration and localization loading.

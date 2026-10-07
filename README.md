@@ -289,6 +289,13 @@ distinct node fields. See
 This does **not** yet establish the *complete* PK3/loose-file precedence or
 runtime selected-language filtering, so the VFS remains unchanged.
 
+The model now includes a separate `SearchpathOrder::eligible(...)` method
+for the **observed localized-source filtering** in two original FS lookup
+branches: nonlocalized entries pass, while localized entries require a
+matching active language and an inactive rejection gate. This still does
+not establish complete mount priority or the setting lifecycle, and is
+not yet attached to the VFS.
+
 ## Development rule
 
 Analysis output must be reproducible. Do not rename guessed functions as facts: recovered names must record whether they are **observed**, **matched**, or **inferred**. This matters because the final native port will be built from reconstructed behavior rather than copied proprietary source.

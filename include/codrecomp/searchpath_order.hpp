@@ -7,20 +7,24 @@
 
 namespace codrecomp::fs {
 
-// Evidence-based insertion algorithm at CoDSP.exe VA 0x004248B0.
-// class_flag mirrors node+0x0C, now verified as the localized flag.
-// Preserve the field name for source compatibility; full mount priority is
-// unresolved until language selection and discovery order are recovered.
-// Entries are listed head-first, matching the original traversal order.
+// Modeled from CoDSP.exe VA 0x4248B0 and locale gates at 0x4226E7/0x422848.
+// class_flag is the verified localized flag (name retained for source compatibility).
+// Language index comes from node+0x10; meaningful only when localized.
 struct SearchpathEntry {
     std::uint64_t id;
     bool class_flag;
+    std::uint32_t language_index = 0;
 };
 
 class SearchpathOrder {
 public:
     bool insert(SearchpathEntry candidate);
     const std::vector<SearchpathEntry>& entries() const noexcept { return items_; }
+    // Evidence-based filtering for one observed filesystem lookup branch.
+    // The gate's origin/meaning is NOT proven; true means localized nodes
+    // were excluded by the branch. This does not perform actual file lookup.
+    std::vector<SearchpathEntry> eligible(std::uint32_t active_language_index,
+                                          bool reject_localized) const;
 private:
     std::vector<SearchpathEntry> items_;
 };

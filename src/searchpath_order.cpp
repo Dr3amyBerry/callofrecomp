@@ -8,11 +8,8 @@ bool SearchpathOrder::insert(SearchpathEntry candidate) {
     if (std::any_of(items_.begin(), items_.end(), [candidate](const auto& item) {
             return item.id == candidate.id;
         })) return false;
-
-    // CoDSP.exe 0x4248B0, with class now identified as localization:
-    // non-localized (zero) -> prepend; localized (nonzero) -> insert after
-    // the first node and its immediately succeeding non-localized nodes.
-    // This function alone does not establish active-language filtering.
+    // Non-localized nodes prepend. Localized nodes insert after the first
+    // node and its immediately following non-localized successors.
     if (!candidate.class_flag || items_.empty()) {
         items_.insert(items_.begin(), candidate);
     } else {
@@ -22,6 +19,16 @@ bool SearchpathOrder::insert(SearchpathEntry candidate) {
         items_.insert(items_.begin() + static_cast<std::ptrdiff_t>(after + 1), candidate);
     }
     return true;
+}
+
+std::vector<SearchpathEntry> SearchpathOrder::eligible(
+    std::uint32_t active_language_index, bool reject_localized) const {
+    std::vector<SearchpathEntry> found;
+    for (const auto& item : items_) {
+        if (!item.class_flag || (!reject_localized && item.language_index == active_language_index))
+            found.push_back(item);
+    }
+    return found;
 }
 
 } // namespace codrecomp::fs

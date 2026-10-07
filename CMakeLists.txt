@@ -80,6 +80,10 @@ if(CODRECOMP_BUILD_TESTS)
     target_link_libraries(codrecomp_searchpath_order_smoke PRIVATE codrecomp_searchpath_order)
     add_test(NAME searchpath_order_smoke COMMAND codrecomp_searchpath_order_smoke)
 
+    add_executable(codrecomp_searchpath_locale_filter_smoke tests/searchpath_locale_filter_smoke.cpp)
+    target_link_libraries(codrecomp_searchpath_locale_filter_smoke PRIVATE codrecomp_searchpath_order)
+    add_test(NAME searchpath_locale_filter_smoke COMMAND codrecomp_searchpath_locale_filter_smoke)
+
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.
     find_package(Python3 COMPONENTS Interpreter QUIET)

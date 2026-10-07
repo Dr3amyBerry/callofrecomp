@@ -32,6 +32,10 @@ EVIDENCE_REGIONS = (
      "1bd20f060293a90be12e10fd887cc420450d6e94586e6e78dcb1cb5587f8b1ba"),
     ("language_index_matching", 0x00424C02, 134,
      "15df6aad1c515b45566a45c7c4adc591f7dce8cda666bce4c531c7408efb7776"),
+    ("read_lookup_locale_gate", 0x004226E7, 41,
+     "c928c33bc41341f6963c9618964652b878d24715c67891b8a3cc1f67f3e58459"),
+    ("open_lookup_locale_gate", 0x00422848, 46,
+     "c8b4b117ba8b0e0c667eb3a3b85d06f5ca6fef94413647b4f1009e1370ef9626"),
 )
 
 PREFIX_VAS = {
@@ -125,9 +129,20 @@ def analyze(path: Path, names: list[str] | None = None) -> dict:
             "confidence": "matched: constructor stores and localization diagnostics; no full mount priority claim",
         },
         "fingerprints": evidence,
+        "lookup_language_filter": {
+            "read_lookup_va": "0x004226E7",
+            "open_lookup_va": "0x00422848",
+            "localized_flag_offset": 12,
+            "language_index_offset": 16,
+            "reject_gate_global_va": "0x014DBA84",
+            "active_language_global_va": "0x014BD624",
+            "global_value_offset": 32,
+            "observed_rule": "nonlocalized bypass; localized skipped when gate!=0 or node language index!=active language index",
+            "scope": "two observed filesystem lookup branches; not the full lifecycle of language settings",
+        },
         "filename_candidates": [classify_pkg_name(n, language_to_index) for n in (names or [])],
         "remaining_unknowns": [
-            "runtime language selection and fallbacks",
+            "where and when runtime language/rejection globals are set, and their fallbacks",
             "complete directory/PK3 startup ordering and loose-file precedence",
             "exact prefix handling for multiplayer vs single-player patch assets",
         ],
