@@ -24,6 +24,17 @@ if(CODRECOMP_BUILD_TESTS)
 
     add_test(NAME abi_smoke COMMAND codrecomp_abi_smoke)
 
+    add_executable(codrecomp_host_services_smoke
+        tests/host_services_smoke.c
+    )
+    target_link_libraries(codrecomp_host_services_smoke PRIVATE codrecomp_abi)
+    set_target_properties(codrecomp_host_services_smoke PROPERTIES
+        C_STANDARD 11
+        C_STANDARD_REQUIRED YES
+        C_EXTENSIONS NO
+    )
+    add_test(NAME host_services_smoke COMMAND codrecomp_host_services_smoke)
+
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.
     find_package(Python3 COMPONENTS Interpreter QUIET)
