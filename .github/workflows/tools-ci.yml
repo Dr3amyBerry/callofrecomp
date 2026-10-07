@@ -6,24 +6,32 @@ on:
     paths:
       - "tools/**"
       - "analysis/baselines/**"
+      - "include/**"
+      - "tests/**"
+      - "CMakeLists.txt"
       - ".github/workflows/tools-ci.yml"
   pull_request:
     paths:
       - "tools/**"
       - "analysis/baselines/**"
+      - "include/**"
+      - "tests/**"
+      - "CMakeLists.txt"
       - ".github/workflows/tools-ci.yml"
 
 jobs:
-  python-tools:
+  analysis-and-host-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: Compile analysis tools
         run: python -m compileall -q tools
-      - name: Smoke-test CLIs
+
+      - name: Smoke-test analysis CLIs
         run: |
           python tools/pe_inspect.py --help >/dev/null
           python tools/pk3_inventory.py --help >/dev/null
@@ -31,3 +39,12 @@ jobs:
           python tools/engine_vm_probe.py --help >/dev/null
           python tools/string_xrefs.py --help >/dev/null
           python tools/analyze_baseline.py --help >/dev/null
+
+      - name: Configure host reconstruction tests
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build host reconstruction tests
+        run: cmake --build build --parallel
+
+      - name: Run host reconstruction tests
+        run: ctest --test-dir build --output-on-failure
