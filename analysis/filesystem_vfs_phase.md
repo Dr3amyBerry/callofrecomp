@@ -39,7 +39,7 @@ El despachador en `VA 0x00425FD0` compara el modo con 3; si es mayor usa la ruta
 | 2 | `0x00426033` | Llama a `0x00422360`, con indicador local `0` |
 | 3 | `0x0042602B` | Pone indicador local `1` y pasa a la ruta que llama a `0x00422360` |
 
-Estos cuatro valores **todavía no tienen nombres de modo confirmados**, por lo que deliberadamente no se han fijado en un enum como si fueran equivalentes directos a APIs conocidas. Hace falta verificar también semántica de retornos, errores y handles.
+**Actualización:** los cuatro modos quedaron contrastados contra las cadenas y ramas del binario original: `0=rb/lectura`, `1=wb/escritura`, `2=ab/añadir` y `3=ab/añadir con bandera adicional de sincronización`. Véase [`fs_modes_and_searchpath_evidence.md`](fs_modes_and_searchpath_evidence.md). Los contratos completos de errores, handles y persistencia todavía requieren investigación.
 
 ## Adaptador nativo de lectura para el contrato host
 
@@ -62,21 +62,17 @@ se dejan a `nullptr` **intencionadamente**. No se simula el comportamiento
 original sin suficiente evidencia. El adaptador también evita convertir
 punteros nativos de 64 bits a palabras x86 de 32 bits.
 
-La prueba `tests/host_adapter_smoke.cpp` ejercita modos incorrectos,
-rutas rechazadas, lecturas sucesivas, EOF, archivos vacíos,
-handles independientes y cierre/invalidez. Es **una interfaz host
-funcional**, pero todavía NO hay puente desde el dispatcher de
-`gamex86.dll` ni Android funcional. El número de modo de la prueba
-(`77`) es inventado a propósito como convenio de prueba, NO es
-un código original del juego.
+La prueba `tests/host_adapter_smoke.cpp` ejercita modos incorrectos, rutas rechazadas, lecturas sucesivas, EOF, archivos vacíos, handles independientes y cierre/invalidez. El número de modo `77` de esta prueba es un convenio host sintético, **no** un número del juego.
+
+**Actualización posterior:** se añadió además un puente VM read-only independiente (`GuestMemory` y `LegacyFsReadBridge`) para los syscalls 21/22/37, usando el **modo original 0** y punteros invitados validados. Véase [`../docs/LEGACY_FS_BRIDGE.md`](../docs/LEGACY_FS_BRIDGE.md). Esto no ejecuta el código original de `gamex86.dll` ni hace funcionar la campaña Android.
 
 ## Por integrar
 
-1. Identificar nombres y comportamiento de los modos de apertura contra llamadores y rutinas internas.
-2. Recuperar prioridad de los PK3 originales, localización y overlays de archivos sueltos.
-3. Completar el puente **VM x86 de 32 bits → servicio host** validando punteros/handles; el adaptador de servicio host nativo ya existe.
+1. **Completado parcialmente:** están identificados los 4 modos originales; pendiente detallar errores y política de persistencia.
+2. Recuperar prioridad exacta de los PK3 originales, localización y overlays de archivos sueltos: se observó su lista enlazada y una rutina de inserción condicionada, pero **no** el orden integral.
+3. **Completado solo para lectura:** puente validado de palabras VM x86 de 32 bits a servicios host para IDs 21/22/37; extenderlo cuando la semántica restante esté comprobada.
 4. Recuperar el formato real de listas de archivos de `FS_GETFILELIST`.
 5. Añadir lectura fragmentada/seek y escritura aislada para configuraciones y guardados.
 6. Validar compilación Android NDK y arranque del motor.
 
-La interfaz `include/codrecomp/host_services.h` sigue siendo un **contrato portable**; la librería VFS funciona, pero aún no existe un puente completo al motor ni un juego ejecutable.
+La interfaz `include/codrecomp/host_services.h` es un contrato portable; tanto la VFS como el puente de lectura están implementados y probados, **pero aún no hay compatibilidad completa con el motor original ni un juego ejecutable**.
