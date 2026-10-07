@@ -57,6 +57,8 @@ I should not stop merely because a task is large. Work should be split into phas
 - [x] Located the game/cgame/ui module→engine syscall callbacks.
 - [x] Recovered all three engine-side syscall jump tables and their numeric ranges.
 - [x] Added an engine VM probe that emits reproducible JSON for both directions of the ABI.
+- [x] Extended the PE inspector to record import IAT addresses.
+- [x] Confirmed the dynamic OpenGL/WGL loader path: `LoadLibraryA("opengl32.dll")` + `GetProcAddress` and renderer function-pointer population.
 - [x] Matched UI export commands 0–10 against an id Tech 3-family public reference with independent binary evidence.
 - [x] Established an evidence ledger using `observed`, `matched`, and `inferred` confidence levels.
 
@@ -123,7 +125,8 @@ IDs 11–13 remain intentionally unnamed.
 - [ ] Add broader cross-reference output suitable for machine processing.
 - [x] Produce reproducible JSON reports for the PE, module ABI, and engine VM boundary.
 - [x] Map engine code responsible for loading the game/cgame/ui modules.
-- [ ] Confirm the dynamic OpenGL loader path rather than only inferring it from strings.
+- [x] Confirm the dynamic OpenGL loader path rather than only inferring it from strings.
+- [ ] Inventory the renderer GL/WGL function-pointer table and classify Android replacement requirements.
 - [ ] Recover engine-side semantic names for syscall IDs with independent evidence.
 
 ### Phase B — reconstruct interfaces
@@ -293,7 +296,7 @@ Do not request these merely because they could be useful. Request them only when
 
 Complete when the executable/module boundaries, startup path, `vmMain` commands, syscall interfaces, major engine subsystems, and necessary asset formats have usable evidence-backed maps.
 
-The native VM boundary itself is now mapped; semantic recovery of command/syscall IDs and startup subsystems remains.
+The native VM boundary is now mapped and the Win32 OpenGL dynamic-loader seam is confirmed; semantic recovery of command/syscall IDs, renderer dispatch classification, startup subsystems, and required data formats remain.
 
 ### M2 — Portable host harness
 
