@@ -376,17 +376,35 @@ See [`analysis/localization_searchpath.md`](analysis/localization_searchpath.md)
 
 ### Phase R — static recompilation of modules (hybrid plan, approved 2026-10-12)
 
-Direction: recompile the three SP module DLLs automatically (Ghidra p-code → C)
-and pair them with an ioquake3-derived engine adapted to CoD syscalls/formats.
+Current direction: recompile `CoDSP.exe` and the three SP module DLLs automatically
+(Ghidra p-code → C), retaining the original engine's resource parsers, renderer
+and module/syscall paths. The earlier ioquake3 proposal is superseded by this
+working original-engine pipeline.
 
 - [x] Ghidra p-code exporter and `pcode2c.py` generator; zero unsupported ops across ui/cgame/game.
 - [x] Recompiled `uix86.dll` matches the real DLL's 10,856-syscall init trace (DllMain + 5 vmMain calls).
 - [x] Recompiled `cgamex86.dll` / `gamex86.dll` match the real DLLs up to the same harness-induced crash.
 - [x] Build the generated C for Android ARM64 (NDK r30) and rerun the trace check on a real device: identical.
 - [ ] Richer fake engine so game/cgame run past init; then wire real engine syscalls.
-- [ ] Evaluate ioquake3 as engine base against the decompiled `CoDSP.exe`.
+- [x] Recompile the original engine and start it through CRT/WinMain.
+- [x] Replace window/context creation, GL entry-point loading and basic input with SDL2 shims.
+- [x] Load the original PK3 search path and finish original renderer initialization on desktop.
+- [ ] Replace the Miles audio boundary and reach the menu through the real engine.
+- [ ] Exercise campaign map loading and sustained gameplay.
 
 See [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation_prototype.md).
+
+### Desktop renderer checkpoint — 2026-10-12
+
+- Resumed Claude's uncommitted SDL/OpenGL work and repaired its interrupted string literal.
+- The pinned `CoDSP.exe` hash remains `c755c7da411c87039ade462a2299402c3c4ca5c4fc4f1ae5cea6e25b05c69f47`.
+- Fixed `GetFileType`: real open files now report `FILE_TYPE_DISK`, allowing the guest CRT to read PK3s.
+- Runtime reports **30,283 files in PK3 files**, executes `default.cfg` and initializes the original renderer on an AMD desktop compatibility context.
+- Bounded GL extension reporting preserves supported S3TC; omitting it falsely rejected the GPU, while forwarding the unbounded driver string exposed the legacy engine's buffer limit.
+- Native pointer outputs from GL are translated back to 32-bit guest pointers; external host pointers fail explicitly.
+- Added a reproducible desktop builder and synthetic CTest regressions for the file/GL boundaries. Local CMake build and **10/10 CTest tests passed**.
+- Current engine execution reaches `----- finished R_Init -----`, then stops at missing `mss32.dll!_AIL_set_file_callbacks@16`. **Menu, map loading, audio and Android renderer execution are not verified.**
+- ADB currently lists no connected devices. Desktop work can continue; device validation requires a device when the Android host is ready.
 
 ### Phase D — native implementation
 

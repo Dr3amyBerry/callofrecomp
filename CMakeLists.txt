@@ -108,4 +108,41 @@ if(CODRECOMP_BUILD_TESTS)
                 -v
         )
     endif()
+
+    # Experimental p-code runtime requires compiler support for 128-bit integers.
+    # These fixtures use synthetic inputs and do not require proprietary binaries.
+    include(CheckCSourceCompiles)
+    check_c_source_compiles("int main(void) { unsigned __int128 x = 1; return (int)(x - 1); }"
+        CODRECOMP_HAS_INT128)
+    if(CODRECOMP_HAS_INT128 AND Python3_Interpreter_FOUND)
+        add_library(codrecomp_pcode_runtime STATIC
+            tools/recomp/runtime/guest.c tools/recomp/runtime/kernel32.c
+            tools/recomp/runtime/files.c)
+        target_include_directories(codrecomp_pcode_runtime PUBLIC tools/recomp)
+        if(NOT WIN32)
+            target_link_libraries(codrecomp_pcode_runtime PUBLIC m)
+        endif()
+        add_executable(codrecomp_recomp_files_smoke tests/recomp_files_smoke.c)
+        target_link_libraries(codrecomp_recomp_files_smoke PRIVATE codrecomp_pcode_runtime)
+        add_test(NAME recomp_files_smoke COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_recomp_files_smoke.py
+            $<TARGET_FILE:codrecomp_recomp_files_smoke>)
+
+        find_package(SDL2 CONFIG QUIET)
+        if(SDL2_FOUND)
+            add_executable(codrecomp_recomp_gl_strings_smoke
+                tests/recomp_gl_strings_smoke.c tools/recomp/runtime/window.c
+                tools/recomp/runtime/gl_thunks.c)
+            target_compile_definitions(codrecomp_recomp_gl_strings_smoke PRIVATE SDL_MAIN_HANDLED)
+            target_include_directories(codrecomp_recomp_gl_strings_smoke PRIVATE tools/recomp/runtime)
+            target_link_libraries(codrecomp_recomp_gl_strings_smoke PRIVATE
+                codrecomp_pcode_runtime SDL2::SDL2)
+            if(WIN32)
+                add_custom_command(TARGET codrecomp_recomp_gl_strings_smoke POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    $<TARGET_FILE:SDL2::SDL2> $<TARGET_FILE_DIR:codrecomp_recomp_gl_strings_smoke>)
+            endif()
+            add_test(NAME recomp_gl_strings_smoke COMMAND codrecomp_recomp_gl_strings_smoke)
+        endif()
+    endif()
 endif()

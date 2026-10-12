@@ -161,10 +161,44 @@ static uint32_t missing_import(uint32_t esp) {
     return 0;
 }
 
-static uint32_t resolve_import(const char *dll, const char *name) {
+uint32_t shim_lookup(const char *dll, const char *name) {
     for (int t = 0; t < shim_table_count; t++)
         for (const thunk_def *d = shim_tables[t]; d->name; d++)
-            if (!strcasecmp(d->dll, dll) && !strcmp(d->name, name)) return thunk_address(dll, name, d->fn, d->pop);
+            if (!strcasecmp(d->dll, dll) && !strcmp(d->name, name)) return thunk_address(d->dll, d->name, d->fn, d->pop);
+    return 0;
+}
+
+// Host-provided DLLs (e.g. opengl32.dll) loadable through LoadLibraryA.
+static const char *host_dlls[16];
+static int host_dll_count;
+#define HOST_DLL_BASE 0x7F000000u
+
+void host_dll_register(const char *name) { host_dlls[host_dll_count++] = name; }
+
+static void dll_basename(const char *in, char *out, size_t cap) {
+    const char *b = in;
+    for (const char *p = in; *p; p++)
+        if (*p == '\\' || *p == '/') b = p + 1;
+    snprintf(out, cap, "%s%s", b, strchr(b, '.') ? "" : ".dll");
+}
+
+uint32_t host_dll_handle(const char *name) {
+    char base[128];
+    dll_basename(name, base, sizeof base);
+    for (int i = 0; i < host_dll_count; i++)
+        if (!strcasecmp(host_dlls[i], base)) return HOST_DLL_BASE + 0x10000u * (uint32_t)i;
+    return 0;
+}
+
+uint32_t host_dll_proc(uint32_t handle, const char *name) {
+    uint32_t i = (handle - HOST_DLL_BASE) / 0x10000u;
+    if (handle < HOST_DLL_BASE || i >= (uint32_t)host_dll_count) return 0;
+    return shim_lookup(host_dlls[i], name);
+}
+
+static uint32_t resolve_import(const char *dll, const char *name) {
+    uint32_t t = shim_lookup(dll, name);
+    if (t) return t;
     const recomp_module *m = module_by_name(dll);
     if (m) {
         uint32_t va = module_export(m, name);

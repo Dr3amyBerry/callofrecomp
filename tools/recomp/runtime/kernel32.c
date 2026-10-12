@@ -124,7 +124,10 @@ K(GetModuleHandleA) {
     const recomp_module *m = module_by_name((const char *)G(A(0)));
     return m ? m->image_base : 0;
 }
+static int host_dll_handle_valid(uint32_t h) { return h >= 0x7F000000u && h < 0x80000000u; }
+
 K(GetProcAddress) {
+    if (A(1) > 0xFFFF && host_dll_handle_valid(A(0))) return host_dll_proc(A(0), (const char *)G(A(1)));
     const recomp_module *m = module_loaded_at(A(0));
     return m && A(1) > 0xFFFF ? module_export(m, (const char *)G(A(1))) : 0;
 }
@@ -132,6 +135,8 @@ K(LoadLibraryA) {
     const char *name = (const char *)G(A(0));
     const recomp_module *m;
     const char *path = module_available_path(name, &m);
+    uint32_t host = host_dll_handle(name);
+    if (!path && host) return host;
     if (!path) {
         printf("LoadLibraryA(\"%s\") -> not available\n", name);
         return 0;

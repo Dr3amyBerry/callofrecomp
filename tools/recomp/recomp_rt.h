@@ -88,6 +88,10 @@ typedef uint32_t (*thunk_fn)(uint32_t esp);
 typedef struct { const char *dll, *name; thunk_fn fn; int pop; } thunk_def;
 uint32_t thunk_address(const char *dll, const char *name, thunk_fn fn, int pop);
 void shims_register(const thunk_def *table);  // table terminated by {0}
+uint32_t shim_lookup(const char *dll, const char *name);  // 0 if no shim
+void host_dll_register(const char *name);  // host-implemented DLL for LoadLibraryA
+uint32_t host_dll_handle(const char *name);
+uint32_t host_dll_proc(uint32_t handle, const char *name);
 
 int module_load(const recomp_module *m, const char *path);  // 0 on failure
 const recomp_module *module_by_name(const char *name);
@@ -100,7 +104,7 @@ extern const thunk_def kernel32_thunks[];
 extern const char *guest_command_line;
 
 // ---- runtime/files.c ----
-extern const thunk_def files_thunks[], misc_thunks[];
+extern const thunk_def files_thunks[], misc_thunks[], window_thunks[];
 extern const char *files_game_dir, *files_home_dir;
 extern int shim_realtime;
 uint32_t host_millis(void);

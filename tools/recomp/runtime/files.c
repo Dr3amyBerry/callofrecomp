@@ -157,6 +157,11 @@ K(CloseHandle) {
     return 1;
 }
 
+K(GetFileType) {
+    handle *h = get(A(0) - HBASE);
+    return h && h->f ? 1 : 0;  // FILE_TYPE_DISK / FILE_TYPE_UNKNOWN
+}
+
 K(FlushFileBuffers) {
     handle *h = get(A(0) - HBASE);
     if (h && h->f) fflush(h->f);
@@ -333,6 +338,7 @@ K(FatalAppExitA) { guest_fatal("FatalAppExit: %s", S(1)); return 0; }
 #define F(dll, name, pop) {dll, #name, k_##name, pop}
 #define AL(dll, name, fn, pop) {dll, #name, k_##fn, pop}
 const thunk_def files_thunks[] = {
+    F("KERNEL32.dll", GetFileType, 4),
     F("KERNEL32.dll", CreateFileA, 28), F("KERNEL32.dll", ReadFile, 20), F("KERNEL32.dll", WriteFile, 20),
     F("KERNEL32.dll", SetFilePointer, 16), F("KERNEL32.dll", CloseHandle, 4), F("KERNEL32.dll", FlushFileBuffers, 4),
     AL("KERNEL32.dll", SetEndOfFile, ReturnTrue, 4), F("KERNEL32.dll", FindFirstFileA, 8),
