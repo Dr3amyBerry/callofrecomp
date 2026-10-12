@@ -48,6 +48,7 @@ entire declared stack preserves the thread block and CPUID page. CTest: 12/12.
 
 With this layout the real `pathfinder` probe passes client initialization, starts
 the mission and accepts timed W input; the user confirms mission 1 controls work.
-Animation pacing during reload/aim remains under investigation. An optional
+The isolated ADS pacing issue was traced to CPU calibration disabling prediction;
+see [engine clocks](RECOMP_CLOCKS.md). An optional
 `CODRECOMP_TRACE_FAULT` environment variable retains the last 64 dispatch PCs,
 stack pointers and SEH values, printed with registers only after a fault.

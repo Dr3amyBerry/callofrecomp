@@ -46,6 +46,29 @@ int main(int argc, char **argv) {
     if (!call("MoveFileA", 2, move_args)) return 11;
     if (call("MoveFileA", 2, move_args)) return 12; // source was consumed
     if (call("GetLastError", 0, NULL) != 2) return 13; // ERROR_FILE_NOT_FOUND
+    // Real engine clocks must advance with elapsed time, not once per call.
+    // Otherwise CPU calibration selects the no-prediction low-spec profile.
+    shim_realtime = 1;
+    uint32_t clock_arg[1] = {guest_alloc(8)};
+    call("QueryPerformanceFrequency", 1, clock_arg);
+    uint64_t frequency = (uint64_t)rd(G(clock_arg[0]), 8);
+    call("QueryPerformanceCounter", 1, clock_arg);
+    uint64_t before = (uint64_t)rd(G(clock_arg[0]), 8);
+    uint64_t ticks_before = (uint64_t)rdtsc_val();
+    uint32_t millis_before = call("GetTickCount", 0, NULL);
+    uint32_t delay[1] = {30}; call("Sleep", 1, delay);
+    call("QueryPerformanceCounter", 1, clock_arg);
+    uint64_t elapsed = (uint64_t)rd(G(clock_arg[0]), 8) - before;
+    if (!frequency || elapsed * 1000 / frequency < 25) return 17;
+    if ((uint64_t)rdtsc_val() - ticks_before < 25000000) return 18;
+    if ((uint32_t)(call("GetTickCount", 0, NULL) - millis_before) < 25) return 19;
+    shim_realtime = 0;
+    call("QueryPerformanceCounter", 1, clock_arg);
+    before = (uint64_t)rd(G(clock_arg[0]), 8);
+    call("QueryPerformanceCounter", 1, clock_arg);
+    if ((uint64_t)rd(G(clock_arg[0]), 8) - before != 16000) return 20;
+    ticks_before = (uint64_t)rdtsc_val();
+    if ((uint64_t)rdtsc_val() - ticks_before != 1000) return 21;
     puts("recompiled file boundary passed");
     return 0;
 }

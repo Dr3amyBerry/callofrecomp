@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#if defined(__i386__) || defined(__x86_64__)
+#include <x86intrin.h>
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -47,6 +50,13 @@ void unsupported(const char *what) { guest_fatal("unsupported %s", what); }
 u128 cpuid_ptr(void) { return SCRATCH; }  // zeroed: report no CPU features
 
 u128 rdtsc_val(void) {
+    if (shim_realtime) {
+#if defined(__i386__) || defined(__x86_64__)
+        return __rdtsc();
+#else
+        return host_counter(); // portable virtual 1-GHz counter
+#endif
+    }
     static uint64_t t;
     return t += 1000;
 }

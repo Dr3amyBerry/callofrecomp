@@ -85,7 +85,7 @@ K(SetLastError) { last_error = A(0); return 0; }
 K(GetCurrentThreadId) { (void)esp; return 1; }
 K(GetCurrentThread) { (void)esp; return 0xFFFFFFFEu; }
 K(GetCurrentProcess) { (void)esp; return 0xFFFFFFFFu; }
-K(GetTickCount) { (void)esp; static uint32_t t = 1000; return t += 16; }
+K(GetTickCount) { (void)esp; static uint32_t t = 1000; return shim_realtime ? host_millis() : (t += 16); }
 K(TlsAlloc) { (void)esp; return tls_next < 64 ? tls_next++ : 0xFFFFFFFFu; }
 K(TlsSetValue) { tls[A(0) & 63] = A(1); return 1; }
 K(TlsGetValue) { return tls[A(0) & 63]; }
@@ -157,8 +157,8 @@ K(GetCPInfo) {  // single-byte code page, default char '?'
     wr(G(A(1) + 4), 1, '?');
     return 1;
 }
-K(QueryPerformanceCounter) { static uint64_t t = 1000000; wr(G(A(0)), 8, t += 16000); return 1; }
-K(QueryPerformanceFrequency) { wr(G(A(0)), 8, 1000000); return 1; }
+K(QueryPerformanceCounter) { static uint64_t t = 1000000; wr(G(A(0)), 8, shim_realtime ? host_counter() : (t += 16000)); return 1; }
+K(QueryPerformanceFrequency) { wr(G(A(0)), 8, shim_realtime ? 1000000000u : 1000000u); return 1; }
 K(GetSystemTimeAsFileTime) { wr(G(A(0)), 8, 0x01C4000000000000ull); return 0; }
 K(GetSystemInfo) {
     memset(G(A(0)), 0, 36);

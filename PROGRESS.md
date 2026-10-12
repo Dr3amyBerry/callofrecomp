@@ -94,6 +94,15 @@ I should not stop merely because a task is large. Work should be split into phas
   12 CTests pass after it. The original campaign probe now replaces the existing
   autosave successfully and continues rendering. A private GL framebuffer capture
   confirms the first-person campaign scene; original assets remain ignored.
+- Reproduced the isolated ADS stutter: 6 distinct aim fractions in 34 rendered
+  transition frames, held between roughly 50-ms server updates. Per-call fake
+  clocks made CPU calibration report 0.0625 MHz and select a no-prediction profile.
+  Real mode now uses monotonic time and native x86 RDTSC; deterministic trace
+  mode remains unchanged. The original engine measures 3.59 GHz, selects its
+  2000-MHz profile and keeps cg_nopredict at its registered default 0. The repeat
+  probe records 26 distinct fractions in 26 transition frames. Clock regression
+  failed before the change (exit 17); all 12 CTests now pass. Existing profiles
+  require restoring cg_nopredict 0; visual user confirmation is pending.
 
 ### Completed foundation
 

@@ -52,7 +52,7 @@ static inline double x87_fsqrt(double a) { return sqrt(a); }
 static inline double x87_frndint(double a) { return nearbyint(a); }
 
 u128 cpuid_ptr(void);
-u128 rdtsc_val(void);  // deterministic counter, not wall time
+u128 rdtsc_val(void);  // real mode: host x86 TSC or portable 1-GHz counter; trace mode: deterministic
 void unsupported(const char *what);
 
 typedef struct { uint32_t start, end; void (*fn)(void); } recomp_chunk;
@@ -115,6 +115,7 @@ extern const thunk_def files_thunks[], misc_thunks[], window_thunks[];
 extern const char *files_game_dir, *files_home_dir;
 extern int shim_realtime;
 uint32_t host_millis(void);
+uint64_t host_counter(void); // monotonic nanoseconds, frequency 1 GHz
 
 void guest_run(void);
 uint32_t guest_call(uint32_t fn, int n, const uint32_t *args);

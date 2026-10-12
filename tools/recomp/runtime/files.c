@@ -1,3 +1,6 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 200809L
+#endif
 // KERNEL32 file-system and system-information shims for the recompiled engine.
 // Guest sees the game at C:\cod. Reads resolve to CODRECOMP_HOME (writable
 // overlay) first, then the original install; writes always go to the overlay,
@@ -12,6 +15,7 @@
 #include "recomp_rt.h"
 
 #ifdef _WIN32
+#include <windows.h>
 #include <direct.h>
 #define mkdir_host(p) _mkdir(p)
 #else
@@ -25,11 +29,19 @@ const char *files_game_dir = ".";
 const char *files_home_dir = "codrecomp_home";
 int shim_realtime;  // 0: deterministic clocks (trace tests), 1: wall clock (engine)
 
-uint32_t host_millis(void) {
+uint64_t host_counter(void) {
+#ifdef _WIN32
+    LARGE_INTEGER counter, frequency;
+    if (!QueryPerformanceCounter(&counter) || !QueryPerformanceFrequency(&frequency))
+        guest_fatal("host performance counter unavailable");
+    return (uint64_t)((u128)(uint64_t)counter.QuadPart * 1000000000u / (uint64_t)frequency.QuadPart);
+#else
     struct timespec ts;
-    timespec_get(&ts, TIME_UTC);
-    return (uint32_t)(ts.tv_sec * 1000ull + ts.tv_nsec / 1000000);
+    if (clock_gettime(CLOCK_MONOTONIC, &ts)) guest_fatal("host monotonic clock unavailable");
+    return (uint64_t)ts.tv_sec * 1000000000u + (uint64_t)ts.tv_nsec;
+#endif
 }
+uint32_t host_millis(void) { return (uint32_t)(host_counter() / 1000000u); }
 
 // Guest path -> path relative to the game root ("main/pak0.pk3"); NULL if outside.
 static int guest_rel(const char *in, char *out, size_t cap) {
