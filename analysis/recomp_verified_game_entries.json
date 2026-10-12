@@ -1,0 +1,19 @@
+{
+  "binary": "gamex86.dll",
+  "sha256": "27930aa3f663d0af39a90e6956c980be1e599e0f0c98191a9fb7eaba61481577",
+  "entries": [
+    {
+      "address": "0x20035480",
+      "first_instruction": "MOV EAX, [0x202DB248]",
+      "static_data_pointer_slot": "0x200A4DE8",
+      "confidence": "observed",
+      "reason": "Original executable instructions referenced by an aligned data pointer; reached during the real training-server initialization but missing from the initial generated code."
+    }
+  ],
+  "export_arguments": [
+    "--discover-data-code-pointers",
+    "--code-entry", "0x20035480"
+  ],
+  "exported_instructions": 144114,
+  "unsupported_pcode_operations": 0
+}

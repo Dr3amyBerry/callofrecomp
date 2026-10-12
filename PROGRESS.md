@@ -447,6 +447,14 @@ See [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation
 - A regression reproduced the invalid initial state (exit 25). Initialized these registers before engine entry; **12/12 CTest tests pass**.
 - The original training run now passes the CRT exception, starts **Server: training**, restarts resources/UI and reaches missing **gamex86.dll callback `0x20035480`** (`recomp_out/engine_training5.log`). Verified original instructions at that address; expanding game-module callback coverage next. This is server initialization, not verified map completion or gameplay.
 
+### Original training resource loading checkpoint — 2026-10-12
+
+- Expanded game-module data-held callback coverage: **188 candidates disassembled**, **144,114 instructions**, zero unsupported p-code operations. Explicit callback `0x20035480` is referenced by original data slot `0x200A4DE8`; hash and reproduction arguments are in [`analysis/recomp_verified_game_entries.json`](analysis/recomp_verified_game_entries.json).
+- Expanded client-module coverage before its deeper map path: **154 candidates disassembled**, **81,941 instructions**, zero unsupported operations. Both regenerated private modules compile with Clang `-O1` and link with the actual engine.
+- Original `spmap training` now runs past the game callback and loads **surfaces, cull groups, visibility, models/entities and lights**, merges lightmaps and initializes the effects system (`recomp_out/engine_training6.log`). This is materially deeper than boot/UI parsing.
+- The next concrete blocker is **mss32.dll!AIL_open_stream**, called from original sound playback at return address `0x00442D9F`. Implement original filesystem-callback access and compressed audio streaming next; no dummy success or audio suppression.
+- Local repository checks remain **12/12 CTest passing**; CI for memory and x87 commits succeeded. Rendered map, movement/input, sustained gameplay and the campaign `pathfinder` map remain unverified. The first mission goal is still active.
+
 ### Phase D — native implementation
 
 - [x] Start portable C/C++ host scaffolding with CMake and an ABI interface target.
