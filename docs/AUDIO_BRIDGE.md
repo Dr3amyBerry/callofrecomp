@@ -45,16 +45,37 @@ a visible working menu. CTest passes 11/11, including deterministic PCM mixing,
 loop/pause/end states, 8-bit byte offsets, x87 float return ABI, WAV metadata,
 resampling, output bounds and malformed metadata rejection.
 
-The latest engine run stops at missing recompiled entry `0x0050B990` after
-passing the verified `0x00518050` callback. Indirect-code coverage remains a
-separate blocker from the unimplemented Miles imports.
+The optimized run passes both recovered callbacks and reaches
+`Common Initialization Complete`. With the double-buffer bridge, it remains
+active for a 40-second observation; visible menu/video output is not yet verified.
+Direct `+set com_introplayed 1 +spmap training` reaches another missing entry,
+`0x0045AA90`, in an original initialization table. The rebuilt engine passes
+it and stops at guest heap exhaustion; runtime memory allocation/release is
+the next blocker. Gameplay is unverified.
 
 The mixer retains positions but does not yet apply spatial attenuation. EAX,
 reverb and preferences are unsupported; the corresponding setters currently
-return without implementing effects. MP3 streams and double-buffer sample
-loading remain unimplemented. Do not treat device startup as full Miles
+return without implementing effects. MP3 streams remain unimplemented.
+Do not treat device startup as full Miles
 compatibility.
 
 Verified callback entries and their original assignment sites are recorded in
 [the code-entry ledger](../analysis/recomp_verified_code_entries.json). Pass its
 export arguments to ExportPcode when recreating the private engine output.
+
+## Double-buffer contract
+
+The optional native x86 probe in `tools/recomp/hosts/miles_buffer_probe.c` loads
+the user's original DLL and measures actual API state transitions. On the
+supplied 2003 DLL: free slots are returned once by `sample_buffer_ready` (a
+reservation); loading starts playback without `start_sample`; both occupied
+slots return -1. `sample_position` is the current buffer's byte offset and
+returns to zero at the next buffer. The original engine's `0x00443D10` submits
+queued cinematic PCM this way. Later Miles versions changed automatic startup;
+see the vendor's [development history](https://www.radgametools.com/msshist.htm).
+
+The SDL bridge copies both buffers into host-owned stereo float memory. Consumed
+slots become reusable; an underrun outputs silence and can accept more PCM.
+A zero-length buffer marks EOF. Invalid submissions release their reservation,
+and `end_sample` discards queued playback. Tests cover alternation, reservation,
+guest-memory independence, position reset, refill, EOF and error recovery.

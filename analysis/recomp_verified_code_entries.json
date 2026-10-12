@@ -15,11 +15,22 @@
       "callback_assignment": "0x0050B9EE",
       "confidence": "observed",
       "reason": "Original instruction assigns this executable address to a callback slot; automatic analysis labeled the entry as data."
+    },
+    {
+      "address": "0x0045AA90",
+      "instruction": "PUSH ESI; followed by original initialization code",
+      "callback_assignment": "0x0045A6ED",
+      "confidence": "observed",
+      "reason": "Executable entry assigned to engine callback table slot 0x008D8984; reached by the original spmap training path but mislabeled as data."
     }
   ],
   "export_arguments": [
     "--discover-data-code-pointers",
-    "--code-entry", "0x00518050",
-    "--code-entry", "0x0050B990"
+    "--code-entry",
+    "0x00518050",
+    "--code-entry",
+    "0x0050B990",
+    "--code-entry",
+    "0x0045AA90"
   ]
 }

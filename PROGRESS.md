@@ -421,6 +421,16 @@ See [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation
 - Music MP3 streams, double-buffer loading, positional attenuation/effects and full menu/map gameplay remain unfinished. Device startup is not proof of audible sound or a visible menu.
 - Public source changes remain separate from ignored generated C, binaries, traces and original assets. See [`docs/AUDIO_BRIDGE.md`](docs/AUDIO_BRIDGE.md).
 
+### Cinematic audio and first PC map attempt — 2026-10-12
+
+- Optimized engine with both recovered RET callbacks reaches **Common Initialization Complete** (`recomp_out/engine_audio7.log`). The next missing import was `AIL_minimum_sample_buffer_size` for cinematic audio.
+- Added a native x86 Miles probe using silent PCM and the supplied original DLL. Measured automatic buffer startup, one-time reservation of free slots, alternating consumption and per-buffer byte positions; no proprietary code or audio is committed.
+- Implemented two owned PCM buffers, minimum buffer sizing, free/reserved/queued states, refill after underrun and EOF. Added regressions for ownership, alternation, position reset, end/EOF and invalid-buffer reservation recovery. **11/11 CTest tests pass.**
+- The engine stays active through a 40-second observation after common initialization (`recomp_out/engine_buffers1.log`). This does **not** prove visible rendering, video completion or gameplay.
+- Direct `+set com_introplayed 1 +spmap training` exercises a resource/UI restart and then reaches missing original code `0x0045AA90` (`recomp_out/engine_training1.log`). Its assignment at `0x0045A6ED` is confirmed by binary disassembly; explicitly exported it, bringing engine coverage to **332,034 instructions**. Optimized compilation is in progress; map completion remains unverified.
+- Optimized rerun passes that entry and now stops at **guest heap exhausted (4096 bytes)** (`recomp_out/engine_training2.log`). The runtime has a 256 MiB bump arena, no-op HeapFree/VirtualFree, and VirtualAlloc shares that arena. Correct allocation/release semantics are the next concrete task; no playable-map claim is made.
+- The first campaign route remains the original `spmap pathfinder`; training is the preliminary map-loading check. MP3 streaming, spatial audio and sustained input/rendering validation remain required.
+
 ### Phase D — native implementation
 
 - [x] Start portable C/C++ host scaffolding with CMake and an ABI interface target.

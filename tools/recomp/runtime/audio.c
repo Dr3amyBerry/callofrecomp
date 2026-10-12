@@ -11,11 +11,18 @@
 #define AUDIO_LIMIT (64u << 20)
 
 typedef struct {
+    float *pcm;
+    uint32_t frames;
+    int state; // 0 free, 1 reserved by buffer_ready, 2 queued
+} pcm_buffer;
+typedef struct {
     int allocated, format, playing;
     float *pcm, volume, pan;
     uint32_t frames, rate, loops;
     double cursor;
     float position[3];
+    pcm_buffer buffers[2];
+    int buffered, active_buffer, eof;
 } sample;
 static sample samples[SAMPLE_MAX];
 static SDL_AudioDeviceID device;
@@ -36,28 +43,52 @@ static int guest_range(uint32_t address, uint32_t size) {
         if (!guest_committed((uint32_t)p)) return 0;
     return 1;
 }
+static void clear_pcm(sample *s) {
+    free(s->pcm); s->pcm = NULL;
+    for (int i = 0; i < 2; i++) { free(s->buffers[i].pcm); s->buffers[i] = (pcm_buffer){0}; }
+    s->frames = 0; s->cursor = 0; s->playing = 0;
+    s->buffered = 0; s->active_buffer = 0; s->eof = 0;
+}
+static float *current_pcm(sample *s, uint32_t *frames) {
+    if (s->buffered) {
+        for (int i = 0; i < 2; i++) {
+            pcm_buffer *b = &s->buffers[s->active_buffer];
+            if (b->state != 2) { s->cursor = 0; if (s->eof) s->playing = 0; *frames = 0; return NULL; }
+            if (s->cursor < b->frames) { *frames = b->frames; return b->pcm; }
+            s->cursor -= b->frames; b->state = 0;
+            s->active_buffer ^= 1;
+        }
+        s->cursor = 0;
+        if (s->eof) s->playing = 0;
+        *frames = 0; return NULL;
+    }
+    if (!s->frames) { *frames = 0; return NULL; }
+    while (s->cursor >= s->frames) {
+        if (s->loops == 1) { s->playing = 0; *frames = 0; return NULL; }
+        if (s->loops > 1) s->loops--;
+        s->cursor -= s->frames;
+    }
+    *frames = s->frames; return s->pcm;
+}
 
 void audio_mix(float *output, uint32_t frames, uint32_t rate) {
     memset(output, 0, (size_t)frames * 2 * sizeof(float));
     if (!rate) return;
     for (int i = 0; i < SAMPLE_MAX; i++) {
         sample *s = &samples[i];
-        if (!s->allocated || s->playing != 4 || !s->pcm || !s->frames) continue;
+        if (!s->allocated || s->playing != 4) continue;
         float left = s->volume * (s->pan > 0.5f ? 2.0f * (1.0f - s->pan) : 1.0f);
         float right = s->volume * (s->pan < 0.5f ? 2.0f * s->pan : 1.0f);
         for (uint32_t f = 0; f < frames; f++) {
-            while (s->cursor >= s->frames) {
-                if (s->loops == 1) { s->playing = 0; break; }
-                if (s->loops > 1) s->loops--;
-                s->cursor -= s->frames;
-            }
-            if (!s->playing) break;
+            uint32_t count;
+            float *pcm = current_pcm(s, &count);
+            if (!pcm || !count || !s->playing) break;
             uint32_t p = (uint32_t)s->cursor;
-            output[2 * f] += s->pcm[2 * p] * left;
-            output[2 * f + 1] += s->pcm[2 * p + 1] * right;
+            output[2 * f] += pcm[2 * p] * left;
+            output[2 * f + 1] += pcm[2 * p + 1] * right;
             s->cursor += (double)s->rate / rate;
         }
-        if (s->cursor >= s->frames && s->loops == 1) s->playing = 0;
+        uint32_t ignored; current_pcm(s, &ignored);
     }
     for (uint32_t i = 0; i < frames * 2; i++) {
         if (output[i] > 1) output[i] = 1;
@@ -90,7 +121,7 @@ K(shutdown) {
     (void)esp;
     if (device) SDL_CloseAudioDevice(device);
     device = 0;
-    for (int i = 0; i < SAMPLE_MAX; i++) { free(samples[i].pcm); memset(&samples[i], 0, sizeof(sample)); }
+    for (int i = 0; i < SAMPLE_MAX; i++) { clear_pcm(&samples[i]); memset(&samples[i], 0, sizeof(sample)); }
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
     return 0;
 }
@@ -118,17 +149,17 @@ K(allocate) {
 }
 K(release) {
     lock(); sample *s = lookup(A(0));
-    if (s) { free(s->pcm); memset(s, 0, sizeof *s); }
+    if (s) { clear_pcm(s); memset(s, 0, sizeof *s); }
     unlock(); return 0;
 }
 K(init) {
     lock(); sample *s = lookup(A(0));
-    if (s) { free(s->pcm); *s = (sample){.allocated = 1, .rate = 22050, .volume = 1, .pan = 0.5f, .loops = 1}; }
+    if (s) { clear_pcm(s); *s = (sample){.allocated = 1, .rate = 22050, .volume = 1, .pan = 0.5f, .loops = 1}; }
     unlock(); return 0;
 }
 K(type) { lock(); sample *s = lookup(A(0)); if (s) s->format = (int)A(1); unlock(); return 0; }
 static int set_pcm(sample *s, uint32_t data, uint32_t bytes) {
-    free(s->pcm); s->pcm = NULL; s->frames = 0; s->cursor = 0; s->playing = 0;
+    clear_pcm(s);
     if (!guest_range(data, bytes) || (s->format & 4)) { error("unsupported or invalid PCM sample"); return 0; }
     uint32_t channels = (s->format & 2) ? 2 : 1, width = (s->format & 1) ? 2 : 1;
     uint32_t frames = bytes / (channels * width);
@@ -159,10 +190,10 @@ K(volume) {
 }
 K(volume_pan) { lock(); sample *s = lookup(A(0)); if (s) { if (A(1)) wr(G(A(1)), 4, d2f(s->volume, 4)); if (A(2)) wr(G(A(2)), 4, d2f(s->pan, 4)); } unlock(); return 0; }
 K(loops) { lock(); sample *s = lookup(A(0)); if (s) s->loops = A(1); unlock(); return 0; }
-K(start) { lock(); sample *s = lookup(A(0)); if (s) { s->cursor = 0; s->playing = s->frames ? 4 : 0; } unlock(); return 0; }
-K(resume) { lock(); sample *s = lookup(A(0)); if (s && s->frames) s->playing = 4; unlock(); return 0; }
+K(start) { lock(); sample *s = lookup(A(0)); if (s && (!s->buffered || s->playing != 4)) { s->cursor = 0; s->playing = s->frames || s->buffered ? 4 : 0; } unlock(); return 0; }
+K(resume) { lock(); sample *s = lookup(A(0)); if (s && (s->frames || s->buffered)) s->playing = 4; unlock(); return 0; }
 K(stop) { lock(); sample *s = lookup(A(0)); if (s) s->playing = 8; unlock(); return 0; }
-K(end) { lock(); sample *s = lookup(A(0)); if (s) { s->playing = 0; s->cursor = s->frames; } unlock(); return 0; }
+K(end) { lock(); sample *s = lookup(A(0)); if (s) { s->playing = 0; s->cursor = s->frames; if (s->buffered) { s->eof = 1; for (int i = 0; i < 2; i++) s->buffers[i].state = 0; } } unlock(); return 0; }
 K(status) { lock(); sample *s = lookup(A(0)); uint32_t v = s && s->playing ? (uint32_t)s->playing : 2; unlock(); return v; }
 K(ms_position) {
     lock(); sample *s = lookup(A(0));
@@ -203,7 +234,7 @@ K(info) {
     uint32_t p = A(1); lock(); sample *s = lookup(A(0));
     uint32_t result = 0;
     if (s) {
-        free(s->pcm); s->pcm = NULL; s->frames = 0; s->cursor = 0; s->playing = 0;
+        clear_pcm(s);
         if (guest_range(p, 36) && mem32(p) == 1 && mem32(p + 12) >= 1000
                 && mem32(p + 12) <= 384000 && (mem32(p + 16) == 8 || mem32(p + 16) == 16)
                 && (mem32(p + 20) == 1 || mem32(p + 20) == 2)) {
@@ -241,6 +272,44 @@ K(process) {
     if (A(1) > bytes) memset(G(A(0) + bytes), 0, A(1) - bytes);
     free(pcm); return 1;
 }
+K(minimum_buffer) {
+    uint32_t rate = A(1), format = A(2);
+    if (rate < 1000 || rate > 384000 || format > 3) return 0;
+    uint32_t width = ((format & 1) ? 2 : 1) * ((format & 2) ? 2 : 1);
+    uint32_t bytes = (uint32_t)(((uint64_t)2048 * rate + output_rate - 1) / output_rate) * width;
+    return bytes < 4096 ? 4096 : (bytes + 31) & ~31u;
+}
+K(buffer_ready) {
+    lock(); sample *s = lookup(A(0)); uint32_t slot = UINT32_MAX;
+    if (s) for (int i = 0; i < 2; i++) if (!s->buffers[i].state) {
+        s->buffers[i].state = 1; slot = (uint32_t)i; break;
+    }
+    unlock(); return slot;
+}
+K(load_buffer) {
+    lock(); sample *s = lookup(A(0)); uint32_t slot = A(1), result = 0;
+    if (s && slot < 2 && s->buffers[slot].state != 2) {
+        if (!A(3)) { s->eof = 1; s->buffers[slot].state = 0; result = 1; }
+        else {
+            sample copy = {.format = s->format};
+            if (set_pcm(&copy, A(2), A(3))) {
+                if (!s->buffered) { free(s->pcm); s->pcm = NULL; s->frames = 0; s->cursor = 0; s->buffered = 1; s->active_buffer = (int)slot; }
+                pcm_buffer *b = &s->buffers[slot]; free(b->pcm);
+                *b = (pcm_buffer){copy.pcm, copy.frames, 2};
+                if (s->buffers[s->active_buffer].state != 2) { s->active_buffer = (int)slot; s->cursor = 0; }
+                s->eof = 0; if (s->playing != 8) s->playing = 4; result = 1;
+            }
+        }
+    }
+    if (!result) {
+        error("invalid or occupied audio buffer");
+        if (s && slot < 2 && s->buffers[slot].state != 2) {
+            s->buffers[slot].state = 0;
+            if (s->buffered && s->buffers[0].state != 2 && s->buffers[1].state != 2) s->playing = 0;
+        }
+    }
+    unlock(); return result;
+}
 K(zero) { (void)esp; return 0; }
 
 #define M(name, fn, pop) {"mss32.dll", "_AIL_" name "@" #pop, k_##fn, pop}
@@ -263,6 +332,8 @@ const thunk_def audio_thunks[] = {
     M("sample_status", status, 4), M("3D_sample_status", status, 4),
     M("sample_ms_position", ms_position, 12), M("set_sample_ms_position", set_ms_position, 8),
     M("sample_position", offset, 4), M("3D_sample_offset", offset, 4), M("set_3D_sample_offset", set_offset, 8),
+    M("minimum_sample_buffer_size", minimum_buffer, 12), M("sample_buffer_ready", buffer_ready, 4),
+    M("load_sample_buffer", load_buffer, 16),
     M("3D_sample_length", length, 4), M("set_3D_position", position, 16), M("3D_position", get_position, 16),
     M("WAV_info", wav_info, 8), M("set_sample_reverb_levels", zero, 12), M("set_3D_sample_effects_level", zero, 8),
     M("size_processed_digital_audio", processed_size, 16), M("process_digital_audio", process, 24),

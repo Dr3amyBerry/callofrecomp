@@ -109,6 +109,60 @@ int main(void) {
             || memcmp(G(mem32(info + 4)), G(pcm), 8)) return 20;
     args[1] = 0;
     if (invoke("_AIL_WAV_info@8", 2, args)) return 21;
+    args[0] = sample;
+    invoke("_AIL_init_sample@4", 1, args);
+    args[1] = 1; args[2] = 0;
+    invoke("_AIL_set_sample_type@12", 3, args);
+    args[1] = 22050;
+    invoke("_AIL_set_sample_playback_rate@8", 2, args);
+    // Native Miles 6 claims each free slot once and auto-starts queued buffers.
+    if (invoke("_AIL_sample_buffer_ready@4", 1, args) != 0
+            || invoke("_AIL_sample_buffer_ready@4", 1, args) != 1
+            || invoke("_AIL_sample_buffer_ready@4", 1, args) != UINT32_MAX) return 22;
+    args[1] = 0; args[2] = pcm; args[3] = 8;
+    invoke("_AIL_load_sample_buffer@16", 4, args);
+    args[1] = 1;
+    invoke("_AIL_load_sample_buffer@16", 4, args);
+    // The callback owns copies, so guest memory changes cannot alter playback.
+    memset(G(pcm), 0, 8);
+    audio_mix(out, 4, 22050);
+    for (int i = 0; i < 8; i++) if (fabsf(out[i] - 0.5f) > 0.001f) return 23;
+    if (invoke("_AIL_sample_buffer_ready@4", 1, args) != 0) return 24;
+    if (invoke("_AIL_sample_position@4", 1, args) != 0) return 30;
+    audio_mix(out, 4, 22050);
+    for (int i = 0; i < 8; i++) if (fabsf(out[i] - 0.5f) > 0.001f) return 25;
+    if (invoke("_AIL_sample_buffer_ready@4", 1, args) != 1) return 26;
+    audio_mix(out, 4, 22050);
+    for (int i = 0; i < 8; i++) if (out[i] != 0) return 27;
+    // An underrun stays recoverable; a later valid buffer resumes automatically.
+    for (int i = 0; i < 4; i++) wr(G(pcm + 2*i), 2, 16384);
+    args[1] = 0;
+    invoke("_AIL_load_sample_buffer@16", 4, args);
+    audio_mix(out, 2, 22050);
+    if (invoke("_AIL_sample_position@4", 1, args) != 4) return 28;
+    invoke("_AIL_end_sample@4", 1, args);
+    audio_mix(out, 2, 22050);
+    if (out[0] != 0 || invoke("_AIL_sample_status@4", 1, args) != 2) return 29;
+    invoke("_AIL_init_sample@4", 1, args);
+    args[1] = 1; args[2] = 0;
+    invoke("_AIL_set_sample_type@12", 3, args);
+    args[1] = 0; args[2] = pcm; args[3] = 8;
+    invoke("_AIL_load_sample_buffer@16", 4, args);
+    args[1] = 1;
+    invoke("_AIL_load_sample_buffer@16", 4, args);
+    audio_mix(out, 4, 22050);
+    args[1] = 0; args[3] = 0;
+    invoke("_AIL_load_sample_buffer@16", 4, args);
+    audio_mix(out, 4, 22050);
+    if (invoke("_AIL_sample_status@4", 1, args) != 2) return 31;
+    invoke("_AIL_init_sample@4", 1, args);
+    for (int i = 0; i < 3; i++) {
+        uint32_t slot = invoke("_AIL_sample_buffer_ready@4", 1, args);
+        if (slot > 1) return 32;
+        args[1] = slot; args[2] = 0; args[3] = 8;
+        invoke("_AIL_load_sample_buffer@16", 4, args);
+    }
+    if (invoke("_AIL_sample_status@4", 1, args) != 2) return 33;
     puts("portable PCM audio passed");
     return 0;
 }
