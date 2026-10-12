@@ -55,6 +55,11 @@ I should not stop merely because a task is large. Work should be split into phas
   original menus, but a first frame/gameplay is still unverified. An isolated
   SDL inline-atomic experiment did not resolve it and was removed. An optimized
   native x86-64 comparison is being built; do not treat packaging as playability.
+- Android host/build commit `bd071cb` pushed; GitHub CI `38278346310` passed.
+- A restricted desktop CTest run exposed missing LLVM-MinGW `libc++.dll` and
+  `libunwind.dll`, producing Windows loader dialogs. The build now deploys C++
+  runtime DLLs once for all C++ tests. Reproduction changed from status
+  `0xC0000135` to exit 0 in the same restricted environment; 12/12 checks pass.
 
 ### PC mission checkpoint — 2026-10-12
 

@@ -96,6 +96,33 @@ if(CODRECOMP_BUILD_TESTS)
     target_link_libraries(codrecomp_searchpath_locale_filter_smoke PRIVATE codrecomp_searchpath_order)
     add_test(NAME searchpath_locale_filter_smoke COMMAND codrecomp_searchpath_locale_filter_smoke)
 
+    # LLVM-MinGW C++ executables need their toolchain DLLs beside the tests.
+    # Do not depend on the developer's PATH to locate libc++/libunwind.
+    if(WIN32 AND MINGW)
+        get_filename_component(cxx_bin "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        set(cxx_runtime_dlls)
+        foreach(runtime_name libc++.dll libunwind.dll libwinpthread-1.dll)
+            if(EXISTS "${cxx_bin}/${runtime_name}")
+                list(APPEND cxx_runtime_dlls "${cxx_bin}/${runtime_name}")
+            endif()
+        endforeach()
+        if(cxx_runtime_dlls)
+            set(cxx_runtime_dir "${CMAKE_CURRENT_BINARY_DIR}")
+            if(CMAKE_CONFIGURATION_TYPES)
+                string(APPEND cxx_runtime_dir "/$<CONFIG>")
+            endif()
+            add_custom_target(codrecomp_test_runtime
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${cxx_runtime_dir}"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${cxx_runtime_dlls} "${cxx_runtime_dir}"
+                VERBATIM)
+            foreach(cpp_test codrecomp_vfs_smoke codrecomp_host_adapter_smoke
+                    codrecomp_guest_vm_bridge_smoke codrecomp_searchpath_order_smoke
+                    codrecomp_searchpath_locale_filter_smoke)
+                add_dependencies(${cpp_test} codrecomp_test_runtime)
+            endforeach()
+        endif()
+    endif()
+
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.
     find_package(Python3 COMPONENTS Interpreter QUIET)
