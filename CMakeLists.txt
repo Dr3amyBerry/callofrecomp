@@ -130,6 +130,11 @@ if(CODRECOMP_BUILD_TESTS)
 
         find_package(SDL2 CONFIG QUIET)
         if(SDL2_FOUND)
+            add_executable(codrecomp_recomp_audio_smoke
+                tests/recomp_audio_smoke.c tools/recomp/runtime/audio.c)
+            target_compile_definitions(codrecomp_recomp_audio_smoke PRIVATE SDL_MAIN_HANDLED)
+            target_include_directories(codrecomp_recomp_audio_smoke PRIVATE tools/recomp/runtime)
+            target_link_libraries(codrecomp_recomp_audio_smoke PRIVATE codrecomp_pcode_runtime SDL2::SDL2)
             add_executable(codrecomp_recomp_gl_strings_smoke
                 tests/recomp_gl_strings_smoke.c tools/recomp/runtime/window.c
                 tools/recomp/runtime/gl_thunks.c)
@@ -138,11 +143,14 @@ if(CODRECOMP_BUILD_TESTS)
             target_link_libraries(codrecomp_recomp_gl_strings_smoke PRIVATE
                 codrecomp_pcode_runtime SDL2::SDL2)
             if(WIN32)
-                add_custom_command(TARGET codrecomp_recomp_gl_strings_smoke POST_BUILD
+                foreach(sdl_test codrecomp_recomp_gl_strings_smoke codrecomp_recomp_audio_smoke)
+                add_custom_command(TARGET ${sdl_test} POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    $<TARGET_FILE:SDL2::SDL2> $<TARGET_FILE_DIR:codrecomp_recomp_gl_strings_smoke>)
+                    $<TARGET_FILE:SDL2::SDL2> $<TARGET_FILE_DIR:${sdl_test}>)
+                endforeach()
             endif()
             add_test(NAME recomp_gl_strings_smoke COMMAND codrecomp_recomp_gl_strings_smoke)
+            add_test(NAME recomp_audio_smoke COMMAND codrecomp_recomp_audio_smoke)
         endif()
     endif()
 endif()

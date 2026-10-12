@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "gl_thunks.h"
+#include "audio.h"
 
 extern const recomp_module recomp_module_codsp, recomp_module_uix86, recomp_module_cgamex86, recomp_module_gamex86;
 
@@ -37,6 +38,7 @@ int main(int argc, char **argv) {
     shims_register(misc_thunks);
     shims_register(window_thunks);
     shims_register(gl_thunks);
+    shims_register(audio_thunks);
     host_dll_register("opengl32.dll");
     module_register_available(&recomp_module_uix86, join(argv[1], "uix86.dll"));
     module_register_available(&recomp_module_cgamex86, join(argv[1], "cgamex86.dll"));

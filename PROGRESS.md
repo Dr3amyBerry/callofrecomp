@@ -406,6 +406,19 @@ See [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation
 - Current engine execution reaches `----- finished R_Init -----`, then stops at missing `mss32.dll!_AIL_set_file_callbacks@16`. **Menu, map loading, audio and Android renderer execution are not verified.**
 - ADB currently lists no connected devices. Desktop work can continue; device validation requires a device when the Android host is ready.
 
+### Audio and callback recovery checkpoint — 2026-10-12
+
+- User clarified the immediate objective: **first mission playable on PC**, before Android gameplay validation.
+- Added a portable Miles-import boundary backed by SDL audio: owned PCM buffers, WAV decoding, conversion, volume/pan/rate, looping and playback state. The audio callback never executes guest code.
+- Real-engine run `recomp_out/engine_audio4.log` opens **44,100 Hz stereo float**, initializes 32 positional channels and parses every UI menu through `ui/pregame.menu`.
+- Extended p-code export to discover indirect callbacks stored in initialized non-executable data. UI export now contains **40,507 instructions**; the engine contains **331,853** after explicit recovery of a verified code entry mislabeled as data.
+- Missing UI callback `0x40016DB0` was verified against original instructions and recovered. The subsequent engine blocker `0x00518050` is an original `RET` stored as a callback by `0x00518073`; exported with `--code-entry 0x00518050`.
+- Rebuilt and ran the engine again: it passes that recovered callback and stops at another missing entry, `0x0050B990` (`recomp_out/engine_audio5.log`). Recover remaining indirect entries before claiming menu completion.
+- UI traces still have **10,867 lines** in both runs. The generic comparator reports three differences in surplus logged argument words (IDs 51/26/8), so its strict exit status is not a clean comparison; do not report that command as passing.
+- Review found and tests reproduced audio ABI/state bugs (x87 float return, 8-bit offsets, stale-buffer replay) plus invalid metadata acceptance. Fixed them before commit; **11/11 CTest tests pass** including WAV decoding and malformed metadata rejection.
+- Music MP3 streams, double-buffer loading, positional attenuation/effects and full menu/map gameplay remain unfinished. Device startup is not proof of audible sound or a visible menu.
+- Public source changes remain separate from ignored generated C, binaries, traces and original assets. See [`docs/AUDIO_BRIDGE.md`](docs/AUDIO_BRIDGE.md).
+
 ### Phase D — native implementation
 
 - [x] Start portable C/C++ host scaffolding with CMake and an ABI interface target.
