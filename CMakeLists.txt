@@ -9,7 +9,19 @@ target_include_directories(codrecomp_abi INTERFACE
 
 # Portable virtual filesystem and PK3 (ZIP store / raw DEFLATE) reader.
 # Android NDK provides libz; keep the core independent of proprietary game files.
-find_package(ZLIB REQUIRED)
+# Falls back to a pinned static zlib when the host has none (e.g. bare Windows).
+find_package(ZLIB QUIET)
+if(NOT ZLIB_FOUND)
+    include(FetchContent)
+    set(ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(zlib
+        URL https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
+        URL_HASH SHA256=9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+        EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable(zlib)
+    target_include_directories(zlibstatic PUBLIC ${zlib_SOURCE_DIR} ${zlib_BINARY_DIR})
+    add_library(ZLIB::ZLIB ALIAS zlibstatic)
+endif()
 add_library(codrecomp_vfs STATIC src/vfs.cpp)
 target_link_libraries(codrecomp_vfs PUBLIC ZLIB::ZLIB)
 target_link_libraries(codrecomp_vfs PUBLIC codrecomp_abi)

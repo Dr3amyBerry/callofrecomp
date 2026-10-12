@@ -369,7 +369,8 @@ See [`analysis/localization_searchpath.md`](analysis/localization_searchpath.md)
 - [x] Recover the observed per-node language acceptance checks in two filesystem lookup branches; independent model and tests added.
 - [ ] Recover initialization/updates of language and rejection globals, the complete startup discovery sequence and only then integrate it with the VFS.
 - [x] Implement bounded-memory sequential reads of loose files, ZIP-stored and raw-DEFLATE PK3 members, with end-of-stream integrity checks.
-- [ ] Implement verified seek behavior and precise error mapping; keep original mount selection unresolved.
+- [x] Implement bounded seek (replay-based, CRC-preserving) through VFS streams and host handles.
+- [ ] Precise original error mapping; keep original mount selection unresolved.
 - [ ] Reconstruct configuration and localization loading.
 - [ ] Trace single-player startup from process entry to first rendered frame.
 
@@ -427,7 +428,8 @@ These are tool/environment limitations, not reasons to abandon the project.
 At the time of this update the working environment has:
 
 - available: Python, GNU `objdump`, `llvm-objdump`, Clang/Clang++, CMake, Ninja
-- not currently available: Ghidra headless tools, radare2/rizin, Android SDK, Android NDK, `adb`
+- available on the local Windows workstation (2026-10-11): Ghidra 12.1.4 headless (`tools/ghidra_decompile.sh`), JDK 21, Android SDK + `adb`
+- not currently available: radare2/rizin, Android NDK, GNU binutils on Windows (tools fall back to `llvm-objdump`)
 
 When one of the missing tools becomes the most efficient or necessary path, I should record the exact requirement here and ask the user to provide/enable it rather than making the user perform the analysis manually.
 
@@ -494,7 +496,7 @@ These are anticipated, not yet active blockers:
 
 | Tool/capability | Why it may be needed | When to request it |
 |---|---|---|
-| Ghidra headless | scalable decompilation, p-code, xrefs, function recovery | when custom/static tooling stops being efficient for large-scale function reconstruction |
+| Ghidra headless | scalable decompilation, p-code, xrefs, function recovery | **installed**; full SP decompilation is exported to ignored `decomp/` |
 | Android NDK | native ARM64 compilation | when the reconstructed portable core reaches Android build stage |
 | Android SDK + adb or accessible emulator/device | install/run/log/debug | when first Android binary is ready |
 | Optional debugger/emulator | runtime behavioral validation of original x86 code | only if static evidence is insufficient for a specific behavior |

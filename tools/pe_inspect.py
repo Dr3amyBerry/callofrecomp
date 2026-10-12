@@ -290,6 +290,23 @@ def compact_text(report: dict) -> str:
     return "\n".join(lines)
 
 
+
+def default_objdump() -> str:
+    """Return a runnable objdump: $CODRECOMP_OBJDUMP, GNU objdump, then llvm-objdump.
+
+    On Windows, extension-less wrapper scripts (e.g. llvm-mingw's ``objdump``)
+    are found by ``shutil.which`` but cannot be spawned by ``subprocess``.
+    """
+    import os
+    import shutil
+    if os.getenv('CODRECOMP_OBJDUMP'):
+        return os.environ['CODRECOMP_OBJDUMP']
+    for name in ('objdump', 'llvm-objdump'):
+        found = shutil.which(name)
+        if found and (os.name != 'nt' or found.lower().endswith('.exe')):
+            return found
+    return 'objdump'
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Inspect legacy PE32 binaries without modifying them")
     parser.add_argument("files", nargs="+", type=Path)

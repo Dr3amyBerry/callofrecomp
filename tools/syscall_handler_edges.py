@@ -16,6 +16,7 @@ from bisect import bisect_right
 from pathlib import Path
 
 from engine_vm_probe import PEFile, PEFormatError, recover_syscall_dispatch
+from pe_inspect import default_objdump
 
 BRANCH_RE = re.compile(
     r"^\s*(?P<va>[0-9a-fA-F]+):\s+"
@@ -57,7 +58,7 @@ def analyze(
     start_id: int,
     end_id: int,
     max_handler_bytes: int = 192,
-    objdump: str = "objdump",
+    objdump: str | None = None,
 ) -> dict:
     if start_id < 0 or end_id < start_id or max_handler_bytes < 1:
         raise ValueError("invalid syscall range or max-handler-bytes")
@@ -85,7 +86,7 @@ def analyze(
                 "entry_rva": va - pe.image_base,
                 "scan_end_va": end,
                 "scan_bytes": end - va,
-                "direct_edges": decoded_direct_edges(exe, va, end, objdump),
+                "direct_edges": decoded_direct_edges(exe, va, end, objdump or default_objdump()),
             }
     return {
         "schema_version": 1,
@@ -108,7 +109,7 @@ def main() -> int:
     parser.add_argument("--start-id", required=True, type=int)
     parser.add_argument("--end-id", required=True, type=int)
     parser.add_argument("--max-handler-bytes", type=int, default=192)
-    parser.add_argument("--objdump", default="objdump")
+    parser.add_argument("--objdump", default=None)
     parser.add_argument("--json", dest="json_path", type=Path)
     args = parser.parse_args()
     try:

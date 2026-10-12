@@ -15,10 +15,10 @@ import struct
 import subprocess
 from pathlib import Path
 
-from pe_inspect import PEFile, PEFormatError
+from pe_inspect import PEFile, PEFormatError, default_objdump
 
 INSN_RE = re.compile(r'^\s*([a-fA-F0-9]+):\s+(?:[a-fA-F0-9]{2}\s+)+\s*([a-z][a-z0-9]*)\s*(.*?)\s*$')
-ESP_REF = re.compile(r'^DWORD PTR \[esp(?:\+0x([0-9a-f]+))?\]$', re.IGNORECASE)
+ESP_REF = re.compile(r'^DWORD PTR \[esp(?:\s*\+\s*0x([0-9a-f]+))?\]$', re.IGNORECASE)
 REGS = ('eax', 'ecx', 'edx', 'ebx', 'esi', 'edi')
 
 
@@ -105,7 +105,8 @@ def recover_wrapper_start(pe: PEFile, call_offset: int, lookback: int = 64) -> i
 
 
 def inspect(pe: PEFile, wanted: list[int], window: int = 1024,
-            objdump: str = 'objdump') -> dict:
+            objdump: str | None = None) -> dict:
+    objdump = objdump or default_objdump()
     exports = {item['name']: item for item in pe.exports()}
     entry = exports.get('dllEntry')
     if entry is None:
@@ -174,7 +175,7 @@ def main() -> int:
     parser.add_argument('module', type=Path)
     parser.add_argument('--ids', required=True, help='comma-separated syscall IDs')
     parser.add_argument('--wrapper-span', type=int, default=1024)
-    parser.add_argument('--objdump', default='objdump')
+    parser.add_argument('--objdump', default=None)
     parser.add_argument('--require-sha256', help='refuse input if SHA-256 does not match')
     parser.add_argument('--json', dest='json_path', type=Path)
     args = parser.parse_args()

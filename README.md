@@ -187,6 +187,19 @@ CODRECOMP_ORIGINALS=originals python -m unittest discover -s tests -p 'test_*.py
 The tests use synthetic PE fixtures in CI; proprietary game files are never
 required or committed. The Python tests are also registered with CTest.
 
+### Ghidra headless decompilation
+
+Exports decompiled C, a function index and defined strings for each SP binary
+into `decomp/<binary>/` (git-ignored: it is derived from proprietary code).
+Requires Ghidra 11+ and a JDK 21.
+
+```bash
+GHIDRA_HOME=/path/to/ghidra tools/ghidra_decompile.sh originals decomp
+```
+
+Decompiler output is a navigation aid for evidence gathering, **not** source to
+commit or ship; reconstructed code must still be written and validated cleanly.
+
 ### PK3 inventory
 
 Reads PK3/ZIP metadata without extracting the archive:

@@ -146,6 +146,9 @@ int main(int argc, char** argv) {
     { std::ofstream bad(test_dir / "invalid.pk3"); bad << "not zip"; }
     { std::ofstream loose(test_dir / "loose" / "scripts" / "hello.cfg"); loose << "hello-from-loose"; }
 
+    // Scope every Vfs/stream so archive handles close before cleanup (Windows
+    // refuses to delete files that are still open).
+    {
     Vfs vfs;
     assert(!vfs.mount_pk3(test_dir / "invalid.pk3"));
     assert(!vfs.mount_pk3(test_dir / "traversal.pk3"));
@@ -311,6 +314,7 @@ int main(int argc, char** argv) {
             std::cout << "real localization PK3 contents and CRC verified\n";
         }
         std::cout << "original PK3 mounted: " << mount.entries << " entries\n";
+    }
     }
     fs::remove_all(test_dir);
     std::cout << "VFS smoke checks passed\n";
