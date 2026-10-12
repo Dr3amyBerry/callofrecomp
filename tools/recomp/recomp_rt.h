@@ -56,10 +56,48 @@ u128 rdtsc_val(void);  // deterministic counter, not wall time
 void unsupported(const char *what);
 
 typedef struct { uint32_t start, end; void (*fn)(void); } recomp_chunk;
-typedef struct { const char *name; uint32_t iat_va; } recomp_import;
-extern const recomp_chunk recomp_chunks[];
-extern const int recomp_chunk_count;
-extern const recomp_import recomp_imports[];
-extern const int recomp_import_count;
-extern const uint32_t recomp_export_dllEntry, recomp_export_vmMain;
-extern const uint32_t recomp_image_base, recomp_image_size;
+typedef struct { const char *dll, *name; uint32_t iat_va; } recomp_import;
+typedef struct { const char *name; uint32_t va; } recomp_export;
+typedef struct {
+    const char *name;  // original file name, e.g. "uix86.dll"
+    uint32_t image_base, image_size, entry_point;
+    const recomp_chunk *chunks;
+    int chunk_count;
+    const recomp_import *imports;  // terminated by {0}
+    const recomp_export *exports;  // terminated by {0}
+} recomp_module;
+
+// ---- runtime/guest.c ----
+enum { REG_EAX = 0x0, REG_ECX = 0x4, REG_EDX = 0x8, REG_ESP = 0x10, REG_FS_OFFSET = 0x110 };
+#define GUEST_EXIT_PC 0xFFFFFFF0u
+
+void guest_init(void);
+void guest_commit(uint32_t addr, uint32_t size);
+int guest_committed(uint32_t addr);
+uint32_t guest_alloc(uint32_t size);  // zeroed, from the guest heap
+uint32_t guest_strdup(const char *s);
+static inline uint32_t reg32(uint32_t off) { return (uint32_t)rd(R + off, 4); }
+static inline void set_reg32(uint32_t off, uint32_t v) { wr(R + off, 4, v); }
+static inline uint32_t mem32(uint32_t a) { return (uint32_t)rd(G(a), 4); }
+#define ARG(esp, i) mem32((esp) + 4 + 4 * (i))  // stack argument i of a thunk call
+
+// Host functions callable from guest code. fn receives guest ESP (pointing at
+// the return address) and returns EAX; pop = argument bytes the callee
+// removes (stdcall) or 0 (cdecl).
+typedef uint32_t (*thunk_fn)(uint32_t esp);
+typedef struct { const char *dll, *name; thunk_fn fn; int pop; } thunk_def;
+uint32_t thunk_address(const char *dll, const char *name, thunk_fn fn, int pop);
+void shims_register(const thunk_def *table);  // table terminated by {0}
+
+int module_load(const recomp_module *m, const char *path);  // 0 on failure
+const recomp_module *module_by_name(const char *name);
+uint32_t module_export(const recomp_module *m, const char *name);
+void module_register_available(const recomp_module *m, const char *path);  // for LoadLibraryA
+const char *module_available_path(const char *name, const recomp_module **out);
+const recomp_module *module_loaded_at(uint32_t base);
+extern uint32_t guest_main_base;
+extern const thunk_def kernel32_thunks[];
+
+void guest_run(void);
+uint32_t guest_call(uint32_t fn, int n, const uint32_t *args);
+void guest_fatal(const char *fmt, ...);

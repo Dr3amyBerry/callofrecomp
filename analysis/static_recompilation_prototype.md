@@ -53,6 +53,14 @@ because the recompiled `PC` is only updated at block dispatch.
 Timing for the full UI init: 0.16 s recompiled (`-O1`, unoptimised design)
 versus 0.06 s native.
 
+## Android ARM64 (real device)
+
+The same generated C, built with NDK r30 (`aarch64-linux-android30-clang`)
+against the portable runtime (`mmap`-reserved guest space, POSIX fault
+handler), was run on an arm64-v8a device via `adb`. Its trace for `uix86.dll`
+equals the native Windows x86 trace (10,867 lines, only unused-stack fields
+differ) and the full init takes 0.10 s on the device.
+
 ## Known limitations
 
 - x87 80-bit values are carried as `double`; 10-byte memory loads/stores

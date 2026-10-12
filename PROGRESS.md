@@ -382,7 +382,7 @@ and pair them with an ioquake3-derived engine adapted to CoD syscalls/formats.
 - [x] Ghidra p-code exporter and `pcode2c.py` generator; zero unsupported ops across ui/cgame/game.
 - [x] Recompiled `uix86.dll` matches the real DLL's 10,856-syscall init trace (DllMain + 5 vmMain calls).
 - [x] Recompiled `cgamex86.dll` / `gamex86.dll` match the real DLLs up to the same harness-induced crash.
-- [ ] Build the generated C for Android ARM64 (needs NDK) and rerun the trace check there.
+- [x] Build the generated C for Android ARM64 (NDK r30) and rerun the trace check on a real device: identical.
 - [ ] Richer fake engine so game/cgame run past init; then wire real engine syscalls.
 - [ ] Evaluate ioquake3 as engine base against the decompiled `CoDSP.exe`.
 
@@ -443,7 +443,8 @@ At the time of this update the working environment has:
 
 - available: Python, GNU `objdump`, `llvm-objdump`, Clang/Clang++, CMake, Ninja
 - available on the local Windows workstation (2026-10-11): Ghidra 12.1.4 headless (`tools/ghidra_decompile.sh`), JDK 21, Android SDK + `adb`
-- not currently available: radare2/rizin, Android NDK, GNU binutils on Windows (tools fall back to `llvm-objdump`)
+- Android NDK r30 installed (2026-10-12); an arm64-v8a device is reachable over adb
+- not currently available: radare2/rizin, GNU binutils on Windows (tools fall back to `llvm-objdump`)
 
 When one of the missing tools becomes the most efficient or necessary path, I should record the exact requirement here and ask the user to provide/enable it rather than making the user perform the analysis manually.
 
