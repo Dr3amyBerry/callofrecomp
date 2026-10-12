@@ -55,6 +55,7 @@ u128 rdtsc_val(void) {
 static uint8_t committed[1u << 20];  // one flag per 4 KiB page
 
 void guest_commit(uint32_t addr, uint32_t size) {
+    if ((uint64_t)addr + size > (1ull << 32)) guest_fatal("commit outside guest memory");
     uint32_t first = addr >> 12, last = (uint32_t)(((uint64_t)addr + size + 4095) >> 12);
     for (uint32_t p = first; p < last; p++) {
         if (committed[p]) continue;
@@ -71,16 +72,148 @@ void guest_commit(uint32_t addr, uint32_t size) {
 int guest_committed(uint32_t addr) { return committed[addr >> 12]; }
 
 static uint32_t heap_top = HEAP_BASE;
+typedef struct heap_block {
+    uint32_t base, span, size;
+    struct heap_block *next;
+} heap_block;
+static heap_block *heap_live[4096], *heap_free;
+static unsigned heap_hash(uint32_t address) { return (address >> 4) & 4095; }
+static heap_block *heap_find(uint32_t address) {
+    for (heap_block *b = heap_live[heap_hash(address)]; b; b = b->next)
+        if (b->base + 16 == address) return b;
+    return NULL;
+}
+uint32_t guest_heap_alloc(uint32_t size) {
+    uint64_t span64 = 16 + (((uint64_t)(size ? size : 1) + 15) & ~15ull);
+    if (span64 > HEAP_SIZE) return 0;
+    uint32_t span = (uint32_t)span64;
+    heap_block *b = NULL;
+    heap_block **link = &heap_free;
+    while (*link && (*link)->span < span) link = &(*link)->next;
+    if (*link) {
+        b = *link;
+        if (b->span > span) {
+            heap_block *rest = malloc(sizeof *rest);
+            if (!rest) return 0;
+            *rest = (heap_block){b->base + span, b->span - span, 0, b->next};
+            *link = rest;
+        } else *link = b->next;
+    } else {
+        if ((uint64_t)heap_top + span > (uint64_t)HEAP_BASE + HEAP_SIZE) return 0;
+        b = malloc(sizeof *b); if (!b) return 0;
+        b->base = heap_top; heap_top += span;
+    }
+    b->span = span; b->size = size;
+    uint32_t p = b->base + 16;
+    unsigned hash = heap_hash(p); b->next = heap_live[hash]; heap_live[hash] = b;
+    guest_commit(b->base, span); wr(G(b->base), 4, size);
+    memset(G(p), 0, size); return p;
+}
+int guest_heap_free(uint32_t address) {
+    heap_block **live = &heap_live[heap_hash(address)];
+    while (*live && (*live)->base + 16 != address) live = &(*live)->next;
+    if (!*live) return 0;
+    heap_block *b = *live; *live = b->next; b->size = 0;
+    heap_block **link = &heap_free, *previous = NULL;
+    while (*link && (*link)->base < b->base) { previous = *link; link = &(*link)->next; }
+    b->next = *link; *link = b;
+    if (b->next && b->base + b->span == b->next->base) {
+        heap_block *next = b->next; b->span += next->span; b->next = next->next; free(next);
+    }
+    if (previous && previous->base + previous->span == b->base) {
+        previous->span += b->span; previous->next = b->next; free(b);
+    }
+    return 1;
+}
+uint32_t guest_heap_size(uint32_t address) {
+    heap_block *b = heap_find(address); return b ? b->size : UINT32_MAX;
+}
+uint32_t guest_heap_realloc(uint32_t address, uint32_t size, uint32_t flags) {
+    heap_block *b = heap_find(address); if (!b) return 0;
+    if (size <= b->span - 16) {
+        if ((flags & 8) && size > b->size) memset(G(address + b->size), 0, size - b->size);
+        b->size = size; wr(G(b->base), 4, size); return address;
+    }
+    if (flags & 0x10) return 0; // HEAP_REALLOC_IN_PLACE_ONLY
+    uint32_t p = guest_heap_alloc(size); if (!p) return 0;
+    memcpy(G(p), G(address), b->size < size ? b->size : size);
+    guest_heap_free(address); return p;
+}
 
 uint32_t guest_alloc(uint32_t size) {
-    uint32_t p = heap_top + 16;
-    uint64_t top = ((uint64_t)p + size + 15) & ~15ull;
-    if (top > HEAP_BASE + HEAP_SIZE) guest_fatal("guest heap exhausted (%u bytes)", size);
-    heap_top = (uint32_t)top;
-    guest_commit(p - 16, size + 16);
-    wr(G(p - 16), 4, size);
-    memset(G(p), 0, size);
+    uint32_t p = guest_heap_alloc(size);
+    if (!p) guest_fatal("guest heap exhausted (%u bytes)", size);
     return p;
+}
+
+// Virtual reservations are independent of the CRT heap and module images.
+#define VIRTUAL_BASE 0x80000000u
+#define VIRTUAL_END  0xF0000000ull
+typedef struct virtual_region {
+    uint32_t base, size;
+    struct virtual_region *next;
+} virtual_region;
+static virtual_region *virtual_regions;
+static void guest_decommit(uint32_t base, uint32_t size) {
+    if (!size) return;
+#ifdef _WIN32
+    if (!VirtualFree(MEM + base, size, MEM_DECOMMIT)) guest_fatal("decommit failed");
+#else
+    if (madvise(MEM + base, size, MADV_DONTNEED) || mprotect(MEM + base, size, PROT_NONE))
+        guest_fatal("decommit failed");
+#endif
+    memset(committed + (base >> 12), 0, size >> 12);
+}
+static virtual_region *virtual_find(uint32_t base, uint64_t end) {
+    for (virtual_region *r = virtual_regions; r; r = r->next)
+        if (base >= r->base && base < (uint64_t)r->base + r->size
+                && end <= (uint64_t)r->base + r->size) return r;
+    return NULL;
+}
+uint32_t guest_virtual_alloc(uint32_t address, uint32_t size, uint32_t flags) {
+    if (!size || !(flags & 0x3000) || (flags & ~0x103000u)) return 0;
+    uint64_t end = (uint64_t)address + size;
+    if (end > (1ull << 32)) return 0;
+    uint32_t base = address & ~4095u;
+    uint64_t rounded_end = (end + 4095) & ~4095ull;
+    if (!address || (flags & 0x2000)) {
+        if (address) base = address & ~65535u;
+        else {
+            base = VIRTUAL_BASE;
+            for (virtual_region *r = virtual_regions; r; r = r->next) {
+                if ((uint64_t)base + ((size + 4095ull) & ~4095ull) <= r->base) break;
+                base = (uint32_t)(((uint64_t)r->base + r->size + 65535) & ~65535ull);
+            }
+            rounded_end = (uint64_t)base + ((size + 4095ull) & ~4095ull);
+        }
+        if (base < VIRTUAL_BASE || rounded_end > VIRTUAL_END) return 0;
+        virtual_region **link = &virtual_regions;
+        while (*link && (*link)->base < base) {
+            if ((uint64_t)(*link)->base + (*link)->size > base) return 0;
+            link = &(*link)->next;
+        }
+        if (*link && rounded_end > (*link)->base) return 0;
+        virtual_region *r = malloc(sizeof *r); if (!r) return 0;
+        *r = (virtual_region){base, (uint32_t)(rounded_end - base), *link}; *link = r;
+    } else if (!virtual_find(base, rounded_end)) return 0;
+    if (flags & 0x1000) guest_commit(base, (uint32_t)(rounded_end - base));
+    return base;
+}
+int guest_virtual_free(uint32_t address, uint32_t size, uint32_t flags) {
+    virtual_region *r = virtual_find(address, (uint64_t)address + size);
+    if (!r) return 0;
+    if (flags == 0x8000) {
+        if (size || address != r->base) return 0;
+        guest_decommit(r->base, r->size);
+        virtual_region **link = &virtual_regions; while (*link != r) link = &(*link)->next;
+        *link = r->next; free(r); return 1;
+    }
+    if (flags != 0x4000) return 0;
+    uint32_t base = address & ~4095u;
+    uint64_t end = ((uint64_t)address + size + 4095) & ~4095ull;
+    if (!size) { if (address != r->base) return 0; end = (uint64_t)r->base + r->size; }
+    if (end > (uint64_t)r->base + r->size) return 0;
+    guest_decommit(base, (uint32_t)(end - base)); return 1;
 }
 
 uint32_t guest_strdup(const char *s) {

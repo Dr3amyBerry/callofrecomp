@@ -332,7 +332,11 @@ K(GetUserNameA) {
     wr(G(A(1)), 4, n + 1);
     return n < cap;
 }
-K(RaiseException) { guest_fatal("RaiseException(%08x)", A(0)); return 0; }
+K(RaiseException) {
+    guest_fatal("RaiseException(%08x, flags=%08x, count=%u, args=%08x, ret=%08x)",
+        A(0), A(1), A(2), A(3), mem32(esp));
+    return 0;
+}
 K(FatalAppExitA) { guest_fatal("FatalAppExit: %s", S(1)); return 0; }
 
 #define F(dll, name, pop) {dll, #name, k_##name, pop}

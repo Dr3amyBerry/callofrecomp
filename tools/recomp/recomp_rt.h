@@ -75,6 +75,12 @@ void guest_init(void);
 void guest_commit(uint32_t addr, uint32_t size);
 int guest_committed(uint32_t addr);
 uint32_t guest_alloc(uint32_t size);  // zeroed, from the guest heap
+uint32_t guest_heap_alloc(uint32_t size); // 0 on exhaustion
+int guest_heap_free(uint32_t address);
+uint32_t guest_heap_size(uint32_t address); // UINT32_MAX if invalid
+uint32_t guest_heap_realloc(uint32_t address, uint32_t size, uint32_t flags);
+uint32_t guest_virtual_alloc(uint32_t address, uint32_t size, uint32_t flags);
+int guest_virtual_free(uint32_t address, uint32_t size, uint32_t flags);
 uint32_t guest_strdup(const char *s);
 static inline uint32_t reg32(uint32_t off) { return (uint32_t)rd(R + off, 4); }
 static inline void set_reg32(uint32_t off, uint32_t v) { wr(R + off, 4, v); }

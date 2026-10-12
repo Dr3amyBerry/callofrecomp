@@ -124,6 +124,9 @@ if(CODRECOMP_BUILD_TESTS)
         endif()
         add_executable(codrecomp_recomp_files_smoke tests/recomp_files_smoke.c)
         target_link_libraries(codrecomp_recomp_files_smoke PRIVATE codrecomp_pcode_runtime)
+        add_executable(codrecomp_recomp_memory_smoke tests/recomp_memory_smoke.c)
+        target_link_libraries(codrecomp_recomp_memory_smoke PRIVATE codrecomp_pcode_runtime)
+        add_test(NAME recomp_memory_smoke COMMAND codrecomp_recomp_memory_smoke)
         add_test(NAME recomp_files_smoke COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_recomp_files_smoke.py
             $<TARGET_FILE:codrecomp_recomp_files_smoke>)

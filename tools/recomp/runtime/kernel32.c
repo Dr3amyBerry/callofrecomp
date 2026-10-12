@@ -96,17 +96,16 @@ K(GetVersionExA) {
     return 1;
 }
 K(HeapCreate) { (void)esp; return 0x00710000u; }
-K(HeapAlloc) { return guest_alloc(A(2)); }
-K(HeapSize) { return mem32(A(2) - 16); }
+K(HeapAlloc) { return guest_heap_alloc(A(2)); }
+K(HeapSize) { return guest_heap_size(A(2)); }
+K(HeapFree) { return guest_heap_free(A(2)); }
 K(HeapReAlloc) {
-    uint32_t old = A(2), n = A(3), p = guest_alloc(n), oldn = mem32(old - 16);
-    memcpy(G(p), G(old), oldn < n ? oldn : n);
-    return p;
+    return guest_heap_realloc(A(2), A(3), A(1));
 }
 K(VirtualAlloc) {
-    if (A(0)) { guest_commit(A(0), A(1)); return A(0); }
-    return (guest_alloc(A(1) + 4096) + 4095) & ~4095u;
+    return guest_virtual_alloc(A(0), A(1), A(2));
 }
+K(VirtualFree) { return guest_virtual_free(A(0), A(1), A(2)); }
 K(GetCommandLineA) { (void)esp; static uint32_t s; return s ? s : (s = guest_strdup(guest_command_line)); }
 K(GetEnvironmentStrings) { (void)esp; return guest_alloc(8); }
 K(GetStartupInfoA) { memset(G(A(0)), 0, 68); wr(G(A(0)), 4, 68); return 0; }
@@ -183,8 +182,8 @@ const thunk_def kernel32_thunks[] = {
     S(GetLastError, 0), S(SetLastError, 4), S(GetCurrentThreadId, 0), ALIAS(GetCurrentProcessId, GetCurrentThreadId, 0),
     S(GetCurrentThread, 0), S(GetCurrentProcess, 0), S(GetTickCount, 0), S(TlsAlloc, 0), S(TlsSetValue, 8),
     S(TlsGetValue, 4), ALIAS(TlsFree, ReturnTrue, 4), S(GetVersionExA, 4), S(HeapCreate, 12),
-    ALIAS(HeapDestroy, ReturnTrue, 4), ALIAS(HeapFree, ReturnTrue, 12), S(HeapAlloc, 12), S(HeapSize, 12),
-    S(HeapReAlloc, 16), S(VirtualAlloc, 16), ALIAS(VirtualFree, ReturnTrue, 12), ALIAS(VirtualProtect, ReturnTrue, 16),
+    ALIAS(HeapDestroy, ReturnTrue, 4), S(HeapFree, 12), S(HeapAlloc, 12), S(HeapSize, 12),
+    S(HeapReAlloc, 16), S(VirtualAlloc, 16), S(VirtualFree, 12), ALIAS(VirtualProtect, ReturnTrue, 16),
     S(GetCommandLineA, 0), S(GetEnvironmentStrings, 0), ALIAS(GetEnvironmentStringsW, GetEnvironmentStrings, 0),
     ALIAS(FreeEnvironmentStringsA, ReturnTrue, 4), ALIAS(FreeEnvironmentStringsW, ReturnTrue, 4),
     S(GetStartupInfoA, 4), S(GetStdHandle, 4), ALIAS(GetFileType, ReturnZero, 4), S(SetHandleCount, 4),

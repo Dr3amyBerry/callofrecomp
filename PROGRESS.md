@@ -431,6 +431,15 @@ See [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation
 - Optimized rerun passes that entry and now stops at **guest heap exhausted (4096 bytes)** (`recomp_out/engine_training2.log`). The runtime has a 256 MiB bump arena, no-op HeapFree/VirtualFree, and VirtualAlloc shares that arena. Correct allocation/release semantics are the next concrete task; no playable-map claim is made.
 - The first campaign route remains the original `spmap pathfinder`; training is the preliminary map-loading check. MP3 streaming, spatial audio and sustained input/rendering validation remain required.
 
+### Memory lifecycle checkpoint — 2026-10-12
+
+- Reproduced the old no-op HeapFree behavior with a synthetic thunk test (exit 2 before the fix).
+- Replaced monotonic-only heap allocation with tracked live blocks and coalescing free spans, including HeapFree, HeapSize and failure-preserving HeapReAlloc.
+- Separated VirtualAlloc reservations from the 256 MiB CRT heap. Added page commit/decommit, exact-base release and region reuse; reservation metadata remains host-owned.
+- Review exposed an inclusive-end lookup bug between adjacent reservations; regression failed at exit 17, then passed after excluding the end address. **12/12 CTest tests pass**, including heap reuse/coalescing, reserve/commit lifecycle and overflow checks.
+- Original `+set com_introplayed 1 +spmap training` now passes heap exhaustion and stops at **RaiseException(c000008f)**, called by the original CRT at return address `0x00524BE3` (`recomp_out/engine_training4.log`). Next: investigate guest floating-point state and the CRT exception path. Do not suppress the exception without evidence.
+- Scope and remaining memory limitations are recorded in [`docs/RECOMP_MEMORY.md`](docs/RECOMP_MEMORY.md). Playable training/campaign, visible rendering, MP3 and sustained input remain unverified.
+
 ### Phase D — native implementation
 
 - [x] Start portable C/C++ host scaffolding with CMake and an ABI interface target.
