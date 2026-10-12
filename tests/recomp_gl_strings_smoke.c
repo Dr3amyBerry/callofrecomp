@@ -67,12 +67,33 @@ int main(void) {
     if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x100 || mem32(message+8) != 'W') return 13;
     if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x101 || mem32(message+8) != 'W') return 14;
     if (window_push_input(0, 0, -1, 0) || window_push_input(1, SDL_NUM_SCANCODES, 1, 0)
-            || window_push_input(4, 0, 0, 0)) return 15;
+            || window_push_input(5, 0, 0, 0)) return 15;
     // A slow frame must not discard the release at the end of an input burst.
     for (int i = 0; i < 400; i++)
         if (!window_push_input(1, SDL_SCANCODE_W, !(i & 1), 0)) return 16;
     for (int i = 0; i < 400; i++)
         if (!guest_call(fn, 5, peek) || mem32(message+4) != (i & 1 ? 0x101u : 0x100u)) return 17;
+    // The original engine warps to its center each frame. An unchanged absolute
+    // touch must yield zero delta, rather than move the UI cursor repeatedly.
+    uint32_t center[2] = {320, 240};
+    guest_call(shim_lookup("USER32.dll", "SetCursorPos"), 2, center);
+    if (!window_push_input(0, 0, 32768, 32768)) return 18;
+    guest_call(fn, 5, peek);
+    uint32_t point = guest_alloc(8);
+    guest_call(shim_lookup("USER32.dll", "GetCursorPos"), 1, &point);
+    if (mem32(point) != 320 || mem32(point+4) != 240) return 19;
+    // Menu activation waits until movement has been processed by a frame.
+    if (!window_push_input(4, 0, 32768, 32768)) return 20;
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x200) return 21;
+    if (guest_call(fn, 5, peek)) return 22;
+    uint32_t hdc = 0;
+    guest_call(shim_lookup("GDI32.dll", "SwapBuffers"), 1, &hdc);
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x201) return 23;
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x202) return 24;
+    if (!window_push_input(4, 0, 32768, 32768) || !window_push_input(4, 1, 0, 0)) return 25;
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x200) return 26;
+    guest_call(shim_lookup("GDI32.dll", "SwapBuffers"), 1, &hdc);
+    if (guest_call(fn, 5, peek)) return 27;
     SDL_Quit();
     puts("guest GL strings and queued input passed");
     return 0;

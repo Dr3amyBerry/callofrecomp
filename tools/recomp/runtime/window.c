@@ -212,6 +212,8 @@ typedef struct { uint32_t msg, wp, lp; } qmsg;
 static qmsg queue[256];
 static int q_head, q_tail;
 static uint32_t mouse_buttons;
+static uint32_t touch_x, touch_y, pending_menu_position;
+static int touch_position_ready, pending_menu_click;
 
 static void post(uint32_t msg, uint32_t wp, uint32_t lp) {
     int next = (q_tail + 1) % 256;
@@ -255,11 +257,12 @@ static void key_codes(SDL_Scancode sc, uint32_t *scan, uint32_t *vk) {
 
 #define INPUT_CODE 0x434F4400
 int window_push_input(int kind, int control, int x, int y) {
-    if (!(SDL_WasInit(SDL_INIT_EVENTS)) || kind < 0 || kind > 3) return 0;
+    if (!(SDL_WasInit(SDL_INIT_EVENTS)) || kind < 0 || kind > 4) return 0;
     if (kind == 0 && (control < 0 || control > 2 || x < 0 || x > 65535 || y < 0 || y > 65535)) return 0;
     if (kind == 1 && (control <= 0 || control >= SDL_NUM_SCANCODES || (x != 0 && x != 1))) return 0;
     if (kind == 2 && ((control != SDL_BUTTON_LEFT && control != SDL_BUTTON_RIGHT && control != SDL_BUTTON_MIDDLE) || (x != 0 && x != 1))) return 0;
     if (kind == 3 && (control || x < -32768 || x > 32767 || y < -32768 || y > 32767)) return 0;
+    if (kind == 4 && (control < 0 || control > 1 || x < 0 || x > 65535 || y < 0 || y > 65535)) return 0;
     SDL_Event e = {0};
     e.type = SDL_USEREVENT;
     e.user.code = INPUT_CODE + kind;
@@ -273,17 +276,24 @@ static void pump(void) {
     // Leave room for the largest expansion (SDL_TEXTINPUT's 31 characters).
     // Keep remaining events in SDL's queue until the guest drains its messages.
     while ((q_head - q_tail - 1 + 256) % 256 >= 32 && SDL_PollEvent(&e)) {
-        if (e.type == SDL_USEREVENT && e.user.code >= INPUT_CODE && e.user.code <= INPUT_CODE + 3) {
+        if (e.type == SDL_USEREVENT && e.user.code >= INPUT_CODE && e.user.code <= INPUT_CODE + 4) {
             int kind = e.user.code - INPUT_CODE, control = (int)(intptr_t)e.user.data1;
             uint32_t packed = (uint32_t)(uintptr_t)e.user.data2;
             int x = packed & 65535, y = packed >> 16;
             memset(&e, 0, sizeof e);
-            if (kind == 0) {
-                cursor_x = (uint32_t)((uint64_t)x * (win_w - 1) / 65535);
-                cursor_y = (uint32_t)((uint64_t)y * (win_h - 1) / 65535);
-                uint32_t lp = cursor_x | cursor_y << 16;
+            if (kind == 0 || kind == 4) {
+                if (kind == 4 && control == 1) { pending_menu_click = 0; continue; }
+                uint32_t target_x = (uint32_t)((uint64_t)x * (win_w - 1) / 65535);
+                uint32_t target_y = (uint32_t)((uint64_t)y * (win_h - 1) / 65535);
+                if (!touch_position_ready) { touch_x = win_w / 2; touch_y = win_h / 2; touch_position_ready = 1; }
+                // IN_MouseMove reads the delta from the warped center; UI then
+                // adds that delta to its own cursor. Preserve the last target.
+                cursor_x += target_x - touch_x; cursor_y += target_y - touch_y;
+                touch_x = target_x; touch_y = target_y;
+                uint32_t lp = target_x | target_y << 16;
                 post(0x0200, mouse_buttons, lp);
-                if (control) {
+                if (kind == 4) { pending_menu_click = 1; pending_menu_position = lp; }
+                else if (control) {
                     if (control == 1) mouse_buttons |= 1; else mouse_buttons &= ~1u;
                     post(control == 1 ? 0x0201 : 0x0202, mouse_buttons, lp);
                 }
@@ -336,7 +346,7 @@ static void pump(void) {
         case SDL_MOUSEWHEEL: post(0x020A, (uint32_t)(e.wheel.y * 120) << 16, 0); break;
         case SDL_WINDOWEVENT:
             if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) post(0x0006, 1, 0);
-            if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST) { mouse_buttons = 0; post(0x0006, 0, 0); }
+            if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST) { mouse_buttons = 0; pending_menu_click = 0; post(0x0006, 0, 0); }
             break;
         }
     }
@@ -456,6 +466,11 @@ K(GetDeviceGammaRamp) {
 K(SwapBuffers) {
     (void)esp;
     if (win) SDL_GL_SwapWindow(win);
+    if (pending_menu_click) {
+        pending_menu_click = 0;
+        mouse_buttons |= 1; post(0x0201, mouse_buttons, pending_menu_position);
+        mouse_buttons &= ~1u; post(0x0202, mouse_buttons, pending_menu_position);
+    }
     static int stats = -1;
     if (stats < 0) stats = getenv("CODRECOMP_FRAME_STATS") != NULL;
     if (stats) {

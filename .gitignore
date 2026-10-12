@@ -56,3 +56,7 @@ Call of Duty Deluxe Edition/
 ghidra_projects/
 decomp/
 recomp_out/
+*.apk
+*.keystore
+android/.gradle/
+android/local.properties

@@ -273,11 +273,15 @@ void guest_init(void) {
 #else
     MEM = mmap(NULL, 1ull << 32, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE, -1, 0);
     if (MEM == MAP_FAILED) MEM = NULL;
+#ifndef __ANDROID__
+    // Android's managed runtime/native bridge owns fault signals. Installing a
+    // guest-only handler process-wide interferes with Java/native transitions.
     struct sigaction sa = {0};
     sa.sa_sigaction = on_fault;
     sa.sa_flags = SA_SIGINFO;
     sigaction(SIGSEGV, &sa, NULL);
     sigaction(SIGBUS, &sa, NULL);
+#endif
 #endif
     if (!MEM) guest_fatal("cannot reserve 4 GiB guest space");
     // Ghidra x86 register layout / FINIT state. CRT control-word updates retain

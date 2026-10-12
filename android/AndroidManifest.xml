@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.callofrecomp" android:versionCode="1" android:versionName="0.1">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+  <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+  <application android:label="CallofRecomp" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false" android:extractNativeLibs="false" android:hardwareAccelerated="true" android:debuggable="true">
+    <activity android:name=".LauncherActivity" android:exported="true" android:configChanges="keyboardHidden|orientation|screenSize|locale|smallestScreenSize|keyboard|navigation|uiMode|screenLayout|density|fontScale">
+      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+    </activity>
+    <activity android:name=".GameActivity" android:exported="false" android:screenOrientation="landscape" android:configChanges="keyboardHidden|orientation|screenSize|locale|smallestScreenSize|keyboard|navigation|uiMode|screenLayout|density|fontScale" />
+  </application>
+</manifest>

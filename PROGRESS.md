@@ -45,9 +45,16 @@ I should not stop merely because a task is large. Work should be split into phas
   and relative look. A 400-event burst reproduced dropped releases; pumping
   now pauses before the Win32 message queue fills, preserving later events.
   All 12 CTests pass, including the new touch and overflow regressions.
-- Android SDL2/GL4ES integration, Java launcher/import/touch controls and private
-  SDK packaging are being built. Java compilation and installation-hash
-  validation pass; APK installation and visible Android execution are pending.
+- Android SDL2/GL4ES integration and all four modules now compile to a private
+  ARM64 debug APK (about 51 MiB), with verified v2/v3 signature and 16-KiB
+  ELF/ZIP alignment. The reproducible SDK builder also supports native x86-64 WSA.
+- Real WSA launcher and SAF import succeed; SHA-256 validation accepts the owned
+  baseline and rejects other binaries. Spanish localization is selected from
+  imported packs. Profiles/logs use separate internal storage, preserving saves.
+- ARM64 under WSA's Houdini 14 bridge completes common initialization and parses
+  original menus, but a first frame/gameplay is still unverified. An isolated
+  SDL inline-atomic experiment did not resolve it and was removed. An optimized
+  native x86-64 comparison is being built; do not treat packaging as playability.
 
 ### PC mission checkpoint — 2026-10-12
 
