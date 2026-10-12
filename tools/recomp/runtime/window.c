@@ -401,7 +401,32 @@ K(GetDeviceGammaRamp) {
     return 1;
 }
 
-K(SwapBuffers) { (void)esp; if (win) SDL_GL_SwapWindow(win); return 1; }
+K(SwapBuffers) {
+    (void)esp;
+    if (win) SDL_GL_SwapWindow(win);
+    static int stats = -1;
+    if (stats < 0) stats = getenv("CODRECOMP_FRAME_STATS") != NULL;
+    if (stats) {
+        static Uint64 previous, start;
+        static uint32_t frames;
+        static double sum, minimum = 1e30, maximum;
+        Uint64 now = SDL_GetPerformanceCounter(), frequency = SDL_GetPerformanceFrequency();
+        if (previous) {
+            double ms = (double)(now - previous) * 1000 / frequency;
+            sum += ms; frames++;
+            if (ms < minimum) minimum = ms;
+            if (ms > maximum) maximum = ms;
+            if (now - start >= frequency) {
+                printf("frame stats: fps=%.1f ms avg=%.2f min=%.2f max=%.2f\n",
+                    frames * 1000 / sum, sum / frames, minimum, maximum);
+                fflush(stdout);
+                frames = 0; sum = maximum = 0; minimum = 1e30; start = now;
+            }
+        } else start = now;
+        previous = now;
+    }
+    return 1;
+}
 
 static void *getproc(const char *n) { return SDL_GL_GetProcAddress(n); }
 

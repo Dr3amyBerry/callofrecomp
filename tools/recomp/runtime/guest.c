@@ -27,8 +27,9 @@ int recomp_miss;
 #define HEAP_SIZE 0x10000000u
 #define STACK_TOP 0x10100000u
 #define STACK_SIZE 0x00400000u
-#define SCRATCH 0x0FF00000u
-#define TIB 0x0FF10000u
+// The full stack is 0x0FD00000..0x10100000. Keep host service pages below it.
+#define SCRATCH 0x0FC00000u
+#define TIB 0x0FC10000u
 
 void guest_fatal(const char *fmt, ...) {
     va_list ap;
@@ -222,8 +223,18 @@ uint32_t guest_strdup(const char *s) {
     return p;
 }
 
+static struct { uint32_t pc, esp, seh; } fault_history[64];
+static uint32_t fault_history_count;
+static int trace_fault;
 static void on_fault_report(uint64_t host_addr) {
     printf("CRASH guest_addr=%08llx pc=%08x\n", (unsigned long long)(host_addr - (uint64_t)(uintptr_t)MEM), PC);
+    printf("REG eax=%08x ecx=%08x edx=%08x ebx=%08x esp=%08x ebp=%08x esi=%08x edi=%08x\n",
+        reg32(0), reg32(4), reg32(8), reg32(12), reg32(16), reg32(20), reg32(24), reg32(28));
+    uint32_t count = fault_history_count < 64 ? fault_history_count : 64;
+    for (uint32_t i = 0; i < count; i++) {
+        uint32_t slot = (fault_history_count - count + i) & 63;
+        printf("TRACE pc=%08x esp=%08x seh=%08x\n", fault_history[slot].pc, fault_history[slot].esp, fault_history[slot].seh);
+    }
     fflush(stdout);
 }
 
@@ -244,6 +255,8 @@ static void on_fault(int sig, siginfo_t *info, void *ctx) {
 #endif
 
 void guest_init(void) {
+    trace_fault = getenv("CODRECOMP_TRACE_FAULT") != NULL;
+    fault_history_count = 0;
 #ifdef _WIN32
     MEM = VirtualAlloc(NULL, 1ull << 32, MEM_RESERVE, PAGE_NOACCESS);
     AddVectoredExceptionHandler(1, on_fault);
@@ -433,6 +446,12 @@ int module_load(const recomp_module *m, const char *path) {
 
 void guest_run(void) {
     while (PC != GUEST_EXIT_PC) {
+        if (trace_fault) {
+            uint32_t seh = mem32(TIB);
+            uint32_t slot = fault_history_count++ & 63;
+            fault_history[slot].pc = PC; fault_history[slot].esp = reg32(REG_ESP);
+            fault_history[slot].seh = seh;
+        }
         if (PC >= THUNK_BASE && PC < THUNK_BASE + 16 * THUNK_MAX) {
             thunk_slot *t = &thunks[(PC - THUNK_BASE) / 16];
             uint32_t esp = reg32(REG_ESP), ret = mem32(esp);

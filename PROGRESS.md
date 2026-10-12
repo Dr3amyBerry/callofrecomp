@@ -72,6 +72,19 @@ I should not stop merely because a task is large. Work should be split into phas
 - The exact-entry exporter was exercised against a deliberately conflicting byte
   inside a known five-byte MOV in a read-only Ghidra session. It recovered the
   entry and exported the same 333,204 instructions without saving project changes.
+- Located the campaign crash: TIB and CPUID scratch overlapped the declared 4-MiB
+  stack. A large original game frame overwrote the SEH pointer. Both service pages
+  now live below the stack; a regression checks disjoint ranges and fills the
+  entire stack while preserving TIB/CPUID (RED exit 26, GREEN 12/12 CTest).
+- The rebuilt `pathfinder` probe starts the mission, creates the original save
+  and queues movement. The user confirms this is mission 1 and controls work,
+  but reload/aim animations stutter. Frame pacing is now the active investigation.
+  Closing the game also exposes missing shutdown entry `0x0047EEE0`.
+- Added optional frame statistics and timed fire/reload/aim input. The first
+  campaign sample rendered around 64 FPS after entry, but an existing-autosave
+  operation produced the original “insufficient disk space” error despite ample
+  host free space. Save finalization needs investigation before that pacing sample
+  can cover the full weapon sequence.
 
 ### Completed foundation
 

@@ -37,4 +37,17 @@ without commit, decommit/recommit zeros, release validation, adjacent-region
 boundaries and overflow rejection. The original training run passes its former
 heap-exhaustion point and now stops at a CRT floating-point exception
 (`RaiseException(c000008f)`, return address `0x00524BE3`). Gameplay remains
-unverified; the floating-point runtime is the next investigation.
+unverified at that checkpoint; the floating-point runtime was the next investigation.
+
+The subsequent PC campaign run exposed overlap between the four-MiB guest stack
+(`0x0FD00000..0x10100000`) and the original TIB/CPUID scratch pages. A large
+`gamex86` stack frame overwrote the SEH chain; the next CRT setjmp crashed reading
+`0xEF7AF00C`. TIB and scratch now occupy `0x0FC10000` and `0x0FC00000`, below the
+stack. A regression fails on the old overlap (exit 26) and checks that writing the
+entire declared stack preserves the thread block and CPUID page. CTest: 12/12.
+
+With this layout the real `pathfinder` probe passes client initialization, starts
+the mission and accepts timed W input; the user confirms mission 1 controls work.
+Animation pacing during reload/aim remains under investigation. An optional
+`CODRECOMP_TRACE_FAULT` environment variable retains the last 64 dispatch PCs,
+stack pointers and SEH values, printed with registers only after a fault.

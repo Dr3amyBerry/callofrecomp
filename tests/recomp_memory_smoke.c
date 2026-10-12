@@ -7,6 +7,14 @@ static uint32_t call(const char *name, int n, uint32_t *args) {
 }
 int main(void) {
     guest_init(); shims_register(kernel32_thunks);
+    uint32_t tib = reg32(REG_FS_OFFSET), low = mem32(tib + 8), high = mem32(tib + 4);
+    uint32_t cpu = (uint32_t)cpuid_ptr();
+    if ((uint64_t)tib + 4096 > low && tib < high) return 26;
+    if ((uint64_t)cpu + 4096 > low && cpu < high) return 27;
+    // Large original game frames may use any byte of the declared stack.
+    memset(G(low), 0xa5, high - low);
+    if (mem32(tib) != UINT32_MAX || mem32(tib+4) != high || mem32(tib+8) != low
+            || mem32(tib+24) != tib || mem32(cpu)) return 28;
     if (rd(R + 0x10a0, 2) != 0x037f || rd(R + 0x10a2, 2) != 0
             || rd(R + 0x10a4, 2) != 0xffff) return 25;
     uint32_t a[4] = {0x710000, 8, 64, 0};

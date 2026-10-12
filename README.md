@@ -233,10 +233,13 @@ execution. On Linux the executable has no `.exe` suffix.
 Synthetic runtime tests are included in CTest on compilers with `__int128`.
 For an explicit desktop input integration probe, add `--input-probe` to
 `tools/recomp/build_engine.py`. It builds a separate `codrecomp_input_probe`
-executable that queues a click after 45 seconds and W down/up at 60/63 seconds
+executable that queues a click after 45 seconds, W down/up at 60/63 seconds,
+then fire, reload and aim events during seconds 65–70
 through SDL, without changing the normal engine host. Capture its log and screen
 to verify actual guest progress; elapsed time alone does not prove gameplay.
 Allow loading to finish before the scheduled click on slower machines.
+Set `CODRECOMP_FRAME_STATS=1` to log frame rate and average/minimum/maximum frame
+duration once per second while diagnosing pacing.
 The GL and audio regressions also build when CMake can find SDL2, for example with
 `-DCMAKE_PREFIX_PATH=/path/to/SDL2-prefix`.
 
