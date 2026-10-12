@@ -38,6 +38,8 @@ I should not stop merely because a task is large. Work should be split into phas
 - Added real MP3 stream decoding through original engine filesystem callbacks,
   with owned compressed bytes, fixed decoded blocks, seek, pause and loop states.
   Decoder source is pinned CC0 minimp3; original assets remain outside Git.
+  Vendored decoder files retain LF endings so recorded hashes survive Windows
+  checkouts with automatic line-ending conversion.
 - All 12 CTest checks pass, including synthetic MP3 streams with short reads.
 - Actual `+spmap training` finishes `CL_InitCGame` and visibly shows the original
   Spanish briefing with “Haz clic para iniciar la misión”. Screenshot and run log
