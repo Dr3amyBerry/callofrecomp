@@ -97,6 +97,13 @@ const char *module_available_path(const char *name, const recomp_module **out);
 const recomp_module *module_loaded_at(uint32_t base);
 extern uint32_t guest_main_base;
 extern const thunk_def kernel32_thunks[];
+extern const char *guest_command_line;
+
+// ---- runtime/files.c ----
+extern const thunk_def files_thunks[], misc_thunks[];
+extern const char *files_game_dir, *files_home_dir;
+extern int shim_realtime;
+uint32_t host_millis(void);
 
 void guest_run(void);
 uint32_t guest_call(uint32_t fn, int n, const uint32_t *args);

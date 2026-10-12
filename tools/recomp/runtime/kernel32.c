@@ -7,6 +7,7 @@
 #include "recomp_rt.h"
 
 uint32_t guest_main_base;  // image base returned by GetModuleHandleA(NULL)
+const char *guest_command_line = "codrecomp";
 
 static uint32_t last_error, tls[64], tls_next;
 
@@ -106,7 +107,7 @@ K(VirtualAlloc) {
     if (A(0)) { guest_commit(A(0), A(1)); return A(0); }
     return (guest_alloc(A(1) + 4096) + 4095) & ~4095u;
 }
-K(GetCommandLineA) { (void)esp; static uint32_t s; return s ? s : (s = guest_strdup("codrecomp")); }
+K(GetCommandLineA) { (void)esp; static uint32_t s; return s ? s : (s = guest_strdup(guest_command_line)); }
 K(GetEnvironmentStrings) { (void)esp; return guest_alloc(8); }
 K(GetStartupInfoA) { memset(G(A(0)), 0, 68); wr(G(A(0)), 4, 68); return 0; }
 K(GetStdHandle) { (void)esp; return 0xFFFFFFFFu; }
