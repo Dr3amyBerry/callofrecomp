@@ -200,6 +200,18 @@ GHIDRA_HOME=/path/to/ghidra tools/ghidra_decompile.sh originals decomp
 Decompiler output is a navigation aid for evidence gathering, **not** source to
 commit or ship; reconstructed code must still be written and validated cleanly.
 
+### Static recompilation of modules (prototype)
+
+`tools/recomp/` turns an original module DLL into portable C via Ghidra p-code
+and checks it against the real DLL by diffing engine-syscall traces:
+
+```bash
+GHIDRA_HOME=/path/to/ghidra tools/recomp/run_module.sh originals uix86
+```
+
+The recompiled `uix86.dll` reproduces the original's full UI initialisation
+trace. Results and limits: [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation_prototype.md).
+
 ### PK3 inventory
 
 Reads PK3/ZIP metadata without extracting the archive:

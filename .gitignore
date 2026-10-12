@@ -55,3 +55,4 @@ Call of Duty Deluxe Edition/
 # Ghidra headless projects and decompiler output of proprietary code
 ghidra_projects/
 decomp/
+recomp_out/

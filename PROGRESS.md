@@ -4,7 +4,7 @@
 >
 > **Rule:** this file must be updated whenever a meaningful phase starts, completes, changes direction, discovers a blocker, or requires a new external tool.
 
-**Last updated:** 2026-10-07  
+**Last updated:** 2026-10-12  
 **Primary branch:** `main`  
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
@@ -373,6 +373,20 @@ See [`analysis/localization_searchpath.md`](analysis/localization_searchpath.md)
 - [ ] Precise original error mapping; keep original mount selection unresolved.
 - [ ] Reconstruct configuration and localization loading.
 - [ ] Trace single-player startup from process entry to first rendered frame.
+
+### Phase R — static recompilation of modules (hybrid plan, approved 2026-10-12)
+
+Direction: recompile the three SP module DLLs automatically (Ghidra p-code → C)
+and pair them with an ioquake3-derived engine adapted to CoD syscalls/formats.
+
+- [x] Ghidra p-code exporter and `pcode2c.py` generator; zero unsupported ops across ui/cgame/game.
+- [x] Recompiled `uix86.dll` matches the real DLL's 10,856-syscall init trace (DllMain + 5 vmMain calls).
+- [x] Recompiled `cgamex86.dll` / `gamex86.dll` match the real DLLs up to the same harness-induced crash.
+- [ ] Build the generated C for Android ARM64 (needs NDK) and rerun the trace check there.
+- [ ] Richer fake engine so game/cgame run past init; then wire real engine syscalls.
+- [ ] Evaluate ioquake3 as engine base against the decompiled `CoDSP.exe`.
+
+See [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation_prototype.md).
 
 ### Phase D — native implementation
 
