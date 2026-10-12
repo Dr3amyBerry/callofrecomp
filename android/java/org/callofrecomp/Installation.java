@@ -8,13 +8,15 @@ final class Installation {
     static String language(File dir) {
         File main = new File(dir, "main");
         String preferred = Locale.getDefault().getLanguage();
-        String[][] languages = {{"es", "spanish"}, {"fr", "french"}, {"de", "german"},
-            {"it", "italian"}, {"en", "english"}};
+        // cl_language takes numeric indices from the verified original table:
+        // analysis/localization_searchpath.md (VA 0x00564B08), not language names.
+        String[][] languages = {{"es", "spanish", "4"}, {"fr", "french", "1"}, {"de", "german", "2"},
+            {"it", "italian", "3"}, {"en", "english", "0"}};
         for (String[] entry : languages)
-            if (entry[0].equals(preferred) && new File(main, "localized_" + entry[1] + "_pak0.pk3").isFile()) return entry[1];
+            if (entry[0].equals(preferred) && new File(main, "localized_" + entry[1] + "_pak0.pk3").isFile()) return entry[2];
         for (String[] entry : languages)
-            if (new File(main, "localized_" + entry[1] + "_pak0.pk3").isFile()) return entry[1];
-        return "english";
+            if (new File(main, "localized_" + entry[1] + "_pak0.pk3").isFile()) return entry[2];
+        return "0";
     }
     static boolean valid(File dir) {
         String[][] baseline = {

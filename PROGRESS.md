@@ -60,6 +60,10 @@ I should not stop merely because a task is large. Work should be split into phas
   `libunwind.dll`, producing Windows loader dialogs. The build now deploys C++
   runtime DLLs once for all C++ tests. Reproduction changed from status
   `0xC0000135` to exit 0 in the same restricted environment; 12/12 checks pass.
+- Actual ARM64 WSA logs now confirm `Current language: spanish`. The Android
+  host must pass numeric `cl_language=4`, per the recovered original table;
+  passing the string `spanish` silently selected English. Java tests now assert
+  the numeric engine indices instead of only the resource-pack names.
 
 ### PC mission checkpoint — 2026-10-12
 
