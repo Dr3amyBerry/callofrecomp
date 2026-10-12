@@ -5,6 +5,7 @@ Export/generate the four modules under recomp_out first. No private generated
 source or original assets are copied into the tracked tree.
 """
 import argparse
+import filecmp
 import os
 from pathlib import Path
 import shutil
@@ -17,6 +18,7 @@ def main():
     parser.add_argument("--sdl2", type=Path, required=True, help="SDL2 development prefix (include/SDL2, lib, bin)")
     parser.add_argument("--out", type=Path, default=Path("recomp_out"))
     parser.add_argument("--reuse-objects", action="store_true", help="explicitly reuse previously compiled private generated objects")
+    parser.add_argument("--input-probe", action="store_true", help="build separate integration probe: click at 45s, then hold W at 60s")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     output = args.out.resolve()
@@ -32,15 +34,18 @@ def main():
             if not args.reuse_objects or not obj.exists():
                 subprocess.run([args.cc, *flags, "-c", str(source), "-o", str(obj)], check=True)
             objects.append(str(obj))
-    exe = output / ("codrecomp_engine.exe" if os.name == "nt" else "codrecomp_engine")
+    name = "codrecomp_input_probe" if args.input_probe else "codrecomp_engine"
+    exe = output / (name + (".exe" if os.name == "nt" else ""))
     subprocess.run([args.cc, *flags, "-Wall", "-Wno-unused-function", "-DSDL_MAIN_HANDLED",
                     "-I" + str(runtime), "-I" + str(args.sdl2 / "include/SDL2"),
-                    str(root / "tools/recomp/hosts/engine_host.c"),
+                    str(root / "tools/recomp/hosts" / ("engine_input_probe.c" if args.input_probe else "engine_host.c")),
                     *map(str, sorted(runtime.glob("*.c"))), *objects,
                     "-L" + str(args.sdl2 / "lib"), "-lSDL2",
                     *([] if os.name == "nt" else ["-lm"]), "-o", str(exe)], check=True)
     if os.name == "nt":
-        shutil.copy2(args.sdl2 / "bin/SDL2.dll", output / "SDL2.dll")
+        dll, target = args.sdl2 / "bin/SDL2.dll", output / "SDL2.dll"
+        if not target.exists() or not filecmp.cmp(dll, target, shallow=False):
+            shutil.copy2(dll, target)
     print(exe)
 
 

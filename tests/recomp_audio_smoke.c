@@ -3,24 +3,26 @@
 #include "audio.h"
 
 static unsigned char mp3[417 * 6];
+static unsigned char *stream_bytes = mp3;
+static uint32_t stream_length = sizeof mp3;
 static uint32_t file_offset, closes;
 static uint32_t file_open(uint32_t esp) {
-    if (strcmp((char *)G(ARG(esp, 0)), "silent.mp3")) return 0;
-    wr(G(ARG(esp, 1)), 4, 7); file_offset = 0; return sizeof mp3;
+    if (strcmp((char *)G(ARG(esp, 0)), "silent.mp3") && strcmp((char *)G(ARG(esp, 0)), "test.wav")) return 0;
+    wr(G(ARG(esp, 1)), 4, 7); file_offset = 0; return stream_length;
 }
 static uint32_t file_close(uint32_t esp) { (void)esp; closes++; return 0; }
 static uint32_t file_seek(uint32_t esp) {
     int64_t p = (int32_t)ARG(esp, 1);
     if (ARG(esp, 2) == 1) p += file_offset;
-    if (ARG(esp, 2) == 2) p += sizeof mp3;
-    if (p < 0 || p > sizeof mp3) return UINT32_MAX;
+    if (ARG(esp, 2) == 2) p += stream_length;
+    if (p < 0 || p > stream_length) return UINT32_MAX;
     return file_offset = (uint32_t)p;
 }
 static uint32_t file_read(uint32_t esp) {
     uint32_t n = ARG(esp, 2);
-    if (n > sizeof mp3 - file_offset) n = sizeof mp3 - file_offset;
+    if (n > stream_length - file_offset) n = stream_length - file_offset;
     if (n > 173) n = 173; // Deliberately short filesystem reads.
-    memcpy(G(ARG(esp, 1)), mp3 + file_offset, n); file_offset += n; return n;
+    memcpy(G(ARG(esp, 1)), stream_bytes + file_offset, n); file_offset += n; return n;
 }
 
 static uint32_t invoke(const char *name, int count, uint32_t *args) {
@@ -226,6 +228,17 @@ int main(void) {
     if (invoke("_AIL_open_stream@12", 3, args) || closes != 2) return 42;
     args[1] = guest_strdup("missing.mp3");
     if (invoke("_AIL_open_stream@12", 3, args) || closes != 2) return 43;
+    stream_bytes = G(wav); stream_length = 52;
+    args[1] = guest_strdup("test.wav");
+    stream = invoke("_AIL_open_stream@12", 3, args);
+    if (!stream || closes != 3) return 44;
+    args[0] = stream;
+    if (invoke("_AIL_stream_playback_rate@4", 1, args) != 22050) return 45;
+    invoke("_AIL_start_stream@4", 1, args);
+    audio_mix(out, 4, 22050);
+    for (int i = 0; i < 8; i++) if (fabsf(out[i] - 0.5f) > 0.001f) return 46;
+    if (invoke("_AIL_stream_status@4", 1, args) != 2) return 47;
+    invoke("_AIL_close_stream@4", 1, args);
     puts("portable PCM and MP3 stream audio passed");
     return 0;
 }

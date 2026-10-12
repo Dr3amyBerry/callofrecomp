@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <SDL.h>
 #include "gl_thunks.h"
 
 static void GLAPI_CALL fake_get_pointer(int name, void **out) {
@@ -33,6 +34,30 @@ int main(void) {
         fputs("GL pointer outputs must use guest addresses without overwriting adjacent bytes\n", stderr);
         return 3;
     }
-    puts("guest GL strings passed");
+    // A click can begin and end before the game polls; retain both transitions.
+    if (SDL_Init(SDL_INIT_EVENTS)) return 4;
+    shims_register(window_thunks);
+    SDL_Event event = {0};
+    event.type = SDL_MOUSEBUTTONDOWN; event.button.button = SDL_BUTTON_LEFT;
+    if (SDL_PushEvent(&event) != 1) return 5;
+    event.type = SDL_MOUSEBUTTONUP;
+    if (SDL_PushEvent(&event) != 1) return 6;
+    uint32_t message = guest_alloc(28);
+    uint32_t peek[5] = {message, 0, 0, 0, 1};
+    uint32_t fn = shim_lookup("USER32.dll", "PeekMessageA");
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x201 || mem32(message+8) != 1) return 7;
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x202 || mem32(message+8) != 0) return 8;
+    event.type = SDL_MOUSEBUTTONDOWN; event.button.button = SDL_BUTTON_LEFT;
+    SDL_PushEvent(&event);
+    event.button.button = SDL_BUTTON_RIGHT; SDL_PushEvent(&event);
+    event.type = SDL_MOUSEBUTTONUP; event.button.button = SDL_BUTTON_LEFT; SDL_PushEvent(&event);
+    event.type = SDL_MOUSEMOTION; event.motion.xrel = 3; event.motion.yrel = 4; SDL_PushEvent(&event);
+    event.type = SDL_MOUSEBUTTONUP; event.button.button = SDL_BUTTON_RIGHT; SDL_PushEvent(&event);
+    const uint32_t messages[] = {0x201, 0x204, 0x202, 0x200, 0x205};
+    const uint32_t states[] = {1, 3, 2, 2, 0};
+    for (int i = 0; i < 5; i++)
+        if (!guest_call(fn, 5, peek) || mem32(message+4) != messages[i] || mem32(message+8) != states[i]) return 9;
+    SDL_Quit();
+    puts("guest GL strings and queued input passed");
     return 0;
 }

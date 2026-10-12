@@ -202,6 +202,7 @@ K(ShowCursor) {
 typedef struct { uint32_t msg, wp, lp; } qmsg;
 static qmsg queue[256];
 static int q_head, q_tail;
+static uint32_t mouse_buttons;
 
 static void post(uint32_t msg, uint32_t wp, uint32_t lp) {
     int next = (q_tail + 1) % 256;
@@ -266,23 +267,24 @@ static void pump(void) {
         case SDL_MOUSEMOTION:
             cursor_x += (uint32_t)e.motion.xrel;
             cursor_y += (uint32_t)e.motion.yrel;
-            post(0x0200, 0, (cursor_x & 0xFFFF) | cursor_y << 16);
+            post(0x0200, mouse_buttons, (cursor_x & 0xFFFF) | cursor_y << 16);
             break;
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP: {
             int down = e.type == SDL_MOUSEBUTTONDOWN;
+            if (e.button.button != SDL_BUTTON_LEFT && e.button.button != SDL_BUTTON_RIGHT
+                    && e.button.button != SDL_BUTTON_MIDDLE) break;
             uint32_t base = e.button.button == SDL_BUTTON_LEFT ? 0x0201 : e.button.button == SDL_BUTTON_RIGHT ? 0x0204 : 0x0207;
-            uint32_t state = SDL_GetMouseState(NULL, NULL), mk = 0;
-            if (state & SDL_BUTTON_LMASK) mk |= 1;
-            if (state & SDL_BUTTON_RMASK) mk |= 2;
-            if (state & SDL_BUTTON_MMASK) mk |= 0x10;
-            post(base + (down ? 0 : 1), mk, 0);
+            uint32_t bit = e.button.button == SDL_BUTTON_LEFT ? 1 : e.button.button == SDL_BUTTON_RIGHT ? 2 : 0x10;
+            // SDL_GetMouseState is the latest state, possibly after queued UP.
+            if (down) mouse_buttons |= bit; else mouse_buttons &= ~bit;
+            post(base + (down ? 0 : 1), mouse_buttons, (cursor_x & 0xFFFF) | cursor_y << 16);
             break;
         }
         case SDL_MOUSEWHEEL: post(0x020A, (uint32_t)(e.wheel.y * 120) << 16, 0); break;
         case SDL_WINDOWEVENT:
             if (e.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) post(0x0006, 1, 0);
-            if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST) post(0x0006, 0, 0);
+            if (e.window.event == SDL_WINDOWEVENT_FOCUS_LOST) { mouse_buttons = 0; post(0x0006, 0, 0); }
             break;
         }
     }

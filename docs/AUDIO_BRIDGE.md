@@ -87,19 +87,25 @@ open/seek/read/close callbacks, including short reads. It closes the file and fr
 guest scratch allocations before returning. Each compressed file is limited to
 64 MiB; decoded PCM uses a fixed 1,152-frame block, rather than retaining an entire
 decoded track. SDL's callback decodes host-owned bytes and never enters guest code.
-Opening scans the stream on the engine thread to establish duration and a seek
+Opening scans an MP3 stream on the engine thread to establish duration and a seek
 index. Start, pause/resume, looping, playback rate, volume/pan and millisecond
-seeking are supported; stream reverb remains unsupported. Stream containers other
-than MP3 fail explicitly. There is no global compressed-byte budget yet.
+seeking are supported; stream reverb remains unsupported. WAV streams use SDL's
+WAV decoder and conversion to host-owned stereo float PCM, capped at 64 MiB per
+decoded stream, with the same playback controls. There is no global compressed-byte
+budget yet. Unsupported formats fail explicitly.
 
 The decoder is the CC0 minimp3 implementation, pinned with license, upstream commit
 and hashes under `tools/recomp/third_party/minimp3`. Regression coverage uses
 synthetic silent MPEG-1 Layer III frames and mocked original filesystem callbacks;
 no original audio is included. Tests cover short reads, duration, pause/resume,
-seek, EOF, looping and close, alongside the existing PCM/WAV tests. CTest: 12/12.
+seek, EOF, looping, close, invalid/missing files and actual WAV stream mixing,
+alongside the existing PCM/WAV tests. CTest: 12/12.
 
 The real PC `training` run now finishes `CL_InitCGame` and visibly displays the
 original Spanish briefing, including “Haz clic para iniciar la misión”. The
-process remains active beyond a 45-second observation. Scene rendering, movement
-and sustained mission gameplay are still awaiting verification. The current
+process remains active beyond a 45-second observation. A separate SDL input probe
+now enters the rendered first-person training scene, with soldiers, terrain and
+HUD visible. Its timed W events are queued successfully; movement and sustained
+campaign gameplay still need verification. The original training voiceovers are
+PCM WAV streams, which prompted the WAV stream extension. The current
 user-requested milestone is first mission playable on PC before Android.

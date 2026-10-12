@@ -231,6 +231,12 @@ objects when only runtime shims changed. Build failures stop the script before
 execution. On Linux the executable has no `.exe` suffix.
 
 Synthetic runtime tests are included in CTest on compilers with `__int128`.
+For an explicit desktop input integration probe, add `--input-probe` to
+`tools/recomp/build_engine.py`. It builds a separate `codrecomp_input_probe`
+executable that queues a click after 45 seconds and W down/up at 60/63 seconds
+through SDL, without changing the normal engine host. Capture its log and screen
+to verify actual guest progress; elapsed time alone does not prove gameplay.
+Allow loading to finish before the scheduled click on slower machines.
 The GL and audio regressions also build when CMake can find SDL2, for example with
 `-DCMAKE_PREFIX_PATH=/path/to/SDL2-prefix`.
 

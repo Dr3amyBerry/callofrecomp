@@ -46,6 +46,32 @@ I should not stop merely because a task is large. Work should be split into phas
   are private artifacts under `recomp_out`; the process stays active beyond 45s.
 - First-person scene, movement and sustained gameplay are not verified yet.
   This checkpoint does not complete the playable-mission goal.
+- A queued fast-click regression reproduced lost button transitions (exit 7).
+  Mouse state now follows each SDL event; the regression and all 12 CTests pass.
+- Added a separate optional timed SDL integration probe. Its actual briefing
+  click reached missing entry `0x004DD6E0`. Original instructions verify its
+  assignment at `0x004F101A` to slot `0x011D92E4`; the entry is now included in
+  the reproducible export ledger. Gameplay verification is continuing.
+- The rebuilt probe passes `0x004DD6E0` and next reaches a missing GL setup
+  switch branch, `0x004DBD61`. All four destinations from the original bounded
+  jump table at `0x004DC180` are verified and added to the export ledger.
+- An actual branch to `0x004DC14B` exposed overlapping Ghidra code units.
+  Explicit code-entry export now requires an instruction starting exactly at the
+  verified address and retries the independently decoded instruction span when
+  necessary, then revalidates all explicit entries before writing the output.
+  Original `JE` at `0x004DC13E` verifies that destination; successful export now
+  contains 333,204 engine instructions. No sweeping of arbitrary bytes is enabled.
+- The actual probe now enters the visible first-person training scene, with
+  soldiers, terrain and HUD, and remains active after timed W down/up input.
+  Original Foley speech exposed PCM WAV streams (mono, 22,050 Hz); these now use
+  real SDL decoding and owned PCM. WAV stream test reproduced failure (exit 44)
+  and now passes with all 12 tests. The rebuilt `pathfinder` campaign probe
+  finishes `CL_InitCGame` (18.37s) but crashes at `0x0052E84C`, accessing
+  `0xEF7AF00C`, before the timed click. That memory access is the next blocker;
+  campaign movement and sustained gameplay remain unverified.
+- The exact-entry exporter was exercised against a deliberately conflicting byte
+  inside a known five-byte MOV in a read-only Ghidra session. It recovered the
+  entry and exported the same 333,204 instructions without saving project changes.
 
 ### Completed foundation
 

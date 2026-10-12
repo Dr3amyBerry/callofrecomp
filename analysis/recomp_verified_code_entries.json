@@ -22,6 +22,52 @@
       "callback_assignment": "0x0045A6ED",
       "confidence": "observed",
       "reason": "Executable entry assigned to engine callback table slot 0x008D8984; reached by the original spmap training path but mislabeled as data."
+    },
+    {
+      "address": "0x004DD6E0",
+      "instruction": "MOV EAX,[0x0153457C]; followed by original engine code",
+      "callback_assignment": "0x004F101A",
+      "confidence": "observed",
+      "reason": "Original MOV assigns this executable entry to callback slot 0x011D92E4; reached after the training briefing click but marked as data by automatic analysis."
+    },
+    {
+      "address": "0x004DBD61",
+      "instruction": "MOV register,[EAX+offset]; followed by original GL array setup",
+      "jump_table": "0x004DC180",
+      "indirect_jump": "0x004DBD5A",
+      "confidence": "observed",
+      "reason": "One of four table destinations in original bounded ECX<=3 switch; initial destination reached after mission click. All destinations verified against original instructions."
+    },
+    {
+      "address": "0x004DBDB2",
+      "instruction": "MOV register,[EAX+offset]; followed by original GL array setup",
+      "jump_table": "0x004DC180",
+      "indirect_jump": "0x004DBD5A",
+      "confidence": "observed",
+      "reason": "One of four table destinations in original bounded ECX<=3 switch; initial destination reached after mission click. All destinations verified against original instructions."
+    },
+    {
+      "address": "0x004DBDD5",
+      "instruction": "MOV register,[EAX+offset]; followed by original GL array setup",
+      "jump_table": "0x004DC180",
+      "indirect_jump": "0x004DBD5A",
+      "confidence": "observed",
+      "reason": "One of four table destinations in original bounded ECX<=3 switch; initial destination reached after mission click. All destinations verified against original instructions."
+    },
+    {
+      "address": "0x004DBE17",
+      "instruction": "MOV register,[EAX+offset]; followed by original GL array setup",
+      "jump_table": "0x004DC180",
+      "indirect_jump": "0x004DBD5A",
+      "confidence": "observed",
+      "reason": "One of four table destinations in original bounded ECX<=3 switch; initial destination reached after mission click. All destinations verified against original instructions."
+    },
+    {
+      "address": "0x004DC14B",
+      "instruction": "MOV EAX,[0x011CE790]; followed by original GL cleanup and return",
+      "direct_branch": "0x004DC13E",
+      "confidence": "observed",
+      "reason": "Original JE targets this instruction after GL client array setup; reached after mission click but marked as data."
     }
   ],
   "export_arguments": [
@@ -31,6 +77,18 @@
     "--code-entry",
     "0x0050B990",
     "--code-entry",
-    "0x0045AA90"
+    "0x0045AA90",
+    "--code-entry",
+    "0x004DD6E0",
+    "--code-entry",
+    "0x004DBD61",
+    "--code-entry",
+    "0x004DBDB2",
+    "--code-entry",
+    "0x004DBDD5",
+    "--code-entry",
+    "0x004DBE17",
+    "--code-entry",
+    "0x004DC14B"
   ]
 }

@@ -13,6 +13,8 @@
 //@category codrecomp
 
 import ghidra.app.script.GhidraScript;
+import ghidra.app.util.PseudoDisassembler;
+import ghidra.app.util.PseudoInstruction;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.address.Address;
 import ghidra.program.model.mem.MemoryBlock;
@@ -50,10 +52,22 @@ public class ExportPcode extends GhidraScript {
             MemoryBlock block = currentProgram.getMemory().getBlock(entry);
             if (block == null || !block.isInitialized() || !block.isExecute())
                 throw new IllegalArgumentException("code entry outside executable memory: " + entry);
-            if (currentProgram.getListing().getInstructionContaining(entry) == null) {
+            if (currentProgram.getListing().getInstructionAt(entry) == null) {
                 // A verified entry can be mislabeled as data by automatic analysis.
+                // Or an incorrect instruction can overlap the actual branch target.
                 clearListing(entry, entry);
-                if (!disassemble(entry))
+                disassemble(entry);
+                if (currentProgram.getListing().getInstructionAt(entry) == null) {
+                    // Decode independently of existing code units and clear only
+                    // bytes of this verified instruction, preserving its neighbors.
+                    PseudoInstruction first = new PseudoDisassembler(currentProgram).disassemble(entry);
+                    if (first == null || first.getLength() < 1 || first.getLength() > 15
+                            || entry.add(first.getLength() - 1).compareTo(block.getEnd()) > 0)
+                        throw new IllegalArgumentException("cannot decode verified x86 entry: " + entry);
+                    clearListing(entry, entry.add(first.getLength() - 1));
+                    disassemble(entry);
+                }
+                if (currentProgram.getListing().getInstructionAt(entry) == null)
                     throw new IllegalArgumentException("cannot disassemble verified entry: " + entry);
             }
             println("codrecomp: verified code entry=" + entry);
@@ -81,6 +95,14 @@ public class ExportPcode extends GhidraScript {
                     discovered++;
             }
             println("codrecomp: data-code-pointer candidates=" + candidates.size() + " disassembled=" + discovered);
+        }
+        // Later repairs must not silently invalidate an earlier explicit entry.
+        for (int i = 1; i < args.length; i++) {
+            if (args[i].equals("--code-entry")) {
+                Address entry = toAddr(Long.decode(args[++i]));
+                if (currentProgram.getListing().getInstructionAt(entry) == null)
+                    throw new IllegalArgumentException("verified entry lost during discovery: " + entry);
+            }
         }
         File out = new File(args.length > 0 ? args[0] : "pcode.txt");
         out.getParentFile().mkdirs();

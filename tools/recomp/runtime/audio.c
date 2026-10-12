@@ -32,6 +32,7 @@ typedef struct {
     float decoded[2304];
     uint32_t decoded_frames, source_rate;
     uint64_t stream_frame;
+    int is_stream;
 } sample;
 static sample samples[SAMPLE_MAX];
 static SDL_AudioDeviceID device;
@@ -56,6 +57,7 @@ static void clear_pcm(sample *s) {
     if (s->stream) { mp3dec_ex_close(s->stream); free(s->stream); s->stream = NULL; }
     free(s->compressed); s->compressed = NULL;
     s->decoded_frames = 0; s->stream_frame = 0;
+    s->is_stream = 0;
     free(s->pcm); s->pcm = NULL;
     for (int i = 0; i < 2; i++) { free(s->buffers[i].pcm); s->buffers[i] = (pcm_buffer){0}; }
     s->frames = 0; s->cursor = 0; s->playing = 0;
@@ -159,6 +161,31 @@ K(shutdown) {
     return 0;
 }
 K(file_callbacks) { for (int i = 0; i < 4; i++) file_callbacks[i] = A(i); return 0; }
+static int decode_stream(sample *s, unsigned char **bytes, uint32_t length) {
+    if (length >= 12 && !memcmp(*bytes, "RIFF", 4) && !memcmp(*bytes + 8, "WAVE", 4)) {
+        SDL_AudioSpec spec; Uint8 *pcm = NULL; Uint32 count = 0;
+        if (!SDL_LoadWAV_RW(SDL_RWFromConstMem(*bytes, (int)length), 1, &spec, &pcm, &count)) return 0;
+        if (!count || count > AUDIO_LIMIT || spec.channels < 1 || spec.channels > 2
+                || spec.freq < 1000 || spec.freq > 384000) { SDL_FreeWAV(pcm); return 0; }
+        SDL_AudioCVT cvt;
+        if (SDL_BuildAudioCVT(&cvt, spec.format, spec.channels, spec.freq, AUDIO_F32SYS, 2, spec.freq) < 0
+                || (uint64_t)count * cvt.len_mult > AUDIO_LIMIT) { SDL_FreeWAV(pcm); return 0; }
+        cvt.len = (int)count; cvt.buf = malloc((size_t)count * cvt.len_mult);
+        if (!cvt.buf) { SDL_FreeWAV(pcm); return 0; }
+        memcpy(cvt.buf, pcm, count); SDL_FreeWAV(pcm);
+        if (SDL_ConvertAudio(&cvt) || !cvt.len_cvt || cvt.len_cvt % (2 * sizeof(float))) { free(cvt.buf); return 0; }
+        s->pcm = (float *)cvt.buf; s->frames = (uint32_t)cvt.len_cvt / (2 * sizeof(float));
+        s->source_rate = s->rate = (uint32_t)spec.freq;
+    } else {
+        s->stream = calloc(1, sizeof *s->stream);
+        if (!s->stream || mp3dec_ex_open_buf(s->stream, *bytes, length, MP3D_SEEK_TO_SAMPLE)
+                || !s->stream->samples || s->stream->info.channels < 1 || s->stream->info.channels > 2
+                || s->stream->info.hz < 1000 || s->stream->info.hz > 384000) return 0;
+        s->source_rate = s->rate = (uint32_t)s->stream->info.hz;
+        s->compressed = *bytes; *bytes = NULL;
+    }
+    s->is_stream = 1; return 1;
+}
 K(open_stream) {
     // Invoke the original filesystem only on the engine thread, outside the SDL lock.
     for (int i = 0; i < 4; i++) if (!file_callbacks[i]) { error("stream filesystem callbacks unavailable"); return 0; }
@@ -166,7 +193,8 @@ K(open_stream) {
     if (!scratch || !out) { guest_heap_free(scratch); guest_heap_free(out); return 0; }
     uint32_t a[3] = {A(1), out, 0};
     uint32_t opened = guest_call(file_callbacks[0], 2, a), handle = mem32(out);
-    unsigned char *bytes = NULL; mp3dec_ex_t *decoder = NULL; uint32_t result = 0;
+    unsigned char *bytes = NULL; uint32_t result = 0;
+    sample candidate = {.allocated=1, .volume=1, .pan=0.5f, .loops=1};
     if (opened && handle) {
         a[0] = handle; a[1] = 0; a[2] = 2;
         uint32_t length = guest_call(file_callbacks[2], 3, a);
@@ -180,24 +208,20 @@ K(open_stream) {
                 if (!n || n > a[2]) break;
                 memcpy(bytes + offset, G(scratch), n); offset += n;
             }
-            decoder = calloc(1, sizeof *decoder);
-            if (offset == length && decoder && !mp3dec_ex_open_buf(decoder, bytes, length, MP3D_SEEK_TO_SAMPLE)
-                    && decoder->samples && decoder->info.channels >= 1 && decoder->info.channels <= 2
-                    && decoder->info.hz >= 1000 && decoder->info.hz <= 384000) {
+            if (offset == length && decode_stream(&candidate, &bytes, length)) {
                 lock();
                 for (int i = 0; i < SAMPLE_MAX; i++) if (!samples[i].allocated) {
-                    samples[i] = (sample){.allocated=1, .stream=decoder, .compressed=bytes,
-                        .source_rate=decoder->info.hz, .rate=decoder->info.hz, .volume=1, .pan=0.5f, .loops=1};
-                    result = SAMPLE_BASE+i+1; decoder = NULL; bytes = NULL; break;
+                    samples[i] = candidate; candidate = (sample){0};
+                    result = SAMPLE_BASE+i+1; break;
                 }
                 unlock();
             }
         }
         a[0] = handle; guest_call(file_callbacks[1], 1, a);
     }
-    if (decoder) { mp3dec_ex_close(decoder); free(decoder); }
+    clear_pcm(&candidate);
     free(bytes); guest_heap_free(scratch); guest_heap_free(out);
-    if (!result) error("unable to open or decode MP3 stream");
+    if (!result) error("unable to open or decode audio stream");
     return result;
 }
 static void stream_seek(sample *s, uint64_t frame) {
@@ -207,17 +231,19 @@ static void stream_seek(sample *s, uint64_t frame) {
         s->stream_frame = frame; s->decoded_frames = 0; s->cursor = 0;
     }
 }
-K(start_stream) { lock(); sample *s = lookup(A(0)); if (s && s->stream) { stream_seek(s, 0); s->playing = 4; } unlock(); return 0; }
-K(pause_stream) { lock(); sample *s = lookup(A(0)); if (s && s->stream) s->playing = A(1) ? 8 : 4; unlock(); return 0; }
+K(start_stream) { lock(); sample *s = lookup(A(0)); if (s && s->is_stream) { if (s->stream) stream_seek(s, 0); else s->cursor = 0; s->playing = 4; } unlock(); return 0; }
+K(pause_stream) { lock(); sample *s = lookup(A(0)); if (s && s->is_stream) s->playing = A(1) ? 8 : 4; unlock(); return 0; }
 K(stream_ms_position) {
     lock(); sample *s = lookup(A(0));
-    if (s && s->stream) {
-        if (guest_range(A(1), 4)) wr(G(A(1)), 4, s->stream->samples * 1000 / s->stream->info.channels / s->source_rate);
-        if (guest_range(A(2), 4)) wr(G(A(2)), 4, (s->stream_frame + (uint64_t)s->cursor) * 1000 / s->source_rate);
+    if (s && s->is_stream) {
+        uint64_t total = s->stream ? s->stream->samples / s->stream->info.channels : s->frames;
+        uint64_t position = (s->stream ? s->stream_frame : 0) + (uint64_t)s->cursor;
+        if (guest_range(A(1), 4)) wr(G(A(1)), 4, total * 1000 / s->source_rate);
+        if (guest_range(A(2), 4)) wr(G(A(2)), 4, position * 1000 / s->source_rate);
     }
     unlock(); return 0;
 }
-K(set_stream_ms_position) { lock(); sample *s = lookup(A(0)); if (s && s->stream) stream_seek(s, (uint64_t)A(1) * s->source_rate / 1000); unlock(); return 0; }
+K(set_stream_ms_position) { lock(); sample *s = lookup(A(0)); if (s && s->is_stream) { uint64_t frame = (uint64_t)A(1) * s->source_rate / 1000; if (s->stream) stream_seek(s, frame); else s->cursor = fmin(s->frames, frame); } unlock(); return 0; }
 K(last_error) { (void)esp; return guest_strdup(audio_error); }
 K(enumerate) {
     if (mem32(A(0))) return 0;
