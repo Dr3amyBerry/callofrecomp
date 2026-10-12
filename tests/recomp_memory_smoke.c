@@ -7,6 +7,8 @@ static uint32_t call(const char *name, int n, uint32_t *args) {
 }
 int main(void) {
     guest_init(); shims_register(kernel32_thunks);
+    if (rd(R + 0x10a0, 2) != 0x037f || rd(R + 0x10a2, 2) != 0
+            || rd(R + 0x10a4, 2) != 0xffff) return 25;
     uint32_t a[4] = {0x710000, 8, 64, 0};
     uint32_t p = call("HeapAlloc", 3, a);
     memset(G(p), 0x5a, 64);

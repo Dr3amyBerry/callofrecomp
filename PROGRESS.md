@@ -440,6 +440,13 @@ See [`analysis/static_recompilation_prototype.md`](analysis/static_recompilation
 - Original `+set com_introplayed 1 +spmap training` now passes heap exhaustion and stops at **RaiseException(c000008f)**, called by the original CRT at return address `0x00524BE3` (`recomp_out/engine_training4.log`). Next: investigate guest floating-point state and the CRT exception path. Do not suppress the exception without evidence.
 - Scope and remaining memory limitations are recorded in [`docs/RECOMP_MEMORY.md`](docs/RECOMP_MEMORY.md). Playable training/campaign, visible rendering, MP3 and sustained input remain unverified.
 
+### x87 startup checkpoint — 2026-10-12
+
+- Located the original CRT exception call at `0x00524BDD` (return `0x00524BE3`). Its control-word updates depend on the initial x87 exception masks.
+- Verified Ghidra x86 `ia.sinc`: FPUControlWord/StatusWord/TagWord are at register offsets `0x10A0/0x10A2/0x10A4`; FINIT defines control `0x037F`, status zero and tag `0xFFFF`. Runtime previously left all three zero.
+- A regression reproduced the invalid initial state (exit 25). Initialized these registers before engine entry; **12/12 CTest tests pass**.
+- The original training run now passes the CRT exception, starts **Server: training**, restarts resources/UI and reaches missing **gamex86.dll callback `0x20035480`** (`recomp_out/engine_training5.log`). Verified original instructions at that address; expanding game-module callback coverage next. This is server initialization, not verified map completion or gameplay.
+
 ### Phase D — native implementation
 
 - [x] Start portable C/C++ host scaffolding with CMake and an ABI interface target.

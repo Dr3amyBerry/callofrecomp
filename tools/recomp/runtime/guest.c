@@ -257,6 +257,11 @@ void guest_init(void) {
     sigaction(SIGBUS, &sa, NULL);
 #endif
     if (!MEM) guest_fatal("cannot reserve 4 GiB guest space");
+    // Ghidra x86 register layout / FINIT state. CRT control-word updates retain
+    // exception-mask bits; zero would incorrectly enable every x87 exception.
+    wr(R + 0x10a0, 2, 0x037f); // FPUControlWord
+    wr(R + 0x10a2, 2, 0);      // FPUStatusWord
+    wr(R + 0x10a4, 2, 0xffff); // FPUTagWord: all registers empty
     guest_commit(STACK_TOP - STACK_SIZE, STACK_SIZE);
     guest_commit(SCRATCH, 0x1000);
     // Minimal thread information block for fs:[...]: empty SEH chain, stack bounds, self pointer.
