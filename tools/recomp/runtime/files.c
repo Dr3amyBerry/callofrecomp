@@ -259,18 +259,31 @@ K(CreateDirectoryA) {
 
 K(DeleteFileA) {
     char rel[1024], path[1100];
-    if (!guest_rel(S(0), rel, sizeof rel)) return 0;
+    if (!guest_rel(S(0), rel, sizeof rel)) { shim_set_last_error(5); return 0; }
     host_path(files_home_dir, rel, path, sizeof path);
-    return remove(path) == 0;
+    if (remove(path) == 0) return 1;
+    shim_set_last_error(errno == ENOENT ? 2 : 5);
+    return 0;
 }
 
 K(MoveFileA) {
     char r1[1024], r2[1024], p1[1100], p2[1100];
-    if (!guest_rel(S(0), r1, sizeof r1) || !guest_rel(S(1), r2, sizeof r2)) return 0;
+    if (!guest_rel(S(0), r1, sizeof r1) || !guest_rel(S(1), r2, sizeof r2)) {
+        shim_set_last_error(5); return 0;
+    }
     host_path(files_home_dir, r1, p1, sizeof p1);
     host_path(files_home_dir, r2, p2, sizeof p2);
+    struct stat st;
+    if (stat(p1, &st)) { shim_set_last_error(errno == ENOENT ? 2 : 5); return 0; }
+    // MoveFile does not replace an existing destination. POSIX rename does;
+    // reject it explicitly so the guest's delete-and-retry path works on both.
+    if (!stat(p2, &st)) { shim_set_last_error(183); return 0; }
     mkdirs_for(p2);
-    return rename(p1, p2) == 0;
+    if (rename(p1, p2) == 0) return 1;
+    int error = errno;
+    shim_set_last_error(error == ENOENT ? 3 : error == EXDEV ? 17 :
+                        error == ENOSPC ? 112 : error == EEXIST ? 183 : 5);
+    return 0;
 }
 
 static uint32_t put_str(uint32_t dst, uint32_t cap, const char *s) {

@@ -78,13 +78,22 @@ I should not stop merely because a task is large. Work should be split into phas
   entire stack while preserving TIB/CPUID (RED exit 26, GREEN 12/12 CTest).
 - The rebuilt `pathfinder` probe starts the mission, creates the original save
   and queues movement. The user confirms this is mission 1 and controls work,
-  but reload/aim animations stutter. Frame pacing is now the active investigation.
+  and clarifies that reload is smooth while aiming with the initial weapon
+  stutters. ADS interpolation is now the active investigation.
   Closing the game also exposes missing shutdown entry `0x0047EEE0`.
 - Added optional frame statistics and timed fire/reload/aim input. The first
   campaign sample rendered around 64 FPS after entry, but an existing-autosave
   operation produced the original “insufficient disk space” error despite ample
   host free space. Save finalization needs investigation before that pacing sample
   can cover the full weapon sequence.
+- Located the repeated-autosave failure: MoveFileA returned failure without
+  setting GetLastError, so the original CRT reported rename success and skipped
+  the engine's delete-and-retry path. File moves now reject an existing target on
+  every host and report Win32 errors; DeleteFileA also reports failure errors.
+  Synthetic replacement regression failed with exit 9 before the fix and all
+  12 CTests pass after it. The original campaign probe now replaces the existing
+  autosave successfully and continues rendering. A private GL framebuffer capture
+  confirms the first-person campaign scene; original assets remain ignored.
 
 ### Completed foundation
 

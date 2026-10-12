@@ -10,6 +10,7 @@ uint32_t guest_main_base;  // image base returned by GetModuleHandleA(NULL)
 const char *guest_command_line = "codrecomp";
 
 static uint32_t last_error, tls[64], tls_next;
+void shim_set_last_error(uint32_t error) { last_error = error; }
 
 static uint32_t ch_at(uint32_t s, uint32_t i, int unit) { return (uint32_t)rd(G(s + i * unit), unit); }
 

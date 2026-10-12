@@ -108,6 +108,7 @@ const recomp_module *module_loaded_at(uint32_t base);
 extern uint32_t guest_main_base;
 extern const thunk_def kernel32_thunks[];
 extern const char *guest_command_line;
+void shim_set_last_error(uint32_t error);
 
 // ---- runtime/files.c ----
 extern const thunk_def files_thunks[], misc_thunks[], window_thunks[];
