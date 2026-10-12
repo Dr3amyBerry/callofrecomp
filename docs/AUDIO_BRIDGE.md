@@ -55,7 +55,7 @@ the next blocker. Gameplay is unverified.
 
 The mixer retains positions but does not yet apply spatial attenuation. EAX,
 reverb and preferences are unsupported; the corresponding setters currently
-return without implementing effects. MP3 streams remain unimplemented.
+return without implementing effects. MP3 streams are implemented as described below.
 Do not treat device startup as full Miles
 compatibility.
 
@@ -79,3 +79,27 @@ slots become reusable; an underrun outputs silence and can accept more PCM.
 A zero-length buffer marks EOF. Invalid submissions release their reservation,
 and `end_sample` discards queued playback. Tests cover alternation, reservation,
 guest-memory independence, position reset, refill, EOF and error recovery.
+
+## MP3 streams and PC checkpoint
+
+The stream bridge reads compressed bytes through the original engine's registered
+open/seek/read/close callbacks, including short reads. It closes the file and frees
+guest scratch allocations before returning. Each compressed file is limited to
+64 MiB; decoded PCM uses a fixed 1,152-frame block, rather than retaining an entire
+decoded track. SDL's callback decodes host-owned bytes and never enters guest code.
+Opening scans the stream on the engine thread to establish duration and a seek
+index. Start, pause/resume, looping, playback rate, volume/pan and millisecond
+seeking are supported; stream reverb remains unsupported. Stream containers other
+than MP3 fail explicitly. There is no global compressed-byte budget yet.
+
+The decoder is the CC0 minimp3 implementation, pinned with license, upstream commit
+and hashes under `tools/recomp/third_party/minimp3`. Regression coverage uses
+synthetic silent MPEG-1 Layer III frames and mocked original filesystem callbacks;
+no original audio is included. Tests cover short reads, duration, pause/resume,
+seek, EOF, looping and close, alongside the existing PCM/WAV tests. CTest: 12/12.
+
+The real PC `training` run now finishes `CL_InitCGame` and visibly displays the
+original Spanish briefing, including “Haz clic para iniciar la misión”. The
+process remains active beyond a 45-second observation. Scene rendering, movement
+and sustained mission gameplay are still awaiting verification. The current
+user-requested milestone is first mission playable on PC before Android.

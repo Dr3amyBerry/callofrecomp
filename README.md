@@ -205,12 +205,14 @@ commit or ship; reconstructed code must still be written and validated cleanly.
 The original `CoDSP.exe` engine is now also recompiled. On desktop the SDL2
 boundary loads the original PK3s, finishes renderer initialization, opens SDL
 audio and parses the original UI menus. PCM/WAV playback has deterministic tests;
-MP3 streams, spatial effects and campaign gameplay remain pending. This is not
+MP3 streams now have bounded block decoding and filesystem callback support;
+spatial effects and campaign gameplay remain pending. This is not
 yet a playable port.
 
 The PC training path now loads original map surfaces, visibility, models,
-entities, lights and effects; compressed-audio streaming is the next missing
-boundary. For deeper indirect callback coverage, pass
+entities, lights and effects, finishes client initialization and visibly displays
+the original briefing. Mission controls and gameplay still need verification.
+For deeper indirect callback coverage, pass
 `--discover-data-code-pointers` to `ExportPcode.java` for each module. Explicit
 verified entries and export arguments are recorded in
 [`analysis/recomp_verified_code_entries.json`](analysis/recomp_verified_code_entries.json)

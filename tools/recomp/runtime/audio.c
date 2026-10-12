@@ -3,6 +3,10 @@
 #include <SDL.h>
 #include <stdlib.h>
 #include <stdio.h>
+#define MINIMP3_IMPLEMENTATION
+#define MINIMP3_FLOAT_OUTPUT
+#define MINIMP3_NO_STDIO
+#include "../third_party/minimp3/minimp3_ex.h"
 
 #define SAMPLE_BASE 0x7E000000u
 #define DRIVER 0x7E100001u
@@ -23,6 +27,11 @@ typedef struct {
     float position[3];
     pcm_buffer buffers[2];
     int buffered, active_buffer, eof;
+    mp3dec_ex_t *stream;
+    unsigned char *compressed;
+    float decoded[2304];
+    uint32_t decoded_frames, source_rate;
+    uint64_t stream_frame;
 } sample;
 static sample samples[SAMPLE_MAX];
 static SDL_AudioDeviceID device;
@@ -44,12 +53,36 @@ static int guest_range(uint32_t address, uint32_t size) {
     return 1;
 }
 static void clear_pcm(sample *s) {
+    if (s->stream) { mp3dec_ex_close(s->stream); free(s->stream); s->stream = NULL; }
+    free(s->compressed); s->compressed = NULL;
+    s->decoded_frames = 0; s->stream_frame = 0;
     free(s->pcm); s->pcm = NULL;
     for (int i = 0; i < 2; i++) { free(s->buffers[i].pcm); s->buffers[i] = (pcm_buffer){0}; }
     s->frames = 0; s->cursor = 0; s->playing = 0;
     s->buffered = 0; s->active_buffer = 0; s->eof = 0;
 }
 static float *current_pcm(sample *s, uint32_t *frames) {
+    if (s->stream) {
+        while (!s->decoded_frames || s->cursor >= s->decoded_frames) {
+            s->cursor -= s->decoded_frames; s->stream_frame += s->decoded_frames;
+            int channels = s->stream->info.channels;
+            size_t n = mp3dec_ex_read(s->stream, s->decoded, 1152 * channels);
+            s->decoded_frames = (uint32_t)(n / channels);
+            if (!n) {
+                if (s->loops == 1 || s->stream->last_error || mp3dec_ex_seek(s->stream, 0)) {
+                    s->playing = 0; *frames = 0; return NULL;
+                }
+                if (s->loops > 1) s->loops--;
+                s->stream_frame = 0;
+                n = mp3dec_ex_read(s->stream, s->decoded, 1152 * channels);
+                s->decoded_frames = (uint32_t)(n / channels);
+                if (!n) { s->playing = 0; *frames = 0; return NULL; }
+            }
+            if (channels == 1) for (int i = (int)s->decoded_frames - 1; i >= 0; i--)
+                s->decoded[2*i] = s->decoded[2*i+1] = s->decoded[i];
+        }
+        *frames = s->decoded_frames; return s->decoded;
+    }
     if (s->buffered) {
         for (int i = 0; i < 2; i++) {
             pcm_buffer *b = &s->buffers[s->active_buffer];
@@ -126,6 +159,65 @@ K(shutdown) {
     return 0;
 }
 K(file_callbacks) { for (int i = 0; i < 4; i++) file_callbacks[i] = A(i); return 0; }
+K(open_stream) {
+    // Invoke the original filesystem only on the engine thread, outside the SDL lock.
+    for (int i = 0; i < 4; i++) if (!file_callbacks[i]) { error("stream filesystem callbacks unavailable"); return 0; }
+    uint32_t scratch = guest_heap_alloc(65536), out = guest_heap_alloc(4);
+    if (!scratch || !out) { guest_heap_free(scratch); guest_heap_free(out); return 0; }
+    uint32_t a[3] = {A(1), out, 0};
+    uint32_t opened = guest_call(file_callbacks[0], 2, a), handle = mem32(out);
+    unsigned char *bytes = NULL; mp3dec_ex_t *decoder = NULL; uint32_t result = 0;
+    if (opened && handle) {
+        a[0] = handle; a[1] = 0; a[2] = 2;
+        uint32_t length = guest_call(file_callbacks[2], 3, a);
+        a[2] = 0;
+        uint32_t rewind = guest_call(file_callbacks[2], 3, a);
+        if (length && length <= AUDIO_LIMIT && rewind == 0 && (bytes = malloc(length))) {
+            uint32_t offset = 0;
+            while (offset < length) {
+                a[0] = handle; a[1] = scratch; a[2] = length-offset < 65536 ? length-offset : 65536;
+                uint32_t n = guest_call(file_callbacks[3], 3, a);
+                if (!n || n > a[2]) break;
+                memcpy(bytes + offset, G(scratch), n); offset += n;
+            }
+            decoder = calloc(1, sizeof *decoder);
+            if (offset == length && decoder && !mp3dec_ex_open_buf(decoder, bytes, length, MP3D_SEEK_TO_SAMPLE)
+                    && decoder->samples && decoder->info.channels >= 1 && decoder->info.channels <= 2
+                    && decoder->info.hz >= 1000 && decoder->info.hz <= 384000) {
+                lock();
+                for (int i = 0; i < SAMPLE_MAX; i++) if (!samples[i].allocated) {
+                    samples[i] = (sample){.allocated=1, .stream=decoder, .compressed=bytes,
+                        .source_rate=decoder->info.hz, .rate=decoder->info.hz, .volume=1, .pan=0.5f, .loops=1};
+                    result = SAMPLE_BASE+i+1; decoder = NULL; bytes = NULL; break;
+                }
+                unlock();
+            }
+        }
+        a[0] = handle; guest_call(file_callbacks[1], 1, a);
+    }
+    if (decoder) { mp3dec_ex_close(decoder); free(decoder); }
+    free(bytes); guest_heap_free(scratch); guest_heap_free(out);
+    if (!result) error("unable to open or decode MP3 stream");
+    return result;
+}
+static void stream_seek(sample *s, uint64_t frame) {
+    uint64_t total = s->stream->samples / s->stream->info.channels;
+    if (frame > total) frame = total;
+    if (!mp3dec_ex_seek(s->stream, frame * s->stream->info.channels)) {
+        s->stream_frame = frame; s->decoded_frames = 0; s->cursor = 0;
+    }
+}
+K(start_stream) { lock(); sample *s = lookup(A(0)); if (s && s->stream) { stream_seek(s, 0); s->playing = 4; } unlock(); return 0; }
+K(pause_stream) { lock(); sample *s = lookup(A(0)); if (s && s->stream) s->playing = A(1) ? 8 : 4; unlock(); return 0; }
+K(stream_ms_position) {
+    lock(); sample *s = lookup(A(0));
+    if (s && s->stream) {
+        if (guest_range(A(1), 4)) wr(G(A(1)), 4, s->stream->samples * 1000 / s->stream->info.channels / s->source_rate);
+        if (guest_range(A(2), 4)) wr(G(A(2)), 4, (s->stream_frame + (uint64_t)s->cursor) * 1000 / s->source_rate);
+    }
+    unlock(); return 0;
+}
+K(set_stream_ms_position) { lock(); sample *s = lookup(A(0)); if (s && s->stream) stream_seek(s, (uint64_t)A(1) * s->source_rate / 1000); unlock(); return 0; }
 K(last_error) { (void)esp; return guest_strdup(audio_error); }
 K(enumerate) {
     if (mem32(A(0))) return 0;
@@ -314,6 +406,12 @@ K(zero) { (void)esp; return 0; }
 
 #define M(name, fn, pop) {"mss32.dll", "_AIL_" name "@" #pop, k_##fn, pop}
 const thunk_def audio_thunks[] = {
+    M("open_stream", open_stream, 12), M("close_stream", release, 4), M("start_stream", start_stream, 4),
+    M("pause_stream", pause_stream, 8), M("stream_status", status, 4),
+    M("stream_playback_rate", rate, 4), M("set_stream_playback_rate", set_rate, 8),
+    M("stream_volume_pan", volume_pan, 12), M("set_stream_volume_pan", set_volume_pan, 12),
+    M("set_stream_loop_count", loops, 8), M("stream_ms_position", stream_ms_position, 12),
+    M("set_stream_ms_position", set_stream_ms_position, 8), M("set_stream_reverb_levels", zero, 12),
     M("startup", startup, 0), M("shutdown", shutdown, 0), M("open_digital_driver", open_driver, 16),
     M("set_file_callbacks", file_callbacks, 16), M("set_redist_directory", zero, 4), M("set_preference", zero, 8),
     M("last_error", last_error, 0), M("enumerate_3D_providers", enumerate, 12), M("open_3D_provider", zero, 4),

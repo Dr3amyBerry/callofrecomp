@@ -32,6 +32,19 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### PC mission checkpoint — 2026-10-12
+
+- Current user priority: first mission playable on PC, then Android.
+- Added real MP3 stream decoding through original engine filesystem callbacks,
+  with owned compressed bytes, fixed decoded blocks, seek, pause and loop states.
+  Decoder source is pinned CC0 minimp3; original assets remain outside Git.
+- All 12 CTest checks pass, including synthetic MP3 streams with short reads.
+- Actual `+spmap training` finishes `CL_InitCGame` and visibly shows the original
+  Spanish briefing with “Haz clic para iniciar la misión”. Screenshot and run log
+  are private artifacts under `recomp_out`; the process stays active beyond 45s.
+- First-person scene, movement and sustained gameplay are not verified yet.
+  This checkpoint does not complete the playable-mission goal.
+
 ### Completed foundation
 
 - [x] Connected to and inspected the supplied Call of Duty Deluxe installation in Google Drive.

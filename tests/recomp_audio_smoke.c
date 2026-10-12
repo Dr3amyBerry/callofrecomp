@@ -2,6 +2,27 @@
 #include <stdlib.h>
 #include "audio.h"
 
+static unsigned char mp3[417 * 6];
+static uint32_t file_offset, closes;
+static uint32_t file_open(uint32_t esp) {
+    if (strcmp((char *)G(ARG(esp, 0)), "silent.mp3")) return 0;
+    wr(G(ARG(esp, 1)), 4, 7); file_offset = 0; return sizeof mp3;
+}
+static uint32_t file_close(uint32_t esp) { (void)esp; closes++; return 0; }
+static uint32_t file_seek(uint32_t esp) {
+    int64_t p = (int32_t)ARG(esp, 1);
+    if (ARG(esp, 2) == 1) p += file_offset;
+    if (ARG(esp, 2) == 2) p += sizeof mp3;
+    if (p < 0 || p > sizeof mp3) return UINT32_MAX;
+    return file_offset = (uint32_t)p;
+}
+static uint32_t file_read(uint32_t esp) {
+    uint32_t n = ARG(esp, 2);
+    if (n > sizeof mp3 - file_offset) n = sizeof mp3 - file_offset;
+    if (n > 173) n = 173; // Deliberately short filesystem reads.
+    memcpy(G(ARG(esp, 1)), mp3 + file_offset, n); file_offset += n; return n;
+}
+
 static uint32_t invoke(const char *name, int count, uint32_t *args) {
     uint32_t fn = shim_lookup("mss32.dll", name);
     if (!fn) { fprintf(stderr, "missing audio thunk %s\n", name); exit(1); }
@@ -163,6 +184,48 @@ int main(void) {
         invoke("_AIL_load_sample_buffer@16", 4, args);
     }
     if (invoke("_AIL_sample_status@4", 1, args) != 2) return 33;
-    puts("portable PCM audio passed");
+    invoke("_AIL_release_sample_handle@4", 1, args);
+    for (int i = 0; i < 6; i++) {
+        mp3[417*i] = 0xff; mp3[417*i+1] = 0xfb; mp3[417*i+2] = 0x90;
+    }
+    args[0] = thunk_address("test", "open", file_open, 8);
+    args[1] = thunk_address("test", "close", file_close, 4);
+    args[2] = thunk_address("test", "seek", file_seek, 12);
+    args[3] = thunk_address("test", "read", file_read, 12);
+    invoke("_AIL_set_file_callbacks@16", 4, args);
+    args[0] = 0; args[1] = guest_strdup("silent.mp3"); args[2] = 0;
+    uint32_t stream = invoke("_AIL_open_stream@12", 3, args);
+    if (!stream || closes != 1) return 34;
+    args[0] = stream; args[1] = info; args[2] = info + 4;
+    invoke("_AIL_stream_ms_position@12", 3, args);
+    if (mem32(info) < 150 || mem32(info) > 157 || mem32(info+4)) return 35;
+    invoke("_AIL_start_stream@4", 1, args);
+    audio_mix(out, 4, 44100);
+    if (invoke("_AIL_stream_status@4", 1, args) != 4) return 36;
+    args[1] = 1;
+    invoke("_AIL_pause_stream@8", 2, args);
+    if (invoke("_AIL_stream_status@4", 1, args) != 8) return 37;
+    args[1] = 0;
+    invoke("_AIL_pause_stream@8", 2, args);
+    args[1] = 100;
+    invoke("_AIL_set_stream_ms_position@8", 2, args);
+    args[1] = info; args[2] = info + 4;
+    invoke("_AIL_stream_ms_position@12", 3, args);
+    if (mem32(info+4) != 100) return 38;
+    for (int i = 0; i < 2000; i++) audio_mix(out, 4, 44100);
+    if (invoke("_AIL_stream_status@4", 1, args) != 2) return 39;
+    args[1] = 0;
+    invoke("_AIL_set_stream_loop_count@8", 2, args);
+    invoke("_AIL_start_stream@4", 1, args);
+    for (int i = 0; i < 2000; i++) audio_mix(out, 4, 44100);
+    if (invoke("_AIL_stream_status@4", 1, args) != 4) return 40;
+    invoke("_AIL_close_stream@4", 1, args);
+    if (invoke("_AIL_stream_status@4", 1, args) != 2) return 41;
+    memset(mp3, 0, sizeof mp3);
+    args[0] = 0; args[1] = guest_strdup("silent.mp3"); args[2] = 0;
+    if (invoke("_AIL_open_stream@12", 3, args) || closes != 2) return 42;
+    args[1] = guest_strdup("missing.mp3");
+    if (invoke("_AIL_open_stream@12", 3, args) || closes != 2) return 43;
+    puts("portable PCM and MP3 stream audio passed");
     return 0;
 }
