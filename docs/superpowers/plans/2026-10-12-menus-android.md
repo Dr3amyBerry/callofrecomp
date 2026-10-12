@@ -28,7 +28,7 @@ compatibility. A small Android launcher owns data import and touch controls.
   ARM64 ELF entries, APK signature and alignment with installed SDK tools.
 - [x] Install on WSA, supply private original files, capture logs/screenshots and
   exercise original menus and mission loading. Resolve observed failures.
-- [ ] Run desktop regressions, update verified progress, commit/push and check CI.
+- [x] Run desktop regressions, update verified progress, commit/push and check CI.
 
 ## Execution record
 
@@ -56,3 +56,8 @@ compatibility. A small Android launcher owns data import and touch controls.
   a CoD-owned bridge and independent show/hide toggle. Added Java cancellation
   and stick-direction regressions to CI; batched absolute movement has a tested
   red/green regression in the runtime smoke. Windows menu +quit still exits 0.
+- Commit 18efb50 pushed to main; GitHub CI 38303531640 passed, including the new
+  Java touch tests. Follow-up training inspection identified required prone/lean
+  controls; added these and objectives, with a separate red/green input test and
+  both ABI packages rebuilt. Native WSA final gameplay is the device checkpoint;
+  a physical ARM64 run and completing every training objective remain open.

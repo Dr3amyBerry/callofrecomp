@@ -22,6 +22,10 @@ final class TouchInput {
             case "use": key(9, pressed); break;
             case "jump": key(44, pressed); break;
             case "crouch": key(6, pressed); break;
+            case "prone": key(224, pressed); break; // left Ctrl, original goprone
+            case "lean_left": key(20, pressed); break; // Q
+            case "lean_right": key(8, pressed); break; // E
+            case "objectives": key(43, pressed); break; // Tab
             case "weapon_next": key(17, pressed); break; // N, bound to weapnext
             case "melee": key(25, pressed); break; // V, bound to +melee
             case "grenade": key(33, pressed); break; // 4, original grenade slot

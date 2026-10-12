@@ -25,6 +25,13 @@ public final class TouchInputTest {
             throw new AssertionError("Duplicate action notifications must not leave aiming held");
         events.clear(); input.action("unknown", true);
         if (!events.isEmpty()) throw new AssertionError("Unregistered actions must not inject keys");
+        input.action("prone", true); input.action("lean_left", true);
+        input.action("lean_right", true); input.action("objectives", true);
+        input.releaseAll();
+        for (int code : new int[]{224, 20, 8, 43}) {
+            if (!events.contains("1:"+code+":1:0") || !events.contains("1:"+code+":0:0"))
+                throw new AssertionError("Training stance, lean and objectives must be usable and cancellable");
+        }
         System.out.println("Touch action cancellation and stick transitions passed");
     }
 }

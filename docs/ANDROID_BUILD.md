@@ -60,7 +60,9 @@ For training, choose **Nueva Partida**, then **Regular** or **Novato**. The orig
 menu starts `training` (Campamento Toccoa), before the campaign missions.
 Use **CONTROLES** after entering the level: left stick moves, drag the free area
 to look, and the labelled buttons fire, aim, reload, use, jump, crouch and switch
-weapon. **OCULTAR** removes the overlay so menus and briefings accept direct taps.
+weapon. TUMBARSE, INCL. IZQ./DER. and OBJETIVOS cover the training's remaining
+keyboard actions, including the barbed-wire section. **OCULTAR** removes the
+overlay so menus and briefings accept direct taps.
 **MENÚ** sends Escape and hides the controls for the original pause menu. Tap
 **Volver a la Partida**, then **CONTROLES**, to resume touch gameplay. RetroTouch's
 settings icon opens its layout editor; SAVE retains position/size/opacity changes.

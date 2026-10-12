@@ -33,7 +33,9 @@ final class TouchControls extends FrameLayout {
         String[][] actions = {{"fire", "DISPARO"}, {"aim", "APUNTAR"},
             {"reload", "RECARGA"}, {"use", "USAR"}, {"jump", "SALTAR"},
             {"crouch", "AGACHAR"}, {"weapon_next", "SIG. ARMA"},
-            {"grenade", "GRANADA"}, {"melee", "GOLPE"}, {"menu", "MENÚ"}};
+            {"grenade", "GRANADA"}, {"melee", "GOLPE"}, {"menu", "MENÚ"},
+            {"prone", "TUMBARSE"}, {"lean_left", "INCL. IZQ."},
+            {"lean_right", "INCL. DER."}, {"objectives", "OBJETIVOS"}};
         for (String[] action : actions) retro.registerAction(action[0], action[1]);
         // Reference FPS layout: left movement and utilities, right look/weapon/
         // stance/fire/aim. Control sizes are relative to the short screen edge.
@@ -45,12 +47,16 @@ final class TouchControls extends FrameLayout {
         layout.add(RetroTouchControl.button("reload_button", "reload", "RECARGA", .17f, .40f, .11f));
         layout.add(RetroTouchControl.button("melee_button", "melee", "GOLPE", .07f, .49f, .11f));
         layout.add(RetroTouchControl.button("grenade_button", "grenade", "GRANADA", .27f, .44f, .11f));
+        layout.add(RetroTouchControl.button("prone_button", "prone", "TUMBARSE", .30f, .59f, .11f));
+        layout.add(RetroTouchControl.button("lean_left_button", "lean_left", "INCL.\nIZQ.", .17f, .22f, .10f));
+        layout.add(RetroTouchControl.button("lean_right_button", "lean_right", "INCL.\nDER.", .28f, .22f, .10f));
+        layout.add(RetroTouchControl.button("objectives_button", "objectives", "OBJETIVOS", .40f, .15f, .11f));
         layout.add(RetroTouchControl.button("weapon_button", "weapon_next", "SIG.\nARMA", .90f, .25f, .13f));
         layout.add(RetroTouchControl.button("jump_button", "jump", "SALTAR", .94f, .46f, .12f));
         layout.add(RetroTouchControl.button("crouch_button", "crouch", "AGACHAR", .94f, .64f, .12f));
         layout.add(RetroTouchControl.button("fire_button", "fire", "DISPARO", .83f, .72f, .15f));
         layout.add(RetroTouchControl.button("aim_button", "aim", "APUNTAR", .83f, .91f, .12f));
-        retro.setGameplayLayout(new RetroTouchLayout("callofrecomp_sp_v1", layout));
+        retro.setGameplayLayout(new RetroTouchLayout("callofrecomp_sp_training_v1", layout));
         retro.setLookWhileHoldingAction("fire", true);
         retro.setAutoHideOnController(false);
         retro.setListener(new RetroTouchAdapter() {

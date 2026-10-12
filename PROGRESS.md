@@ -60,7 +60,7 @@ I should not stop merely because a task is large. Work should be split into phas
   gameplay remains unverified.
 - Integrated the actual pinned RetroTouch 1.0.0-beta.4 AAR, its FPS layout,
   editable/persistent buttons, movement, look, fire/aim, reload/use, stance,
-  grenade, melee and next weapon. CONTROLES/OCULTAR selects GAMEPLAY/OFF;
+  prone/lean/objectives, grenade, melee and next weapon. CONTROLES/OCULTAR selects GAMEPLAY/OFF;
   MENU sends Escape and hides controls. Hide, pause and focus loss release input.
 - Fixed splash-to-game activation and absolute menu mapping to the verified
   640x480 UI cursor. Batched touches replace pending movement; the regression
@@ -68,8 +68,10 @@ I should not stop merely because a task is large. Work should be split into phas
   the original engine's VM context, not a direct module callback.
 - WSA x86-64 tests: direct Options/back/new-game touches, Regular -> `Server:
   training`, Camp Toccoa briefing/start, visible 3D characters/world, joystick
-  movement, relative look and original pause menu with controls hidden. Both
-  ARM64/x86-64 APKs build with v2/v3 signatures and 16-KiB ELF/ZIP alignment.
+  movement, relative look and original pause menu with controls hidden.
+  Loading the training autosave through Continue also succeeds; TUMBARSE changes
+  the stance to prone in the visible training world without a keyboard.
+  Both ARM64/x86-64 APKs build with v2/v3 signatures and 16-KiB ELF/ZIP alignment.
 - Android host/build commit `bd071cb` pushed; GitHub CI `38278346310` passed.
 - A restricted desktop CTest run exposed missing LLVM-MinGW `libc++.dll` and
   `libunwind.dll`, producing Windows loader dialogs. The build now deploys C++
