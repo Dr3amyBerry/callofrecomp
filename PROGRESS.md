@@ -34,7 +34,8 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ### Original menus and Android host checkpoint — 2026-10-12
 
-- Current user priority is original menus and an Android build, tested through
+- Current user priority is RetroTouch controls that can be hidden for menus,
+  and playable **training before campaign missions**, tested through
   ADB on local WSA (`127.0.0.1:58526`, Android 13, ARM64 native-bridge support).
 - Restored original cleanup callbacks `0x0047EEE0`, `0x0051A430`, `0x00532010`
   and `0x00532020`, each verified against original instructions/registration
@@ -54,7 +55,21 @@ I should not stop merely because a task is large. Work should be split into phas
 - ARM64 under WSA's Houdini 14 bridge completes common initialization and parses
   original menus, but a first frame/gameplay is still unverified. An isolated
   SDL inline-atomic experiment did not resolve it and was removed. An optimized
-  native x86-64 comparison is being built; do not treat packaging as playability.
+  native x86-64 comparison now displays original menus and playable Camp Toccoa.
+  The user also confirmed the visible original menu in WSA; physical ARM64
+  gameplay remains unverified.
+- Integrated the actual pinned RetroTouch 1.0.0-beta.4 AAR, its FPS layout,
+  editable/persistent buttons, movement, look, fire/aim, reload/use, stance,
+  grenade, melee and next weapon. CONTROLES/OCULTAR selects GAMEPLAY/OFF;
+  MENU sends Escape and hides controls. Hide, pause and focus loss release input.
+- Fixed splash-to-game activation and absolute menu mapping to the verified
+  640x480 UI cursor. Batched touches replace pending movement; the regression
+  failed before that fix and passes after it. UI movement still runs through
+  the original engine's VM context, not a direct module callback.
+- WSA x86-64 tests: direct Options/back/new-game touches, Regular -> `Server:
+  training`, Camp Toccoa briefing/start, visible 3D characters/world, joystick
+  movement, relative look and original pause menu with controls hidden. Both
+  ARM64/x86-64 APKs build with v2/v3 signatures and 16-KiB ELF/ZIP alignment.
 - Android host/build commit `bd071cb` pushed; GitHub CI `38278346310` passed.
 - A restricted desktop CTest run exposed missing LLVM-MinGW `libc++.dll` and
   `libunwind.dll`, producing Windows loader dialogs. The build now deploys C++

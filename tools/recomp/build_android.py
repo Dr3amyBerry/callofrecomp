@@ -15,6 +15,7 @@ import zipfile
 DEPENDENCIES = {
     "SDL": ("https://github.com/libsdl-org/SDL.git", "5d249570393f7a37e037abf22cd6012a4cc56a71"),
     "gl4es": ("https://github.com/ptitSeb/gl4es.git", "ec16bedd8819c475326f4f1a3063772c6d986e06"),
+    "RetroTouch": ("https://github.com/Andiweli/RetroTouch.git", "cdc01db0a6d6f9acaef72d7c496f5929b1bc3b8b"),
 }
 
 
@@ -81,23 +82,28 @@ def main():
         path.mkdir()
     sources = sorted((deps / "SDL/android-project/app/src/main/java").rglob("*.java"))
     sources += sorted((root / "android/java").rglob("*.java"))
+    # The pinned AAR has no resources/dependencies; keep its binary API boundary.
+    retro_jar = package / "retrotouch.jar"
+    with zipfile.ZipFile(deps / "RetroTouch/source/RetroTouch-1.0.0-beta.4.aar") as aar:
+        retro_jar.write_bytes(aar.read("classes.jar"))
     response = package / "javac.args"
     response.write_text("\n".join('"' + str(p).replace("\\", "/") + '"' for p in sources), encoding="utf-8")
     env = dict(os.environ, JAVA_HOME=str(java))
     env["PATH"] = str(java / "bin") + os.pathsep + env.get("PATH", "")
     run(java / f"bin/javac{exe}", "-encoding", "UTF-8", "-source", "8", "-target", "8",
-        "-classpath", android_jar, "-d", classes, "@" + str(response), env=env)
+        "-classpath", str(android_jar) + os.pathsep + str(retro_jar), "-d", classes, "@" + str(response), env=env)
     class_jar = package / "classes.jar"
     with zipfile.ZipFile(class_jar, "w") as jar:
         for path in classes.rglob("*.class"):
             jar.write(path, path.relative_to(classes).as_posix())
-    run(build_tools / f"d8{batch}", "--min-api", "26", "--lib", android_jar, "--output", dex, class_jar, env=env)
+    run(build_tools / f"d8{batch}", "--min-api", "26", "--lib", android_jar, "--output", dex, class_jar, retro_jar, env=env)
     unsigned, aligned = package / "unsigned.apk", package / "aligned.apk"
     run(build_tools / f"aapt2{exe}", "link", "-I", android_jar, "--manifest", root / "android/AndroidManifest.xml", "-o", unsigned)
     with zipfile.ZipFile(unsigned, "a") as apk:
         apk.write(dex / "classes.dex", "classes.dex", compress_type=zipfile.ZIP_DEFLATED)
         apk.write(deps / "SDL/LICENSE.txt", "assets/licenses/SDL2.txt", compress_type=zipfile.ZIP_DEFLATED)
         apk.write(deps / "gl4es/LICENSE", "assets/licenses/GL4ES.txt", compress_type=zipfile.ZIP_DEFLATED)
+        apk.write(deps / "RetroTouch/LICENSE", "assets/licenses/RetroTouch.txt", compress_type=zipfile.ZIP_DEFLATED)
         ndk_host = "windows-x86_64" if os.name == "nt" else ("darwin-x86_64" if os.sys.platform == "darwin" else "linux-x86_64")
         strip = ndk / f"toolchains/llvm/prebuilt/{ndk_host}/bin/llvm-strip{exe}"
         stripped = package / "native"

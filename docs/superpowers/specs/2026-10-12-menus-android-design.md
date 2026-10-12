@@ -17,6 +17,11 @@ folder picker into the app's writable storage, without broad storage permission.
 Saved games and configuration occupy a separate writable profile directory.
 
 Touch menus map absolute normalized coordinates to guest client coordinates.
+User steering: use the actual RetroTouch AAR and reference FPS layout, with a
+visible show/hide control. Its OFF mode passes touches to the original menu input
+layer; hiding/pause resets held actions. Prioritize the original `training` level
+at Camp Toccoa before other campaign maps. Native x86-64 is the WSA test ABI;
+ARM64 remains the phone target.
 An on-screen control overlay provides movement, look, attack, aim, reload, use,
 jump, crouch and pause. A visible control-mode toggle permits original menus and
 briefings to use direct touch. Touch input enters SDL's event queue; Android UI

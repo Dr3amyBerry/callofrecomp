@@ -1,116 +1,120 @@
 package org.callofrecomp;
 
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.RectF;
-import android.util.SparseArray;
+import android.view.Gravity;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import com.ast.retrotouch.RetroTouchAdapter;
+import com.ast.retrotouch.RetroTouchControl;
+import com.ast.retrotouch.RetroTouchLayout;
+import com.ast.retrotouch.RetroTouchMode;
+import com.ast.retrotouch.RetroTouchView;
+import java.util.ArrayList;
+import java.util.List;
 
-final class TouchControls extends View {
-    private static final int JOY = 100, LOOK = 101, MENU = 102;
-    private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final SparseArray<Finger> fingers = new SparseArray<>();
-    private final int[] holds = new int[64];
-    private boolean game, menuHeld;
-    private int menuX, menuY;
-    private static final String[] LABELS = {"DISPARO", "APUNTAR", "RECARGA", "USAR", "SALTAR", "AGACHAR", "ARMA"};
-    private static final int[] KEYS = {-1, -3, 21, 9, 44, 6, 30};
-    private static final class Finger {
-        int role; float x, y; int joy;
-        Finger(int r, float a, float b) { role = r; x = a; y = b; }
+/** RetroTouch owns drawing, multitouch and editing; this bridge owns CoD input. */
+final class TouchControls extends FrameLayout {
+    private final TouchInput input = new TouchInput((kind, code, x, y) ->
+        GameActivity.nativeInput(kind, code, x, y));
+    private final RetroTouchView retro;
+    private final MenuPointer menu;
+    private final Button toggle;
+    private boolean visible;
+
+    TouchControls(Context context) {
+        super(context);
+        menu = new MenuPointer(context);
+        addView(menu, new LayoutParams(-1, -1));
+        retro = new RetroTouchView(context);
+        addView(retro, new LayoutParams(-1, -1));
+        String[][] actions = {{"fire", "DISPARO"}, {"aim", "APUNTAR"},
+            {"reload", "RECARGA"}, {"use", "USAR"}, {"jump", "SALTAR"},
+            {"crouch", "AGACHAR"}, {"weapon_next", "SIG. ARMA"},
+            {"grenade", "GRANADA"}, {"melee", "GOLPE"}, {"menu", "MENÚ"}};
+        for (String[] action : actions) retro.registerAction(action[0], action[1]);
+        // Reference FPS layout: left movement and utilities, right look/weapon/
+        // stance/fire/aim. Control sizes are relative to the short screen edge.
+        List<RetroTouchControl> layout = new ArrayList<>();
+        layout.add(RetroTouchControl.lookZone("look", .72f, .48f, .56f, .96f));
+        layout.add(RetroTouchControl.moveStick("move", .16f, .76f, .25f));
+        layout.add(RetroTouchControl.button("menu_button", "menu", "MENÚ", .07f, .09f, .11f));
+        layout.add(RetroTouchControl.button("use_button", "use", "USAR", .07f, .30f, .11f));
+        layout.add(RetroTouchControl.button("reload_button", "reload", "RECARGA", .17f, .40f, .11f));
+        layout.add(RetroTouchControl.button("melee_button", "melee", "GOLPE", .07f, .49f, .11f));
+        layout.add(RetroTouchControl.button("grenade_button", "grenade", "GRANADA", .27f, .44f, .11f));
+        layout.add(RetroTouchControl.button("weapon_button", "weapon_next", "SIG.\nARMA", .90f, .25f, .13f));
+        layout.add(RetroTouchControl.button("jump_button", "jump", "SALTAR", .94f, .46f, .12f));
+        layout.add(RetroTouchControl.button("crouch_button", "crouch", "AGACHAR", .94f, .64f, .12f));
+        layout.add(RetroTouchControl.button("fire_button", "fire", "DISPARO", .83f, .72f, .15f));
+        layout.add(RetroTouchControl.button("aim_button", "aim", "APUNTAR", .83f, .91f, .12f));
+        retro.setGameplayLayout(new RetroTouchLayout("callofrecomp_sp_v1", layout));
+        retro.setLookWhileHoldingAction("fire", true);
+        retro.setAutoHideOnController(false);
+        retro.setListener(new RetroTouchAdapter() {
+            @Override public void onAction(String action, boolean pressed) {
+                if (action.equals("menu") && pressed) {
+                    input.action("menu", true); input.action("menu", false);
+                    // Let RetroTouch finish its pointer callback before resetting
+                    // its pointer collection and switching to touch pass-through.
+                    post(() -> showControls(false));
+                } else input.action(action, pressed);
+            }
+            @Override public void onMove(float x, float y) { input.move(x, y); }
+            @Override public void onLook(float x, float y) { input.look(x, y); }
+            @Override public void onEditorStateChanged(boolean editing) {
+                if (editing) input.releaseAll();
+            }
+        });
+        toggle = new Button(context);
+        toggle.setTextSize(11); toggle.setAlpha(.72f);
+        toggle.setContentDescription("Mostrar u ocultar controles táctiles");
+        toggle.setOnClickListener(v -> showControls(!visible));
+        int size = Math.round(48 * getResources().getDisplayMetrics().density);
+        // Leave RetroTouch's movable settings icon in the upper-right accessible.
+        addView(toggle, new LayoutParams(size * 3, size, Gravity.TOP | Gravity.CENTER_HORIZONTAL));
+        showControls(false);
     }
-    TouchControls(Context context) { super(context); setFocusable(false); }
-    private void input(int kind, int control, int x, int y) { GameActivity.nativeInput(kind, control, x, y); }
-    private void key(int key, boolean down) {
-        int index = key < 0 ? 50 - key : key;
-        if (down) { if (holds[index]++ == 0) input(key < 0 ? 2 : 1, Math.abs(key), 1, 0); }
-        else if (holds[index] > 0 && --holds[index] == 0) input(key < 0 ? 2 : 1, Math.abs(key), 0, 0);
+    private void showControls(boolean show) {
+        releaseAll(); visible = show;
+        retro.setMode(show ? RetroTouchMode.GAMEPLAY : RetroTouchMode.OFF);
+        menu.setVisibility(show ? View.GONE : View.VISIBLE);
+        toggle.setText(show ? "OCULTAR" : "CONTROLES");
     }
     void releaseAll() {
-        for (int i = 0; i < holds.length; i++) if (holds[i] != 0) {
-            int code = i > 50 ? -(i - 50) : i;
-            input(code < 0 ? 2 : 1, Math.abs(code), 0, 0); holds[i] = 0;
+        retro.resetInputState(); input.releaseAll(); menu.cancel();
+    }
+    private static final class MenuPointer extends View {
+        private int pointer = -1, x, y;
+        MenuPointer(Context context) { super(context); setFocusable(false); }
+        void cancel() { pointer = -1; GameActivity.nativeInput(4, 1, 0, 0); }
+        private void position(float px, float py) {
+            x = Math.max(0, Math.min(65535, Math.round(px * 65535 / Math.max(1, getWidth()))));
+            y = Math.max(0, Math.min(65535, Math.round(py * 65535 / Math.max(1, getHeight()))));
+            GameActivity.nativeInput(0, 0, x, y);
         }
-        input(4, 1, 0, 0);
-        menuHeld = false; fingers.clear(); invalidate();
-    }
-    private RectF button(int i) {
-        float w = getWidth(), h = getHeight();
-        return new RectF(w * (.59f + (i % 3) * .135f), h * (.56f + (i / 3) * .13f),
-            w * (.715f + (i % 3) * .135f), h * (.675f + (i / 3) * .13f));
-    }
-    @Override protected void onDraw(Canvas canvas) {
-        float w = getWidth(), h = getHeight(); paint.setTextSize(Math.max(12, h * .024f));
-        box(canvas, new RectF(w * .77f, 0, w, h * .10f), game ? "MENÚ / PAUSA" : "CONTROLES");
-        if (!game) return;
-        paint.setColor(0x55303030); canvas.drawCircle(w * .18f, h * .72f, h * .16f, paint);
-        paint.setColor(0xCCFFFFFF); canvas.drawText("MOVER", w * .13f, h * .73f, paint);
-        for (int i = 0; i < LABELS.length; i++) box(canvas, button(i), LABELS[i]);
-    }
-    private void box(Canvas c, RectF r, String text) {
-        paint.setColor(0x77303030); c.drawRoundRect(r, 8, 8, paint);
-        paint.setColor(0xDDFFFFFF); paint.setTextAlign(Paint.Align.CENTER);
-        c.drawText(text, r.centerX(), r.centerY() + paint.getTextSize() / 3, paint);
-        paint.setTextAlign(Paint.Align.LEFT);
-    }
-    private void absolute(int action, float x, float y) {
-        menuX = Math.max(0, Math.min(65535, Math.round(x * 65535 / Math.max(1, getWidth()))));
-        menuY = Math.max(0, Math.min(65535, Math.round(y * 65535 / Math.max(1, getHeight()))));
-        input(0, action, menuX, menuY);
-    }
-    private void joystick(Finger finger, float x, float y) {
-        float dx = (x / getWidth() - .18f), dy = (y / getHeight() - .72f);
-        int next = (dx < -.04f ? 1 : 0) | (dx > .04f ? 2 : 0) | (dy < -.05f ? 4 : 0) | (dy > .05f ? 8 : 0);
-        int[] codes = {4, 7, 26, 22};
-        for (int i = 0; i < 4; i++) if (((next ^ finger.joy) & (1 << i)) != 0) key(codes[i], (next & (1 << i)) != 0);
-        finger.joy = next;
-    }
-    @Override public boolean onTouchEvent(MotionEvent event) {
-        if (event.isFromSource(InputDevice.SOURCE_MOUSE)) return false;
-        int action = event.getActionMasked(), index = event.getActionIndex();
-        float x = event.getX(index), y = event.getY(index); int id = event.getPointerId(index);
-        if (action == MotionEvent.ACTION_CANCEL) { releaseAll(); return true; }
-        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-            if (x > getWidth() * .77f && y < getHeight() * .10f) {
-                releaseAll();
-                if (game) { key(41, true); key(41, false); }
-                game = !game; invalidate(); return true;
+        @Override public boolean onTouchEvent(MotionEvent e) {
+            int action = e.getActionMasked(), index = e.getActionIndex();
+            if (action == MotionEvent.ACTION_CANCEL) { cancel(); return true; }
+            if (action == MotionEvent.ACTION_DOWN) {
+                pointer = e.getPointerId(index); position(e.getX(index), e.getY(index));
+            } else if (action == MotionEvent.ACTION_MOVE && pointer != -1) {
+                int p = e.findPointerIndex(pointer);
+                if (p >= 0) position(e.getX(p), e.getY(p));
+            } else if ((action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP)
+                    && e.getPointerId(index) == pointer) {
+                position(e.getX(index), e.getY(index));
+                GameActivity.nativeInput(4, 0, x, y); pointer = -1;
             }
-            if (!game) {
-                if (!menuHeld) { absolute(0, x, y); menuHeld = true; fingers.put(id, new Finger(MENU, x, y)); }
-                return true;
-            }
-            int role = LOOK;
-            for (int i = 0; i < LABELS.length; i++) if (button(i).contains(x, y)) { role = i; break; }
-            if (role == LOOK && x < getWidth() * .36f) role = JOY;
-            Finger f = new Finger(role, x, y); fingers.put(id, f);
-            if (role < LABELS.length) key(KEYS[role], true);
-            if (role == JOY) joystick(f, x, y);
-        } else if (action == MotionEvent.ACTION_MOVE) {
-            for (int i = 0; i < event.getPointerCount(); i++) {
-                Finger f = fingers.get(event.getPointerId(i)); if (f == null) continue;
-                float a = event.getX(i), b = event.getY(i);
-                if (f.role == MENU) absolute(0, a, b);
-                if (f.role == JOY) joystick(f, a, b);
-                if (f.role == LOOK) input(3, 0, Math.max(-32768, Math.min(32767, Math.round((a - f.x) * 1280 / getWidth()))),
-                    Math.max(-32768, Math.min(32767, Math.round((b - f.y) * 720 / getHeight()))));
-                f.x = a; f.y = b;
-            }
-        } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP) {
-            Finger f = fingers.get(id);
-            if (f != null) {
-                if (f.role < LABELS.length) key(KEYS[f.role], false);
-                if (f.role == JOY) {
-                    int[] codes = {4, 7, 26, 22};
-                    for (int i = 0; i < 4; i++) if ((f.joy & (1 << i)) != 0) key(codes[i], false);
-                }
-                if (f.role == MENU) { absolute(0, x, y); input(4, 0, menuX, menuY); menuHeld = false; }
-                fingers.remove(id);
-            }
+            return true;
         }
-        return true;
+        @Override public boolean onGenericMotionEvent(MotionEvent e) {
+            if (e.isFromSource(InputDevice.SOURCE_MOUSE) && e.getActionMasked() == MotionEvent.ACTION_HOVER_MOVE) {
+                position(e.getX(), e.getY()); return true;
+            }
+            return super.onGenericMotionEvent(e);
+        }
     }
 }

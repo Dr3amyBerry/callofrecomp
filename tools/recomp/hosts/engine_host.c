@@ -9,6 +9,19 @@
 
 extern const recomp_module recomp_module_codsp, recomp_module_uix86, recomp_module_cgamex86, recomp_module_gamex86;
 
+static int menu_pointer(int x, int y, int *dx, int *dy) {
+    if (!module_loaded_at(recomp_module_uix86.image_base)) return 0;
+    // Verified 1.5 SP UI_MOUSE_EVENT (vmMain command 4): cursor integers at
+    // 0x401C0470/74 are clamped to 640x480 by the original 0x4000C660.
+    // Read the current UI position so warping, resize and physical mouse input
+    // cannot leave a stale touch origin or apply gameplay mouse sensitivity.
+    *dx = x * 640 / 65535 - (int)mem32(0x401C0470u);
+    *dy = y * 480 / 65535 - (int)mem32(0x401C0474u);
+    // Deliver through IN_MouseMove / VM_Call, which owns the syscall VM context.
+    // Calling vmMain directly here would bypass that context during hover.
+    return 1;
+}
+
 static char *join(const char *dir, const char *file) {
     size_t n = strlen(dir) + strlen(file) + 2;
     char *p = malloc(n);
@@ -37,6 +50,7 @@ int main(int argc, char **argv) {
     shims_register(kernel32_thunks);
     shims_register(misc_thunks);
     shims_register(window_thunks);
+    window_menu_pointer = menu_pointer;
     shims_register(gl_thunks);
     shims_register(audio_thunks);
     host_dll_register("opengl32.dll");

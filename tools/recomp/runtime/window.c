@@ -19,6 +19,7 @@ static SDL_Window *win;
 static SDL_GLContext ctx;
 static int win_w = 640, win_h = 480, desk_w = 1280, desk_h = 720;
 static uint32_t cursor_x, cursor_y;
+static uint32_t warp_x, warp_y;
 static int cursor_count, active;
 
 // ---------------------------------------------------------------- classes / windows
@@ -106,6 +107,9 @@ K(CreateWindowExA) {
         SDL_SetWindowSize(win, win_w, win_h);
         SDL_SetWindowPosition(win, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         if (A(2)) SDL_SetWindowTitle(win, S(2));
+        // The splash and game share one SDL window, but each original WndProc
+        // needs its own activation. Android may emit no second focus event.
+        if (game_hwnd != hwnd) active = 0;
         game_hwnd = hwnd;
     }
     printf("codrecomp: window %08x %dx%d class=%s proc=%08x%s\n", hwnd, w, h, cls, proc, game && game_hwnd == hwnd ? " [game]" : "");
@@ -199,7 +203,7 @@ K(GetWindowTextA) {
 // ---------------------------------------------------------------- cursor
 
 K(GetCursorPos) { wr(G(A(0)), 4, cursor_x); wr(G(A(0) + 4), 4, cursor_y); return 1; }
-K(SetCursorPos) { cursor_x = A(0); cursor_y = A(1); return 1; }
+K(SetCursorPos) { warp_x = cursor_x = A(0); warp_y = cursor_y = A(1); return 1; }
 K(ShowCursor) {
     cursor_count += A(0) ? 1 : -1;
     if (win) SDL_SetRelativeMouseMode(cursor_count < 0 ? SDL_TRUE : SDL_FALSE);
@@ -214,6 +218,7 @@ static int q_head, q_tail;
 static uint32_t mouse_buttons;
 static uint32_t touch_x, touch_y, pending_menu_position;
 static int touch_position_ready, pending_menu_click;
+int (*window_menu_pointer)(int x, int y, int *dx, int *dy);
 
 static void post(uint32_t msg, uint32_t wp, uint32_t lp) {
     int next = (q_tail + 1) % 256;
@@ -288,7 +293,12 @@ static void pump(void) {
                 if (!touch_position_ready) { touch_x = win_w / 2; touch_y = win_h / 2; touch_position_ready = 1; }
                 // IN_MouseMove reads the delta from the warped center; UI then
                 // adds that delta to its own cursor. Preserve the last target.
-                cursor_x += target_x - touch_x; cursor_y += target_y - touch_y;
+                int dx = (int)(target_x - touch_x), dy = (int)(target_y - touch_y);
+                if (window_menu_pointer && window_menu_pointer(x, y, &dx, &dy)) {
+                    // Multiple touches before IN_MouseMove are one absolute
+                    // target. Replace the pending delta from the last warp.
+                    cursor_x = warp_x + (uint32_t)dx; cursor_y = warp_y + (uint32_t)dy;
+                } else { cursor_x += (uint32_t)dx; cursor_y += (uint32_t)dy; }
                 touch_x = target_x; touch_y = target_y;
                 uint32_t lp = target_x | target_y << 16;
                 post(0x0200, mouse_buttons, lp);

@@ -45,6 +45,8 @@ jobs:
           mkdir -p build-android-check
           javac -d build-android-check android/java/org/callofrecomp/Installation.java tests/android/InstallationTest.java
           java -cp build-android-check org.callofrecomp.InstallationTest
+          javac -d build-android-check android/java/org/callofrecomp/TouchInput.java tests/android/TouchInputTest.java
+          java -cp build-android-check org.callofrecomp.TouchInputTest
 
       - name: Smoke-test analysis CLIs
         run: |

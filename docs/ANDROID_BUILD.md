@@ -17,7 +17,7 @@ writable profiles live in internal app storage. The APK contains no original PE/
 python tools/recomp/build_android.py --sdk "$env:ANDROID_HOME" --java "$env:JAVA_HOME" --jobs 2
 ```
 
-The builder fetches the exact SDL2 and GL4ES revisions recorded in its source,
+The builder fetches the exact SDL2, GL4ES and RetroTouch revisions in its source,
 builds ARM64 shared libraries for API 26+, compiles the SDL and application Java
 sources, and produces `recomp_out/callofrecomp-arm64-debug.apk`. It checks the APK
 signature and 16-KiB native-library ZIP alignment. Builds and the local debug
@@ -32,13 +32,16 @@ both ELF LOAD segments and APK ZIP alignment at 16 KiB.
 
 SDL2: <https://github.com/libsdl-org/SDL> (zlib license).
 GL4ES: <https://github.com/ptitSeb/gl4es> (MIT license).
+RetroTouch: <https://github.com/Andiweli/RetroTouch> (MIT license), 1.0.0-beta.4
+AAR at commit `cdc01db0a6d6f9acaef72d7c496f5929b1bc3b8b`. The builder uses its
+classes.jar directly rather than copying the library implementation into the app.
 The upstream licenses are retained in the local dependency source trees.
 
 ## Install and play
 
 ```powershell
 adb connect 127.0.0.1:58526
-adb -s 127.0.0.1:58526 install -r recomp_out/callofrecomp-arm64-debug.apk
+adb -s 127.0.0.1:58526 install -r recomp_out/callofrecomp-x86_64-debug.apk
 adb -s 127.0.0.1:58526 shell am start -n org.callofrecomp/.LauncherActivity
 ```
 
@@ -52,9 +55,15 @@ other executable/DLL versions are rejected. PK3 content may include localization
 **Jugar** starts the engine and its original campaign/options/load UI. Touch menus directly.
 The initial language follows available imported localization packs, preferring the
 device language when available; a Spanish-only installation starts in Spanish.
-Use **CONTROLES** after entering a mission: left stick moves, drag the free area
+Use the x86-64 APK on WSA; use the ARM64 APK on an ARM64 Android phone.
+For training, choose **Nueva Partida**, then **Regular** or **Novato**. The original
+menu starts `training` (Campamento Toccoa), before the campaign missions.
+Use **CONTROLES** after entering the level: left stick moves, drag the free area
 to look, and the labelled buttons fire, aim, reload, use, jump, crouch and switch
-weapon. **MENÚ / PAUSA** sends Escape and returns to direct menu input.
+weapon. **OCULTAR** removes the overlay so menus and briefings accept direct taps.
+**MENÚ** sends Escape and hides the controls for the original pause menu. Tap
+**Volver a la Partida**, then **CONTROLES**, to resume touch gameplay. RetroTouch's
+settings icon opens its layout editor; SAVE retains position/size/opacity changes.
 Touch cancellation, focus loss and backgrounding release held controls.
 Menu taps first update the original UI cursor, then activate after a rendered
 frame; this preserves the original engine's relative/recentered mouse behavior.
@@ -71,6 +80,11 @@ therefore do not establish performance on a physical ARM64 Android device.
 The launcher, real SAF import, compatible-binary checks and signed ARM64 APK
 installation have been exercised on WSA. The ARM64 engine reaches common
 initialization and parses original menus but has not produced a first frame there;
-Android gameplay is not yet verified. Native x86-64 comparison is in progress.
+Native x86-64 WSA now displays the original Spanish menus, opens Options by
+direct touch, loads the original training briefing and enters the Camp Toccoa
+3D world. Relative look, joystick movement and pause/hide have been exercised.
+This verifies that native WSA path, not physical ARM64 performance or completion
+of every training objective. ADB screencap may return black while WSA's desktop
+window visibly renders; validation also used window captures.
 ELF/ZIP alignment alone does not establish full 16-KiB host-page compatibility;
 the guest memory allocator currently tracks and protects 4-KiB pages.

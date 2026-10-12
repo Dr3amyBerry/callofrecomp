@@ -26,7 +26,7 @@ compatibility. A small Android launcher owns data import and touch controls.
   Add synthetic input tests for absolute menu positions and held-button release.
 - [x] Add a reproducible SDK packaging/signing script and build the APK. Verify
   ARM64 ELF entries, APK signature and alignment with installed SDK tools.
-- [ ] Install on WSA, supply private original files, capture logs/screenshots and
+- [x] Install on WSA, supply private original files, capture logs/screenshots and
   exercise original menus and mission loading. Resolve observed failures.
 - [ ] Run desktop regressions, update verified progress, commit/push and check CI.
 
@@ -49,3 +49,10 @@ compatibility. A small Android launcher owns data import and touch controls.
 - Real WSA SAF import passes baseline validation. ARM64 reaches common init but
   has no first frame; native x86-64 optimized comparison is in progress. Removing
   outlined SDL atomics did not resolve this, so the experiment was removed.
+- Native x86-64 reaches the visible original Spanish menu and original Camp
+  Toccoa training. Verified Options/back/new-game direct touches, training load,
+  joystick/look, and pause with controls hidden. ARM64 phone testing remains open.
+- User selected RetroTouch's FPS controls. Integrated the actual pinned AAR with
+  a CoD-owned bridge and independent show/hide toggle. Added Java cancellation
+  and stick-direction regressions to CI; batched absolute movement has a tested
+  red/green regression in the runtime smoke. Windows menu +quit still exits 0.

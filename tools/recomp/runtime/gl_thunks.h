@@ -26,3 +26,6 @@ extern const thunk_def gl_thunks[];
 // 3 relative look, 4 menu activation after a frame (control 1 cancels).
 // Absolute coordinates use 0..65535; key/button x is held.
 int window_push_input(int kind, int control, int x, int y);
+// Optional engine adapter for absolute UI positions (normalized 0..65535).
+// Runs on the engine thread; return 1 with UI-relative movement in dx/dy.
+extern int (*window_menu_pointer)(int x, int y, int *dx, int *dy);

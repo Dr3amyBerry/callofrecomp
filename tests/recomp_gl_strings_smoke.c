@@ -11,6 +11,12 @@ static void *getproc(const char *name) {
     return !strcmp(name, "glGetPointerv") ? (void *)fake_get_pointer : NULL;
 }
 
+static int menu_delta(int x, int y, int *dx, int *dy) {
+    (void)x; (void)y;
+    *dx = 10; *dy = 20;
+    return 1;
+}
+
 int main(void) {
     guest_init();
     char extensions[32768];
@@ -94,6 +100,19 @@ int main(void) {
     if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x200) return 26;
     guest_call(shim_lookup("GDI32.dll", "SwapBuffers"), 1, &hdc);
     if (guest_call(fn, 5, peek)) return 27;
+    // Down/up can arrive before one engine frame. Absolute UI movement must
+    // replace the pending delta, rather than apply the same target twice.
+    window_menu_pointer = menu_delta;
+    guest_call(shim_lookup("USER32.dll", "SetCursorPos"), 2, center);
+    window_push_input(0, 0, 32768, 32768);
+    window_push_input(0, 0, 32768, 32768);
+    guest_call(fn, 5, peek); guest_call(fn, 5, peek);
+    guest_call(shim_lookup("USER32.dll", "GetCursorPos"), 1, &point);
+    if (mem32(point) != 330 || mem32(point+4) != 260) {
+        fputs("Batched absolute touches must not accumulate UI movement\n", stderr);
+        return 28;
+    }
+    window_menu_pointer = NULL;
     SDL_Quit();
     puts("guest GL strings and queued input passed");
     return 0;
