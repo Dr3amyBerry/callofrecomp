@@ -3,6 +3,34 @@
   "sha256": "c755c7da411c87039ade462a2299402c3c4ca5c4fc4f1ae5cea6e25b05c69f47",
   "entries": [
     {
+      "address": "0x00532010",
+      "instruction": "RET",
+      "callback_assignment": "0x00531C50",
+      "confidence": "observed",
+      "reason": "Original code registers this return-only destructor through atexit at 0x00531C55; verified together with the adjacent destructor reached on Quit."
+    },
+    {
+      "address": "0x00532020",
+      "instruction": "RET",
+      "callback_assignment": "0x00531C60",
+      "confidence": "observed",
+      "reason": "Original code registers this return-only destructor through atexit at 0x00531C65; reached after audio shutdown during normal menu Quit."
+    },
+    {
+      "address": "0x0051A430",
+      "instruction": "JMP [0x00533340] (mss32.dll!_AIL_shutdown@0)",
+      "callback_assignment": "0x0051A440",
+      "confidence": "observed",
+      "reason": "Original code pushes this imported audio shutdown thunk for registration at 0x0051A440; reached during normal menu Quit after renderer cleanup."
+    },
+    {
+      "address": "0x0047EEE0",
+      "instruction": "RET",
+      "callback_assignment": "0x0047F887",
+      "confidence": "observed",
+      "reason": "Original instruction installs this return-only cleanup callback in a dynamically allocated table; reached when leaving a campaign or shutting down."
+    },
+    {
       "address": "0x00518050",
       "instruction": "RET",
       "callback_assignment": "0x00518073",
@@ -71,6 +99,14 @@
     }
   ],
   "export_arguments": [
+    "--code-entry",
+    "0x00532010",
+    "--code-entry",
+    "0x00532020",
+    "--code-entry",
+    "0x0051A430",
+    "--code-entry",
+    "0x0047EEE0",
     "--discover-data-code-pointers",
     "--code-entry",
     "0x00518050",

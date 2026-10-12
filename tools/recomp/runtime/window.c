@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#ifdef __ANDROID__
+#include <gl4esinit.h>
+#endif
 
 #include "gl_thunks.h"
 
@@ -65,6 +68,12 @@ static void sdl_init(void) {
     if (done) return;
     done = 1;
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) guest_fatal("SDL_Init: %s", SDL_GetError());
+#ifdef __ANDROID__
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+#endif
     SDL_DisplayMode dm;
     if (!SDL_GetDesktopDisplayMode(0, &dm)) { desk_w = dm.w; desk_h = dm.h; }
 }
@@ -244,9 +253,52 @@ static void key_codes(SDL_Scancode sc, uint32_t *scan, uint32_t *vk) {
         if (map[i].sc == sc) { *scan = map[i].scan; *vk = map[i].vk; return; }
 }
 
+#define INPUT_CODE 0x434F4400
+int window_push_input(int kind, int control, int x, int y) {
+    if (!(SDL_WasInit(SDL_INIT_EVENTS)) || kind < 0 || kind > 3) return 0;
+    if (kind == 0 && (control < 0 || control > 2 || x < 0 || x > 65535 || y < 0 || y > 65535)) return 0;
+    if (kind == 1 && (control <= 0 || control >= SDL_NUM_SCANCODES || (x != 0 && x != 1))) return 0;
+    if (kind == 2 && ((control != SDL_BUTTON_LEFT && control != SDL_BUTTON_RIGHT && control != SDL_BUTTON_MIDDLE) || (x != 0 && x != 1))) return 0;
+    if (kind == 3 && (control || x < -32768 || x > 32767 || y < -32768 || y > 32767)) return 0;
+    SDL_Event e = {0};
+    e.type = SDL_USEREVENT;
+    e.user.code = INPUT_CODE + kind;
+    e.user.data1 = (void *)(intptr_t)control;
+    e.user.data2 = (void *)(uintptr_t)((uint32_t)(uint16_t)x | (uint32_t)(uint16_t)y << 16);
+    return SDL_PushEvent(&e) == 1;
+}
+
 static void pump(void) {
     SDL_Event e;
-    while (SDL_PollEvent(&e)) {
+    // Leave room for the largest expansion (SDL_TEXTINPUT's 31 characters).
+    // Keep remaining events in SDL's queue until the guest drains its messages.
+    while ((q_head - q_tail - 1 + 256) % 256 >= 32 && SDL_PollEvent(&e)) {
+        if (e.type == SDL_USEREVENT && e.user.code >= INPUT_CODE && e.user.code <= INPUT_CODE + 3) {
+            int kind = e.user.code - INPUT_CODE, control = (int)(intptr_t)e.user.data1;
+            uint32_t packed = (uint32_t)(uintptr_t)e.user.data2;
+            int x = packed & 65535, y = packed >> 16;
+            memset(&e, 0, sizeof e);
+            if (kind == 0) {
+                cursor_x = (uint32_t)((uint64_t)x * (win_w - 1) / 65535);
+                cursor_y = (uint32_t)((uint64_t)y * (win_h - 1) / 65535);
+                uint32_t lp = cursor_x | cursor_y << 16;
+                post(0x0200, mouse_buttons, lp);
+                if (control) {
+                    if (control == 1) mouse_buttons |= 1; else mouse_buttons &= ~1u;
+                    post(control == 1 ? 0x0201 : 0x0202, mouse_buttons, lp);
+                }
+                continue;
+            } else if (kind == 1) {
+                e.type = x ? SDL_KEYDOWN : SDL_KEYUP;
+                e.key.keysym.scancode = (SDL_Scancode)control;
+            } else if (kind == 2) {
+                e.type = x ? SDL_MOUSEBUTTONDOWN : SDL_MOUSEBUTTONUP;
+                e.button.button = (Uint8)control;
+            } else {
+                e.type = SDL_MOUSEMOTION;
+                e.motion.xrel = (int16_t)x; e.motion.yrel = (int16_t)y;
+            }
+        }
         switch (e.type) {
         case SDL_QUIT: post(0x0010, 0, 0); break;  // WM_CLOSE
         case SDL_KEYDOWN:
@@ -428,7 +480,12 @@ K(SwapBuffers) {
     return 1;
 }
 
+#ifdef __ANDROID__
+static void framebuffer_size(int *w, int *h) { SDL_GL_GetDrawableSize(win, w, h); }
+static void *getproc(const char *n) { return gl4es_GetProcAddress(n); }
+#else
 static void *getproc(const char *n) { return SDL_GL_GetProcAddress(n); }
+#endif
 
 K(wglCreateContext) {
     (void)esp;
@@ -436,9 +493,14 @@ K(wglCreateContext) {
     if (!ctx) {
         ctx = SDL_GL_CreateContext(win);
         if (!ctx) guest_fatal("SDL_GL_CreateContext: %s", SDL_GetError());
+#ifdef __ANDROID__
+        set_getprocaddress(SDL_GL_GetProcAddress);
+        set_getmainfbsize(framebuffer_size);
+        initialize_gl4es();
+#endif
         gl_load(getproc);
-        printf("codrecomp: GL %s / %s\n", (const char *)((const unsigned char *(*)(unsigned))SDL_GL_GetProcAddress("glGetString"))(0x1F01),
-               (const char *)((const unsigned char *(*)(unsigned))SDL_GL_GetProcAddress("glGetString"))(0x1F02));
+        printf("codrecomp: GL %s / %s\n", (const char *)((const unsigned char *(*)(unsigned))getproc("glGetString"))(0x1F01),
+               (const char *)((const unsigned char *(*)(unsigned))getproc("glGetString"))(0x1F02));
         fflush(stdout);
     }
     return HGLRC_MAIN;

@@ -32,6 +32,23 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### Original menus and Android host checkpoint — 2026-10-12
+
+- Current user priority is original menus and an Android build, tested through
+  ADB on local WSA (`127.0.0.1:58526`, Android 13, ARM64 native-bridge support).
+- Restored original cleanup callbacks `0x0047EEE0`, `0x0051A430`, `0x00532010`
+  and `0x00532020`, each verified against original instructions/registration
+  sites. The private export now contains 333,208 instructions. Actual desktop
+  startup parses the original menus, completes common initialization and exits
+  normally with `+quit` (exit 0); previously it failed during cleanup.
+- Added thread-safe queued input for normalized menu touches, scancodes, buttons
+  and relative look. A 400-event burst reproduced dropped releases; pumping
+  now pauses before the Win32 message queue fills, preserving later events.
+  All 12 CTests pass, including the new touch and overflow regressions.
+- Android SDL2/GL4ES integration, Java launcher/import/touch controls and private
+  SDK packaging are being built. Java compilation and installation-hash
+  validation pass; APK installation and visible Android execution are pending.
+
 ### PC mission checkpoint — 2026-10-12
 
 - Current user priority: first mission playable on PC, then Android.

@@ -22,3 +22,6 @@ static inline void gl_guest_pointer(uint32_t output, const void *host) {
 uint32_t gl_guest_string(unsigned int name, const void *host);
 void gl_load(void *(*getproc)(const char *));
 extern const thunk_def gl_thunks[];
+// UI-thread input: 0 absolute menu pointer, 1 scancode, 2 mouse button,
+// 3 relative look. Absolute coordinates use 0..65535; key/button x is held.
+int window_push_input(int kind, int control, int x, int y);

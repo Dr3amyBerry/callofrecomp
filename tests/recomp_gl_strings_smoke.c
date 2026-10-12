@@ -57,6 +57,22 @@ int main(void) {
     const uint32_t states[] = {1, 3, 2, 2, 0};
     for (int i = 0; i < 5; i++)
         if (!guest_call(fn, 5, peek) || mem32(message+4) != messages[i] || mem32(message+8) != states[i]) return 9;
+    if (!window_push_input(0, 1, 32768, 32768) || !window_push_input(0, 2, 32768, 32768)) return 10;
+    const uint32_t touch_messages[] = {0x200, 0x201, 0x200, 0x202};
+    for (int i = 0; i < 4; i++)
+        if (!guest_call(fn, 5, peek) || mem32(message+4) != touch_messages[i]
+                || mem32(message+12) != ((239u << 16) | 319u)) return 11;
+    if (!window_push_input(1, SDL_SCANCODE_W, 1, 0)
+            || !window_push_input(1, SDL_SCANCODE_W, 0, 0)) return 12;
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x100 || mem32(message+8) != 'W') return 13;
+    if (!guest_call(fn, 5, peek) || mem32(message+4) != 0x101 || mem32(message+8) != 'W') return 14;
+    if (window_push_input(0, 0, -1, 0) || window_push_input(1, SDL_NUM_SCANCODES, 1, 0)
+            || window_push_input(4, 0, 0, 0)) return 15;
+    // A slow frame must not discard the release at the end of an input burst.
+    for (int i = 0; i < 400; i++)
+        if (!window_push_input(1, SDL_SCANCODE_W, !(i & 1), 0)) return 16;
+    for (int i = 0; i < 400; i++)
+        if (!guest_call(fn, 5, peek) || mem32(message+4) != (i & 1 ? 0x101u : 0x100u)) return 17;
     SDL_Quit();
     puts("guest GL strings and queued input passed");
     return 0;
