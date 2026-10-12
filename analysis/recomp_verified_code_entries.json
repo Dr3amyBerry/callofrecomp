@@ -1,0 +1,25 @@
+{
+  "binary": "CoDSP.exe",
+  "sha256": "c755c7da411c87039ade462a2299402c3c4ca5c4fc4f1ae5cea6e25b05c69f47",
+  "entries": [
+    {
+      "address": "0x00518050",
+      "instruction": "RET",
+      "callback_assignment": "0x00518073",
+      "confidence": "observed",
+      "reason": "Original instruction assigns this executable address to a callback slot; automatic analysis labeled the entry as data."
+    },
+    {
+      "address": "0x0050B990",
+      "instruction": "RET",
+      "callback_assignment": "0x0050B9EE",
+      "confidence": "observed",
+      "reason": "Original instruction assigns this executable address to a callback slot; automatic analysis labeled the entry as data."
+    }
+  ],
+  "export_arguments": [
+    "--discover-data-code-pointers",
+    "--code-entry", "0x00518050",
+    "--code-entry", "0x0050B990"
+  ]
+}

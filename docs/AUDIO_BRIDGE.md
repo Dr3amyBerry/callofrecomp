@@ -54,3 +54,7 @@ reverb and preferences are unsupported; the corresponding setters currently
 return without implementing effects. MP3 streams and double-buffer sample
 loading remain unimplemented. Do not treat device startup as full Miles
 compatibility.
+
+Verified callback entries and their original assignment sites are recorded in
+[the code-entry ledger](../analysis/recomp_verified_code_entries.json). Pass its
+export arguments to ExportPcode when recreating the private engine output.
