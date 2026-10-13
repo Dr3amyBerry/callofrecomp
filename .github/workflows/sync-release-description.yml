@@ -1,10 +1,11 @@
-name: Correct published release description
+name: Sync v0.2.1 release description
 
 on:
   push:
     branches: [main]
     paths:
       - .github/workflows/sync-release-description.yml
+      - docs/RELEASE_NOTES_v0.2.1.md
   workflow_dispatch:
 
 permissions:
@@ -12,7 +13,7 @@ permissions:
 
 jobs:
   sync-release:
-    name: Repair v0.2.0 release notes
+    name: Update v0.2.1 release notes
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -21,21 +22,21 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check release identity and update description
+      - name: Verify release and update only its description
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_ID: "411239121"
-          RELEASE_TAG: "v0.2.0"
-          NOTES_FILE: docs/RELEASE_NOTES_v0.2.0.md
+          RELEASE_ID: "411282738"
+          RELEASE_TAG: "v0.2.1"
+          NOTES_FILE: docs/RELEASE_NOTES_v0.2.1.md
         shell: bash
         run: |
           set -euo pipefail
           test -s "$NOTES_FILE"
           tag="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --jq '.tag_name')"
           if [[ "$tag" != "$RELEASE_TAG" ]]; then
-            echo "Release ID does not match expected tag" >&2
+            echo "Unexpected release tag" >&2
             exit 1
           fi
           gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" -F "body=@${NOTES_FILE}" --jq '.tag_name'
-          gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --jq '.body' | grep -Fq 'versión de prueba'
-          echo "Release description updated successfully."
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --jq '.body' | grep -Fq 'Corrección principal'
+          echo "Updated v0.2.1 release description successfully."
