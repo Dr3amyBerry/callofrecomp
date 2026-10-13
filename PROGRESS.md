@@ -44,6 +44,9 @@ I should not stop merely because a task is large. Work should be split into phas
 - GameActivity requests immersive full-screen mode. Package version is 0.2.1
   (code 3). Private bundled APK stays local; public release excludes all game data.
 - No screenshots or visual checks were performed; the user verifies appearance.
+- Installed the private 0.2.1 update over the previous APK on the Tecno, retaining
+  app data. The user confirmed that the image now fills the screen. Public APKs
+  contain the same surface correction, without the private bundled resources.
 
 ### Public package importer and published 0.2.0 prerelease — 2026-10-12
 

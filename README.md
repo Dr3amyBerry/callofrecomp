@@ -6,7 +6,7 @@
 
 **Estado / Status:** versión de prueba (pre-release). Menús y componentes están en pruebas; **todavía no se ha verificado que toda la campaña pueda completarse en dispositivos Android reales**.
 
-**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.0) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Estado técnico / Progress](PROGRESS.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
+**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.1) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Estado técnico / Progress](PROGRESS.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
 
 **Call of Duty clásico para Android, mediante recompilación estática de la versión PC 1.5.**
 
