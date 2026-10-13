@@ -1,0 +1,41 @@
+name: Correct published release description
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sync-release-description.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-release:
+    name: Repair v0.2.0 release notes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out release notes
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check release identity and update description
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: "411239121"
+          RELEASE_TAG: "v0.2.0"
+          NOTES_FILE: docs/RELEASE_NOTES_v0.2.0.md
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$NOTES_FILE"
+          tag="$(gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --jq '.tag_name')"
+          if [[ "$tag" != "$RELEASE_TAG" ]]; then
+            echo "Release ID does not match expected tag" >&2
+            exit 1
+          fi
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" -F "body=@${NOTES_FILE}" --jq '.tag_name'
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}" --jq '.body' | grep -Fq 'versión de prueba'
+          echo "Release description updated successfully."
