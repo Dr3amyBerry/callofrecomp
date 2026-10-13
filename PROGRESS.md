@@ -57,11 +57,17 @@ I should not stop merely because a task is large. Work should be split into phas
   The small, variable isolated conversion gain does not justify that instruction
   cache cost. Withdrew the experiment, benchmark/reference duplication and halted
   its build; binary80 conversion is unchanged in the final implementation.
+  Final flags-only ARM64 hot chunks shrink 186,724 to 174,656 and 137,804 to
+  130,392 bytes, reducing the code footprint without the floating experiment.
 - Graphics audit found ordinary GLES2 arrays already passed directly to the
   backend. The earlier identity-normalization patch applies to intercepted/list
   paths and is not established as active for the user's scene. No speculative
   VBO/batching settings or gameplay/quality reductions were introduced.
-- All 18 CTest targets pass; independent review found no production blockers.
+- Fixed diagnostic sampling aliasing: variable pseudorandom intervals replace
+  the fixed 257-call cadence. Regression records 4,044 samples covering every
+  phase of a repeating 257-call sequence. Compiled out of normal APKs; this is
+  a diagnostic correctness fix, not an FPS optimization.
+- All 19 CTest targets pass; independent review found no production blockers.
   Review's empty-block/unsorted-input robustness issue was fixed and regression
   tested. ARM64 version 0.2.3 (code 5) is compiling with profiling OFF; public and
   private local APKs will include the preceding optimization as well. Phone FPS

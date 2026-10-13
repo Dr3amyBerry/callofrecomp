@@ -132,6 +132,9 @@ if(CODRECOMP_BUILD_TESTS)
     add_executable(codrecomp_commit_runs_smoke tests/commit_runs_smoke.c)
     target_include_directories(codrecomp_commit_runs_smoke PRIVATE tools/recomp/runtime)
     add_test(NAME commit_runs_smoke COMMAND codrecomp_commit_runs_smoke)
+    add_executable(codrecomp_profile_sampler_smoke tests/profile_sampler_smoke.c)
+    target_include_directories(codrecomp_profile_sampler_smoke PRIVATE tools/recomp/runtime)
+    add_test(NAME profile_sampler_smoke COMMAND codrecomp_profile_sampler_smoke)
 
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.

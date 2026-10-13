@@ -438,9 +438,10 @@ static int all_chunk_count;
 static dispatch_index code_index;
 
 #if defined(__ANDROID__) && defined(CODRECOMP_CPU_PROFILING)
+#include "profile_sampler.h"
 /* Local, opt-in CPU diagnostics. Sample calls rather than logging each branch. */
 static int cpu_profile = -1;
-static unsigned profile_sequence;
+static uint32_t profile_sequence = UINT32_C(0x9e3779b9);
 enum { PROFILE_SLOTS = 4096 + THUNK_MAX };
 static uint64_t profile_time[PROFILE_SLOTS], profile_count[PROFILE_SLOTS], profile_report;
 static uint64_t profile_clock(int clock) {
@@ -450,7 +451,7 @@ static uint64_t profile_clock(int clock) {
 }
 static uint64_t profile_begin(void) {
     if (cpu_profile < 0) cpu_profile = getenv("CODRECOMP_CPU_STATS") != NULL;
-    return cpu_profile && ++profile_sequence % 257 == 0
+    return cpu_profile && profile_sampler_next(&profile_sequence)
         ? profile_clock(CLOCK_THREAD_CPUTIME_ID) : 0;
 }
 static void profile_end(unsigned slot, uint64_t start) {
