@@ -13,7 +13,7 @@ or blind GL4ES switches are not justified by that source audit.
 - [x] Analyze byte-level flag liveness with conservative external/unknown exits.
 - [x] Integrate only proven dead flag writes while preserving p-code indices.
 - [x] Compile baseline/optimized randomized full-state tests, including branches.
-- [ ] Measure owned crowded-work analogues; regenerate private native modules.
+- [x] Measure owned crowded-work analogues; regenerate private native modules.
 - [ ] Full host tests, independent review, ARM64 build and local APK verification.
 - [ ] Update progress, commit and push; leave gameplay checks to user.
 
@@ -31,3 +31,5 @@ or blind GL4ES switches are not justified by that source audit.
 - 14 flag dataflow tests, compiled full-state O1/O2 test and 262144 raw binary80 cases pass; full CTest18 passes.
 - Independent review found no production blockers. Fixed optional unsorted empty-block CFG mismatch and added regression.
 - ARM64 full rebuild pending. No phones, visual checks or speculative graphics switches.
+
+- Ruling: withdraw binary80 fast-path experiment after ARM64 hot chunk186 grew186724->201664 bytes (8%). Tiny host conversion gain does not justify added instruction-cache footprint. Final floating conversion remains unchanged; removed redundant comparison fixture/benchmark. Rebuilt host suite passes.

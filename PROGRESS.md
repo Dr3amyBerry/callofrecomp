@@ -51,13 +51,12 @@ I should not stop merely because a task is large. Work should be split into phas
   reads, bounded relative loops and RAM effects; 14 dataflow regression tests pass.
 - Reproducible owned `bench_flags.py`: paired host O1 runs 622/574/575 ms baseline
   versus 458/458/452 ms optimized, same full register image and checksum. It does
-  not measure Samsung FPS. `bench_float.py` times are smaller and variable:
-  25/28/26 ms versus 22/20/25 ms for ten million canonical conversions.
-- Added an exact normal binary80-to-double fast path for values with zero low
-  eleven significand bits and representable normalized double exponents. Arbitrary
-  encodings, infinities, NaNs, underflow/overflow and rounding use the old path.
-  262,144 raw binary80 patterns across all sign/exponent encodings match the frozen
-  reference bit for bit, including O1/O2 builds. Existing edge tests also pass.
+  not measure Samsung FPS.
+- Evaluated a bit-exact common binary80 fast path. It matched 262,144 patterns,
+  but inline ARM64 code made hot chunk 186 grow from 186,724 to 201,664 bytes.
+  The small, variable isolated conversion gain does not justify that instruction
+  cache cost. Withdrew the experiment, benchmark/reference duplication and halted
+  its build; binary80 conversion is unchanged in the final implementation.
 - Graphics audit found ordinary GLES2 arrays already passed directly to the
   backend. The earlier identity-normalization patch applies to intercepted/list
   paths and is not established as active for the user's scene. No speculative

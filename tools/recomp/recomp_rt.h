@@ -49,14 +49,6 @@ static inline double f2d(u128 v, int n) {
         unsigned se = (unsigned)(v >> 64) & 0xffff;
         unsigned exponent = se & 0x7fff;
         uint64_t sign = (uint64_t)(se & 0x8000) << 48;
-        // Values produced by d2f have no low 11 significand bits. For a
-        // normalized binary64 exponent they require neither rounding nor carry.
-        // All arbitrary binary80 values retain the full conversion below.
-        if (exponent - 0x3c01u < 2046u &&
-                (significand & UINT64_C(0x80000000000007ff)) == UINT64_C(0x8000000000000000)) {
-            b = sign | (((uint64_t)(exponent - 0x3c01u) << 52) + (significand >> 11));
-            double d; memcpy(&d, &b, 8); return d;
-        }
         if (exponent && !(significand >> 63)) {
             // Intel unsupported encodings (unnormals/pseudo-infinity/NaN):
             // fail closed to real indefinite rather than interpreting as finite.
