@@ -32,7 +32,7 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
-### Public package importer and release preparation — 2026-10-12
+### Public package importer and published 0.2.0 prerelease — 2026-10-12
 
 - Added a browser-local, dependency-free installation packager under `web/dist/`.
   It checks the four baseline PE hashes, excludes saves/configuration, and streams
@@ -48,6 +48,14 @@ I should not stop merely because a task is large. Work should be split into phas
   limits and development requirements; retained the detailed analysis guide separately.
 - Public release assets must be the regular ARM64/x86_64 APKs only. The ignored
   preimported private APK and all original game files must remain local.
+- Published the [public packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
+  and [0.2.0 prerelease](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.0).
+  Release commit: `366629c4c3a78e8f070200b49df829545d024af5`;
+  [CI](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38342929777) passed.
+  Both public APKs have verified v2/v3 signatures and 16-KiB ZIP alignment;
+  their uploaded SHA-256 digests match the local files. Assets are ARM64 (74,625,852
+  bytes), x86_64 WSA (83,526,451 bytes), and SHA256SUMS.txt only. APK content audit
+  confirmed no original EXE/DLL/PK3 or private-originals asset directory.
 - Visual checks and real-device gameplay remain delegated to the user as requested;
   this import feature does not establish that campaign objectives are completable.
 
