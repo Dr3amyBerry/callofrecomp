@@ -6,7 +6,7 @@
 
 **Estado / Status:** versión de prueba (pre-release). Menús y componentes están en pruebas; **todavía no se ha verificado que toda la campaña pueda completarse en dispositivos Android reales**.
 
-**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.1) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Estado técnico / Progress](PROGRESS.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
+**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.2) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Estado técnico / Progress](PROGRESS.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
 
 **Call of Duty clásico para Android, mediante recompilación estática de la versión PC 1.5.**
 
@@ -15,7 +15,7 @@ Usa los menús y recursos de tu instalación de PC, con controles táctiles
 [RetroTouch](https://github.com/Andiweli/RetroTouch), pantalla panorámica y un
 límite de 60 FPS. Necesitas tu propia copia del juego.
 
-[**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.1)
+[**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.2)
 · [**Preparar los archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
 · [Estado técnico](PROGRESS.md)
 
@@ -65,6 +65,9 @@ El lanzador permite elegir **Ligero** (hasta 960×540), **Equilibrado** (hasta
 1280×720) y **Alta** (resolución nativa). Se respeta la proporción de la pantalla;
 el escenario usa una cámara panorámica sin estirar una imagen 4:3. El cambio de
 perfil se aplica al iniciar el juego. Para teléfonos modestos, comienza en Ligero.
+
+Durante el arranque y la carga de misiones aparece un indicador de actividad
+que cambia con las fases del motor. No representa un porcentaje medido.
 
 La opción de ocultar los controles permite interactuar con el menú. Las partidas
 y la configuración se guardan por separado de los recursos importados. Después

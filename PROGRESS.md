@@ -4,7 +4,7 @@
 >
 > **Rule:** this file must be updated whenever a meaningful phase starts, completes, changes direction, discovers a blocker, or requires a new external tool.
 
-**Last updated:** 2026-10-12  
+**Last updated:** 2026-10-13
 **Primary branch:** `main`  
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
@@ -31,6 +31,55 @@ I should not stop merely because a task is large. Work should be split into phas
 ---
 
 ## 2. Current status
+
+### Android loading feedback and runtime overhead — 2026-10-13
+
+- Follow-up: instruction temporaries now use compact local storage when byte-level
+  control-flow analysis proves every read is initialized on every reachable path.
+  Overlapping byte aliases are preserved; one unproven instruction rejects local
+  generation and requires explicit global storage for all linked modules.
+  Independent review caught the danger of a silent per-module fallback when
+  uniques cross module boundaries; that fallback was removed. All four exports passed
+  this analysis. Before replacing generated outputs, diagnostic regeneration
+  with global temporaries matched each existing source exactly.
+- WSA isolated memset benchmark: 197 ns/call with global temporaries versus
+  102 ns/call with local temporaries; output and the entire register image matched.
+  This is a microbenchmark, not measured whole-game FPS or a Tecno result.
+  Compiled synthetic equivalence checks cover 1,000 random register states,
+  overlapping byte aliases, conditional paths, memory stores and x87 conversions.
+- Full WSA baseline training initialization: 16.46 seconds. Optimized Android
+  builds and the corresponding comparison are in progress. Generated-code builds
+  retain line tables instead of enormous per-temporary variable debug records.
+  The Tecno is unavailable for further tests; the user requested continuing with
+  automated comparisons. WSA cannot simulate its Mali GPU or certify its FPS.
+- Added a native-driven, indeterminate loading indicator for engine startup,
+  PK3 initialization, graphics, menu and mission loading. It consumes actual
+  original console milestones and waits for a presented frame before hiding;
+  no fabricated percentage or timer-based readiness. Android polls four times
+  per second and suspends polling in the background.
+- Read-only PK3 handles use demand-paged mappings on Android/POSIX, with bounded
+  copies, logical seek/EOF behavior and FILE fallback. Archives are neither
+  extracted again nor copied wholesale into RAM. Windows/writable handles retain
+  the FILE implementation. Synthetic seek/EOF tests pass on Windows, WSA and Tecno.
+- Indexed recompilation dispatch by 4-KiB guest pages, replacing repeated binary
+  searches with a direct lookup except for shared-page boundaries. Index costs
+  2 MiB and is rebuilt after module load/unload; lifecycle and boundary tests pass.
+- 17 freshly built host tests pass. Both Android ABI builds compile and verify
+  signatures. Full-device 60 FPS is not established: prior Tecno logs showed
+  5,566 ms + 1,204 ms for menu parsing, and the user reported training stutter in
+  Equilibrado. The user confirmed the indicator appears and disappears correctly,
+  but reported no improvement in loading or gameplay. New Tecno logs confirm
+  CL_InitCGame still takes 47.17 seconds, with 8–15 FPS during the gameplay test.
+  File mapping and the dispatch index do not resolve the main bottleneck.
+- Added opt-in, sampled per-chunk thread CPU timing (`profile/cpu_stats`) to
+  distinguish generated engine work from host calls before further optimization.
+  The diagnostic APK was installed locally and the user completed a fresh run,
+  recording 5–12 FPS during movement. Sampling includes clock overhead and nested
+  calls, so it identifies candidates rather than exact CPU percentages. Profiling
+  is compiled out of normal APKs (`CODRECOMP_CPU_PROFILING` defaults OFF). Debuggerd
+  and simpleperf are restricted on this phone; device security was not changed.
+- Package version 0.2.2 (code 4). Private bundled resources remain local. No
+  screenshots or visual checks were performed; user reviews the loading overlay.
 
 ### Tecno full-screen surface sizing — 2026-10-13
 

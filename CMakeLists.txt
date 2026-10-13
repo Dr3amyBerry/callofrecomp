@@ -126,6 +126,9 @@ if(CODRECOMP_BUILD_TESTS)
     add_executable(codrecomp_frame_pacing_smoke tests/frame_pacing_smoke.c)
     target_include_directories(codrecomp_frame_pacing_smoke PRIVATE tools/recomp/runtime)
     add_test(NAME frame_pacing_smoke COMMAND codrecomp_frame_pacing_smoke)
+    add_executable(codrecomp_loading_status_smoke tests/loading_status_smoke.c)
+    target_include_directories(codrecomp_loading_status_smoke PRIVATE tools/recomp/runtime)
+    add_test(NAME loading_status_smoke COMMAND codrecomp_loading_status_smoke)
 
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.
@@ -146,6 +149,10 @@ if(CODRECOMP_BUILD_TESTS)
     check_c_source_compiles("int main(void) { unsigned __int128 x = 1; return (int)(x - 1); }"
         CODRECOMP_HAS_INT128)
     if(CODRECOMP_HAS_INT128)
+        if(Python3_Interpreter_FOUND)
+            set_tests_properties(static_analysis_python PROPERTIES
+                ENVIRONMENT "RECOMP_TEST_CC=${CMAKE_C_COMPILER}")
+        endif()
         add_executable(codrecomp_recomp_x87_smoke tests/recomp_x87_smoke.c)
         target_include_directories(codrecomp_recomp_x87_smoke PRIVATE tools/recomp)
         if(NOT WIN32)
@@ -158,6 +165,9 @@ if(CODRECOMP_BUILD_TESTS)
             tools/recomp/runtime/guest.c tools/recomp/runtime/kernel32.c
             tools/recomp/runtime/files.c)
         target_include_directories(codrecomp_pcode_runtime PUBLIC tools/recomp)
+        add_executable(codrecomp_dispatch_index_smoke tests/dispatch_index_smoke.c)
+        target_include_directories(codrecomp_dispatch_index_smoke PRIVATE tools/recomp tools/recomp/runtime)
+        add_test(NAME dispatch_index_smoke COMMAND codrecomp_dispatch_index_smoke)
         if(NOT WIN32)
             target_link_libraries(codrecomp_pcode_runtime PUBLIC m)
         endif()

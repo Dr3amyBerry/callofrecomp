@@ -27,8 +27,23 @@ artifact, with a development signing certificate and a debuggable manifest.
 `--abi x86_64` builds `recomp_out/callofrecomp-x86_64-debug.apk` for native WSA
 testing. Both variants share the local signing key so reinstalling preserves data.
 `--recomp-opt 0` is a slow diagnostic build; keep the default `1` for normal use.
-The builder strips packaged copies while retaining native-build symbols and checks
+The builder strips packaged copies while retaining generated-code line tables
+and runtime debug information in the native build, and checks
 both ELF LOAD segments and APK ZIP alignment at 16 KiB.
+
+Regenerate private C with the current `pcode2c.py` to enable instruction-local
+temporaries. It proves initialization through relative branches and loops before
+using compact local byte storage; an unproven module is rejected.
+`--global-temporaries` generates the previous form for diagnostic comparisons.
+If unique inputs can cross instructions or modules, regenerate all linked modules
+with that option; mixing global readers and local writers would lose their values.
+The generator change does not optimize already generated C automatically.
+
+Sampled thread CPU diagnostics require configuring Android CMake with
+`-DCODRECOMP_CPU_PROFILING=ON` and creating `files/profile/cpu_stats` inside the
+app's private data. Normal builds compile out the sampling path. The log lists
+chunk candidates every five seconds; timings include measurement overhead and
+nested calls and must not be interpreted as precise CPU percentages.
 
 SDL2: <https://github.com/libsdl-org/SDL> (zlib license).
 GL4ES: <https://github.com/ptitSeb/gl4es> (MIT license).

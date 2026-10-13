@@ -19,6 +19,8 @@
 #include <direct.h>
 #define mkdir_host(p) _mkdir(p)
 #else
+#include <sys/mman.h>
+#include <unistd.h>
 #define mkdir_host(p) mkdir(p, 0755)
 #endif
 
@@ -83,7 +85,8 @@ static void mkdirs_for(const char *path) {
 
 // ---------------------------------------------------------------- handles
 
-typedef struct { FILE *f; DIR *dir; char pattern[260]; char dirpath[1024]; char rel_dir[1024]; int pass; } handle;
+typedef struct { FILE *f; DIR *dir; char pattern[260]; char dirpath[1024]; char rel_dir[1024]; int pass;
+    const uint8_t *mapped; size_t mapped_size; uint64_t position; } handle;
 static handle handles[256];
 
 static uint32_t new_handle(void) {
@@ -129,13 +132,33 @@ K(CreateFileA) {
     if (!f) return INVALID;
     uint32_t h = new_handle();
     handles[h].f = f;
+#ifndef _WIN32
+    /* Immutable read-only PK3 files: demand-paged by the OS, not copied into RAM.
+     * This avoids stdio seek/refill work and FUSE reads for each tiny ZIP access.
+     * Writable files and platforms without mmap keep the original FILE path. */
+    size_t length = strlen(path);
+    if (!(access & 0x40000000u) && length >= 4 && !strcasecmp(path + length - 4, ".pk3")
+            && st.st_size > 0 && (uint64_t)st.st_size <= UINT32_MAX) {
+        void *mapping = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_PRIVATE, fileno(f), 0);
+        if (mapping != MAP_FAILED) {
+            handles[h].mapped = mapping; handles[h].mapped_size = (size_t)st.st_size;
+            handles[h].position = 0;
+        }
+    }
+#endif
     return HBASE + h;
 }
 
 K(ReadFile) {
     handle *h = get(A(0) - HBASE);
     if (!h || !h->f) return 0;
-    size_t n = fread(G(A(1)), 1, A(2), h->f);
+    size_t n;
+    if (h->mapped) {
+        uint64_t remaining = h->position < h->mapped_size ? h->mapped_size - h->position : 0;
+        n = (size_t)(remaining < A(2) ? remaining : A(2));
+        if (n) memcpy(G(A(1)), h->mapped + h->position, n);
+        h->position += n;
+    } else n = fread(G(A(1)), 1, A(2), h->f);
     if (A(3)) wr(G(A(3)), 4, (uint32_t)n);
     return 1;
 }
@@ -158,6 +181,14 @@ K(SetFilePointer) {
     handle *h = get(A(0) - HBASE);
     if (!h || !h->f) return INVALID;
     static const int whence[3] = {SEEK_SET, SEEK_CUR, SEEK_END};
+    if (h->mapped) {
+        int64_t base = A(3) % 3 == 0 ? 0 : A(3) % 3 == 1 ? (int64_t)h->position : (int64_t)h->mapped_size;
+        int64_t position = base + (int32_t)A(1);
+        if (position < 0 || (uint64_t)position > UINT32_MAX) return INVALID;
+        h->position = (uint64_t)position;
+        if (A(2)) wr(G(A(2)), 4, 0);
+        return (uint32_t)position;
+    }
     if (fseek(h->f, (long)(int32_t)A(1), whence[A(3) % 3])) return INVALID;
     if (A(2)) wr(G(A(2)), 4, 0);
     return (uint32_t)ftell(h->f);
@@ -165,7 +196,13 @@ K(SetFilePointer) {
 
 K(CloseHandle) {
     handle *h = get(A(0) - HBASE);
-    if (h && h->f) { fclose(h->f); h->f = NULL; }
+    if (h && h->f) {
+#ifndef _WIN32
+        if (h->mapped) munmap((void *)h->mapped, h->mapped_size);
+#endif
+        h->mapped = NULL; h->mapped_size = 0; h->position = 0;
+        fclose(h->f); h->f = NULL;
+    }
     return 1;
 }
 

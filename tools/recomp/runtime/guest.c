@@ -3,6 +3,7 @@
 #include "recomp_rt.h"
 #include "module_lifecycle.h"
 #include "heap_lifecycle.h"
+#include "dispatch_index.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -18,6 +19,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <time.h>
 #endif
 
 uint8_t *MEM;
@@ -431,6 +433,51 @@ static struct { const recomp_module *m; const char *path; } available[16];
 static int available_count;
 static recomp_chunk all_chunks[4096];
 static int all_chunk_count;
+static dispatch_index code_index;
+
+#if defined(__ANDROID__) && defined(CODRECOMP_CPU_PROFILING)
+/* Local, opt-in CPU diagnostics. Sample calls rather than logging each branch. */
+static int cpu_profile = -1;
+static unsigned profile_sequence;
+static uint64_t profile_time[4097], profile_count[4097], profile_report;
+static uint64_t profile_clock(int clock) {
+    struct timespec t;
+    clock_gettime(clock, &t);
+    return (uint64_t)t.tv_sec * 1000000000u + t.tv_nsec;
+}
+static uint64_t profile_begin(void) {
+    if (cpu_profile < 0) cpu_profile = getenv("CODRECOMP_CPU_STATS") != NULL;
+    return cpu_profile && ++profile_sequence % 257 == 0
+        ? profile_clock(CLOCK_THREAD_CPUTIME_ID) : 0;
+}
+static void profile_end(unsigned slot, uint64_t start) {
+    if (!start) return;
+    profile_time[slot] += profile_clock(CLOCK_THREAD_CPUTIME_ID) - start;
+    profile_count[slot]++;
+    uint64_t now = profile_clock(CLOCK_MONOTONIC);
+    if (!profile_report) profile_report = now;
+    if (now - profile_report < 5000000000ull) return;
+    for (int rank = 0; rank < 6; rank++) {
+        unsigned best = 0;
+        for (unsigned i = 1; i < 4097; i++)
+            if (profile_time[i] > profile_time[best]) best = i;
+        if (!profile_time[best]) break;
+        fprintf(stdout, "cpu sample: %s %08x-%08x time_us=%llu calls=%llu\n",
+            best == 4096 ? "host" : "chunk",
+            best == 4096 ? 0 : all_chunks[best].start,
+            best == 4096 ? 0 : all_chunks[best].end,
+            (unsigned long long)(profile_time[best] / 1000),
+            (unsigned long long)profile_count[best]);
+        profile_time[best] = 0;
+    }
+    memset(profile_time, 0, sizeof profile_time);
+    memset(profile_count, 0, sizeof profile_count);
+    profile_report = now;
+}
+#else
+#define profile_begin() 0
+#define profile_end(slot, start) ((void)0)
+#endif
 
 const recomp_module *module_by_name(const char *name) {
     for (int i = 0; i < loaded_count; i++)
@@ -494,6 +541,7 @@ int module_unload(uint32_t base) {
             for (int k = 0; k < loaded[j]->chunk_count; k++)
                 all_chunks[all_chunk_count++] = loaded[j]->chunks[k];
         qsort(all_chunks, all_chunk_count, sizeof all_chunks[0], cmp_chunk);
+        dispatch_index_build(&code_index, all_chunks, all_chunk_count);
         return 1;
     }
     return 0;
@@ -538,6 +586,7 @@ int module_load(const recomp_module *m, const char *path) {
     loaded[loaded_count++] = m;
     for (int i = 0; i < m->chunk_count; i++) all_chunks[all_chunk_count++] = m->chunks[i];
     qsort(all_chunks, all_chunk_count, sizeof all_chunks[0], cmp_chunk);
+    dispatch_index_build(&code_index, all_chunks, all_chunk_count);
     for (const recomp_import *im = m->imports; im->dll; im++) wr(G(im->iat_va), 4, resolve_import(im->dll, im->name));
     return 1;
 }
@@ -555,20 +604,20 @@ void guest_run(void) {
         if (PC >= THUNK_BASE && PC < THUNK_BASE + 16 * THUNK_MAX) {
             thunk_slot *t = &thunks[(PC - THUNK_BASE) / 16];
             uint32_t esp = reg32(REG_ESP), ret = mem32(esp);
+            uint64_t sample = profile_begin();
             set_reg32(REG_EAX, t->fn(esp));
+            profile_end(4096, sample);
             set_reg32(REG_ESP, esp + 4 + t->pop);
             PC = ret;
             continue;
         }
-        int lo = 0, hi = all_chunk_count - 1, found = -1;
-        while (lo <= hi) {
-            int mid = (lo + hi) / 2;
-            if (PC < all_chunks[mid].start) hi = mid - 1;
-            else if (PC >= all_chunks[mid].end) lo = mid + 1;
-            else { found = mid; break; }
-        }
+        int found = dispatch_index_find(&code_index, all_chunks, all_chunk_count, PC);
         recomp_miss = 0;
-        if (found >= 0) all_chunks[found].fn();
+        if (found >= 0) {
+            uint64_t sample = profile_begin();
+            all_chunks[found].fn();
+            profile_end((unsigned)found, sample);
+        }
         if (found < 0 || (recomp_miss && PC >= all_chunks[found].start && PC < all_chunks[found].end))
             guest_fatal("no recompiled code at this address");
     }

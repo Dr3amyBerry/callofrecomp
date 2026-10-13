@@ -11,6 +11,10 @@
 
 #include "gl_thunks.h"
 #include "frame_pacing.h"
+#include "loading_status.h"
+
+static loading_status load_status = {.phase = ATOMIC_VAR_INIT(1)};
+int window_load_state(void) { return loading_status_get(&load_status); }
 
 #define HDC_MAIN 0x00002001u
 #define HGLRC_MAIN 0x00003001u
@@ -57,6 +61,7 @@ static uint32_t send(uint32_t msg, uint32_t wp, uint32_t lp) { return send_to(ga
 
 // Engine console output arrives as text sent to the Win32 console's edit control.
 static void console_text(const char *s) {
+    loading_status_feed(&load_status, s);
     fputs(s, stdout);
     fflush(stdout);
 }
@@ -523,6 +528,7 @@ K(SwapBuffers) {
         SDL_GL_SwapWindow(win);
         previous = SDL_GetPerformanceCounter();
     } else if (win) SDL_GL_SwapWindow(win);
+    if (win) loading_status_frame(&load_status);
     if (pending_menu_click) {
         pending_menu_click = 0;
         mouse_buttons |= 1; post(0x0201, mouse_buttons, pending_menu_position);

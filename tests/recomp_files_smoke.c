@@ -26,6 +26,19 @@ int main(int argc, char **argv) {
     uint32_t buf = guest_alloc(8), count = guest_alloc(4);
     uint32_t read_args[5] = {h, buf, 4, count, 0};
     if (!call("ReadFile", 5, read_args) || mem32(count) != 4 || memcmp(G(buf), "PK\003\004", 4)) return 5;
+    uint32_t seek[4] = {h, 1, 0, 0};
+    if (call("SetFilePointer",4,seek)!=1)return 20;
+    read_args[2]=7;
+    if (!call("ReadFile",5,read_args)||mem32(count)!=3||memcmp(G(buf),"K\003\004",3))return 21;
+    seek[1]=2;seek[3]=2;
+    if(call("SetFilePointer",4,seek)!=6)return 22;
+    if(!call("ReadFile",5,read_args)||mem32(count)!=0)return 23;
+    seek[1]=(uint32_t)-1;seek[3]=0;
+    if(call("SetFilePointer",4,seek)!=UINT32_MAX)return 24;
+    seek[1]=0;
+    if(call("SetFilePointer",4,seek)!=0)return 25;
+    read_args[2]=4;
+    if(!call("ReadFile",5,read_args)||mem32(count)!=4||memcmp(G(buf),"PK\003\004",4))return 26;
     if (!call("CloseHandle", 1, args)) return 6;
     if (call("GetFileType", 1, args) != 0) return 7;
     // The original CRT checks GetLastError after a failed rename, then the

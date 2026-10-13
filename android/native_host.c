@@ -14,6 +14,13 @@ JNIEXPORT jint JNICALL Java_org_callofrecomp_GameActivity_nativeInput(
     return window_push_input(kind, control, x, y);
 }
 
+extern int window_load_state(void);
+JNIEXPORT jint JNICALL Java_org_callofrecomp_GameActivity_nativeLoadState(
+    JNIEnv *env, jclass cls) {
+    (void)env; (void)cls;
+    return window_load_state();
+}
+
 __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     if (argc < 3) return 1;
     mkdir(argv[2], 0700);
@@ -27,6 +34,9 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     snprintf(frame_stats, sizeof frame_stats, "%s/frame_stats", argv[2]);
     if (access(frame_stats, F_OK) == 0) setenv("CODRECOMP_FRAME_STATS", "1", 1);
     else unsetenv("CODRECOMP_FRAME_STATS");
+    snprintf(frame_stats, sizeof frame_stats, "%s/cpu_stats", argv[2]);
+    if (access(frame_stats, F_OK) == 0) setenv("CODRECOMP_CPU_STATS", "1", 1);
+    else unsetenv("CODRECOMP_CPU_STATS");
     setenv("LIBGL_ES", "2", 1);
     setenv("LIBGL_GL", "21", 1);
     setenv("LIBGL_NOBANNER", "1", 1);

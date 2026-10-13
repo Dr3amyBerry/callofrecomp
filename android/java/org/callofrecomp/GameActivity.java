@@ -4,6 +4,15 @@ import android.os.Bundle;
 import android.content.Context;
 import android.graphics.Rect;
 import android.view.ViewGroup;
+import android.view.View;
+import android.os.Handler;
+import android.os.Looper;
+import android.graphics.Color;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import org.libsdl.app.SDLActivity;
 import org.libsdl.app.SDLSurface;
 import java.io.File;
@@ -13,6 +22,24 @@ import java.nio.charset.StandardCharsets;
 
 public final class GameActivity extends SDLActivity {
     private TouchControls controls;
+    private View loading;
+    private TextView loadingText;
+    private final Handler loadingHandler = new Handler(Looper.getMainLooper());
+    private int loadingPhase = -1;
+    public static native int nativeLoadState();
+    private final Runnable updateLoading = new Runnable() {
+        @Override public void run() {
+            int phase = nativeLoadState();
+            if (phase != loadingPhase) {
+                loadingPhase = phase;
+                loading.setVisibility(phase == 0 ? View.GONE : View.VISIBLE);
+                String[] messages = {"", "Preparando el motor…", "Leyendo archivos del juego…",
+                    "Preparando gráficos…", "Cargando el menú…", "Cargando la misión…", "Preparando la imagen…"};
+                loadingText.setText(messages[Math.max(0, Math.min(phase, messages.length - 1))]);
+            }
+            loadingHandler.postDelayed(this, 250);
+        }
+    };
     public static native int nativeInput(int kind, int control, int x, int y);
     @Override protected String[] getLibraries() { return new String[]{"SDL2", "GL", "main"}; }
     @Override protected SDLSurface createSDLSurface(Context context) {
@@ -46,11 +73,32 @@ public final class GameActivity extends SDLActivity {
         if (mLayout != null) {
             controls = new TouchControls(this);
             mLayout.addView(controls, new ViewGroup.LayoutParams(-1, -1));
+            FrameLayout overlay = new FrameLayout(this);
+            overlay.setBackgroundColor(Color.rgb(20, 23, 17)); overlay.setClickable(true);
+            LinearLayout box = new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL);
+            box.setGravity(Gravity.CENTER); box.setPadding(40, 30, 40, 30);
+            loadingText = new TextView(this); loadingText.setText("Preparando el motor…");
+            loadingText.setTextColor(Color.WHITE); loadingText.setTextSize(20); box.addView(loadingText);
+            ProgressBar progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            progress.setIndeterminate(true);
+            int width = (int)(260 * getResources().getDisplayMetrics().density);
+            box.addView(progress, new LinearLayout.LayoutParams(width, -2));
+            overlay.addView(box, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
+            loading = overlay; mLayout.addView(overlay, new ViewGroup.LayoutParams(-1, -1));
+            loadingHandler.post(updateLoading);
         }
     }
+    @Override protected void onResume() {
+        super.onResume();
+        if (loading != null) { loadingHandler.removeCallbacks(updateLoading); loadingHandler.post(updateLoading); }
+    }
     @Override protected void onPause() {
+        loadingHandler.removeCallbacks(updateLoading);
         if (controls != null) controls.releaseAll();
         super.onPause();
+    }
+    @Override protected void onDestroy() {
+        loadingHandler.removeCallbacks(updateLoading); super.onDestroy();
     }
     @Override public void onWindowFocusChanged(boolean focus) {
         if (!focus && controls != null) controls.releaseAll();
