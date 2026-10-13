@@ -75,6 +75,7 @@ class PatchTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     self.module.apply_patch(root)
                 self.assertEqual(target.read_bytes(), foreign)
+
                 target.write_bytes(original)
                 self.module.apply_patch(root)
                 target.write_bytes(target.read_bytes() + b'// unrelated edit\n')
@@ -82,6 +83,16 @@ class PatchTests(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     self.module.apply_patch(root)
                 self.assertEqual(target.read_bytes(), foreign)
+
+    def test_windows_line_endings_are_preserved(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target, revision = self.fixture(root)
+            target.write_bytes(target.read_bytes().replace(b'\n', b'\r\n'))
+            with patch.object(self.module, 'PINNED_REVISION', revision):
+                self.assertEqual(self.module.apply_patch(root), 'applied')
+                self.assertEqual(self.module.apply_patch(root), 'already applied')
+            self.assertNotIn(b'\n', target.read_bytes().replace(b'\r\n', b''))
 
     def test_partial_patch_and_corrupt_patch_fail_closed(self):
         with tempfile.TemporaryDirectory() as tmp:

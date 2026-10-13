@@ -23,10 +23,10 @@
 - [x] Save the measured negative Tecno outcome and detailed diagnostics with normal profiling default OFF.
 - [x] Add compiled state-equivalence tests for separate register/RAM optimization, including aliasing within spaces, indirect guest addresses, float state, branches and unsupported fallback.
 - [x] Implement scoped non-aliasing pointers in supported chunks; compare generated baselines with optimized code at O1 and O2 before retaining it.
-- [ ] Measure isolated CPU cost with identical inputs; regenerate all private modules and build final Android artifacts.
+- [x] Measure isolated CPU cost with identical inputs; regenerate all private modules and build final Android artifacts.
 - [x] Patch zero-minimum index normalization; verify pinned source, exact output, idempotence and unexpected-source rejection with no GPU.
 - [x] Integrate the patch into Android build tooling, run full host tests and review the changes.
-- [ ] Build/sign private local and public resource-free APKs, record limitations, commit and push.
+- [x] Build/sign private local and public resource-free APKs, record limitations, commit and push.
 
 ## Review focus
 
@@ -42,4 +42,5 @@
 - Measurement: owned O1 benchmark 228-229 ms baseline vs 59-76 ms separated spaces; ARM64 static workload 337 vs 77 instructions. No FPS inference.
 - Ruling: use restrict helper parameters rather than local restrict pointers, because local-pointer form showed no timing improvement while parameters produced compiler alias metadata and equivalent state.
 - Ruling: build ARM64 artifacts for the requested phone target; no WSA/phone execution or x86 rebuild is necessary to validate this change.
-- ARM64 compilation pending; cache confirms CPU profiling OFF.
+- ARM64 compilation, public resource audit, private bundling, signature/alignment/CRC checks completed. Cache and native strings confirm CPU profiling OFF. Public/private native libraries match. No phones or visual checks used.
+- Follow-up: CRLF fixture exposed Windows patch mismatch; stdin patch now follows target line endings, test passes. Builder invokes the patch CLI to preserve standalone module import used by the private packager.

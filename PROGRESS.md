@@ -52,8 +52,14 @@ I should not stop merely because a task is large. Work should be split into phas
   This reduces CPU graphics translation work; GPU frame-time improvement remains
   unmeasured. The build applies the patch idempotently and rejects foreign edits.
 - Normal Android builds explicitly disable sampled CPU profiling, including when
-  a prior diagnostic CMake cache enabled it. All 18 host tests pass. ARM64 rebuild
-  and private local packaging are in progress; no game resources are published.
+  a prior diagnostic CMake cache enabled it. All 18 host tests pass; fresh review
+  found no blockers and the initial optimization commit passes GitHub CI.
+- ARM64 rebuild and local private packaging completed; signatures, alignment and
+  private payload CRC pass. The public resource-free APK is 54,743,868 bytes;
+  private APK is 1,317,325,524 bytes. Cache and native strings confirm profiling
+  OFF. Public/private native libraries match exactly. The GL4ES applicator also
+  handles Windows CRLF without changing line endings (regression test passes).
+  Original resources remain local; published release v0.2.2 is unchanged.
 
 ### Further CPU and memory commitment optimization — 2026-10-13
 

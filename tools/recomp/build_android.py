@@ -10,8 +10,8 @@ from pathlib import Path
 import shutil
 import subprocess
 import struct
+import sys
 import zipfile
-from patch_gl4es import apply_patch as patch_gl4es
 
 DEPENDENCIES = {
     "SDL": ("https://github.com/libsdl-org/SDL.git", "5d249570393f7a37e037abf22cd6012a4cc56a71"),
@@ -69,7 +69,7 @@ def main():
             actual = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
             if actual != revision:
                 raise SystemExit(f"{name}: expected {revision}, found {actual}; use a clean dependency directory")
-        patch_gl4es(deps / 'gl4es')
+        run(sys.executable, root / 'tools/recomp/patch_gl4es.py', deps / 'gl4es')
         run("cmake", "-S", root / "android", "-B", native, "-G", "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={(ndk / 'build/cmake/android.toolchain.cmake').as_posix()}",
             f"-DANDROID_ABI={args.abi}", "-DANDROID_PLATFORM=android-26", "-DCMAKE_BUILD_TYPE=Release",

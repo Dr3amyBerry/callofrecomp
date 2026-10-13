@@ -13,8 +13,8 @@ PATCH_FILE = Path(__file__).resolve().parent / 'patches/gl4es-array-normalizatio
 TARGET = 'src/gl/array.c'
 
 
-def git(root, *args, check=True):
-    result = subprocess.run(['git', '-C', str(root), *args], capture_output=True)
+def git(root, *args, check=True, input=None):
+    result = subprocess.run(['git', '-C', str(root), *args], capture_output=True, input=input)
     if check and result.returncode:
         raise RuntimeError(f'git {args[0]} failed: {result.stderr.decode(errors="replace").strip()}')
     return result
@@ -36,18 +36,24 @@ def apply_patch(root):
         raise RuntimeError(f'GL4ES HEAD must be {PINNED_REVISION}; found {revision}')
     original = git(root, 'show', f'HEAD:{TARGET}').stdout.replace(b'\r\n', b'\n')
     expected = optimized_source(original)
-    current = (root / TARGET).read_bytes().replace(b'\r\n', b'\n')
+    raw = (root / TARGET).read_bytes()
+    current = raw.replace(b'\r\n', b'\n')
+    # Git for Windows may check out the upstream source and our patch as CRLF.
+    # Match the target's line endings without changing its unrelated bytes.
+    patch = PATCH_FILE.read_bytes().replace(b'\r\n', b'\n')
+    if b'\r\n' in raw:
+        patch = patch.replace(b'\n', b'\r\n')
     if current == expected:
-        git(root, 'apply', '--reverse', '--check', str(PATCH_FILE))
+        git(root, 'apply', '--reverse', '--check', '-', input=patch)
         return 'already applied'
     if current != original:
         raise RuntimeError('GL4ES array.c has unexpected changes; refusing to patch')
-    git(root, 'apply', '--check', str(PATCH_FILE))
-    git(root, 'apply', str(PATCH_FILE))
+    git(root, 'apply', '--check', '-', input=patch)
+    git(root, 'apply', '-', input=patch)
     actual = (root / TARGET).read_bytes().replace(b'\r\n', b'\n')
     if actual != expected:
         raise RuntimeError('GL4ES patch postcondition failed')
-    git(root, 'apply', '--reverse', '--check', str(PATCH_FILE))
+    git(root, 'apply', '--reverse', '--check', '-', input=patch)
     return 'applied'
 
 
