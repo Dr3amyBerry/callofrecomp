@@ -49,7 +49,11 @@ I should not stop merely because a task is large. Work should be split into phas
   commitment CPU time averaged 2,596.15 versus 4.56 microseconds over eight
   allocations; page faults/data initialization are excluded from this probe.
 - 18 host tests pass; independent review found no blocking correctness issue.
-  Final ARM64 build is in progress. No visual checks or phone tests were made.
+  The actual memory lifecycle test also passes as an NDK executable on WSA.
+  Final ARM64 APK compiles, verifies its signature and contains no original
+  EXE/DLL/PK3 assets. The private bundled APK is rebuilt locally only; release
+  v0.2.2 remains the previously published build. No visual checks or phone tests
+  were made, and these microbenchmarks do not establish improved whole-game FPS.
 
 ### Android loading feedback and runtime overhead — 2026-10-13
 
