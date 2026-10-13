@@ -1,6 +1,7 @@
 package org.callofrecomp;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,10 @@ import android.provider.DocumentsContract;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
+import android.view.View;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -21,6 +26,12 @@ public final class LauncherActivity extends Activity {
     private boolean importing;
     public static File originals(Context c) { return new File(c.getExternalFilesDir(null), "originals"); }
     public static File profile(Context c) { return new File(c.getFilesDir(), "profile"); }
+    static int performanceMode(Context context) {
+        ActivityManager manager = (ActivityManager)context.getSystemService(Context.ACTIVITY_SERVICE);
+        int fallback = manager != null && manager.isLowRamDevice() ? 1 : 0;
+        int mode = context.getSharedPreferences("graphics", MODE_PRIVATE).getInt("mode", fallback);
+        return mode >= 0 && mode <= 2 ? mode : fallback;
+    }
     private static boolean valid(File dir) {
         return Installation.valid(dir);
     }
@@ -36,6 +47,20 @@ public final class LauncherActivity extends Activity {
         choose = new Button(this); choose.setText("Elegir carpeta del juego"); layout.addView(choose);
         choose.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION), 1));
+        TextView graphicsLabel = new TextView(this);
+        graphicsLabel.setText("Calidad gráfica · Ligero prioriza fluidez; Alta usa resolución nativa.\nSe aplica al iniciar el juego.");
+        layout.addView(graphicsLabel);
+        Spinner graphics = new Spinner(this);
+        graphics.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item,
+            new String[]{"Equilibrado", "Ligero", "Alta"}));
+        graphics.setSelection(performanceMode(this));
+        graphics.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                getSharedPreferences("graphics", MODE_PRIVATE).edit().putInt("mode", position).apply();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) { }
+        });
+        layout.addView(graphics);
         play = new Button(this); play.setText("Jugar"); layout.addView(play);
         play.setOnClickListener(v -> { if (!importing && valid(originals(this))) startActivity(new Intent(this, GameActivity.class)); });
         Button log = new Button(this); log.setText("Ver registro"); layout.addView(log);

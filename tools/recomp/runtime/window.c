@@ -511,7 +511,12 @@ K(SwapBuffers) {
         Uint64 deadline = now + delay;
         while (delay) {
             Uint64 ms = delay * 1000 / frequency;
+#ifdef __ANDROID__
+            /* Yield the final fraction too; busy polling wastes battery/heat. */
+            SDL_Delay(ms > 1 ? (Uint32)(ms - 1) : 1);
+#else
             SDL_Delay(ms > 1 ? (Uint32)(ms - 1) : 0);
+#endif
             now = SDL_GetPerformanceCounter();
             delay = now < deadline ? deadline - now : 0;
         }

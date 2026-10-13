@@ -5,6 +5,12 @@ Los arranques y las pruebas automáticas no certifican todos los objetivos.
 
 ## Primero: entrenamiento
 
+- En el lanzador Android elegir Ligero, iniciar y comprobar que la imagen ocupa
+  toda la pantalla y todos los botones/menús responden en la posición correcta.
+  Comparar la fluidez con Equilibrado; Alta prioriza la resolución nativa.
+  Reiniciar el juego al cambiar el perfil. La lista completa del tutorial puede
+  aparecer al principio; los objetivos deben completarse por etapas.
+
 - Comprobar el modo panorámico: ver más escenario a los lados, con personas y
   objetos proporcionados. Probar también apuntar y la posición de menús/HUD.
   El arranque aplica resolución nativa, `r_mode -1`, `r_customaspect` y un FOV

@@ -35,6 +35,15 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     SDL_GetCurrentDisplayMode(0, &dm);
     /* The activity is landscape; a device can initially report portrait mode. */
     int display_width = dm.w, display_height = dm.h;
+    /* Java supplies the actual fixed-size EGL buffer, not the physical display.
+     * Merely lowering engine cvars would otherwise render into a corner. */
+    for (int i = 1; i + 2 < argc; i++) {
+        if (strcmp(argv[i], "+set")) continue;
+        int value = atoi(argv[i + 2]);
+        if (value <= 0 || value > 16384) continue;
+        if (!strcmp(argv[i + 1], "r_customwidth")) display_width = value;
+        if (!strcmp(argv[i + 1], "r_customheight")) display_height = value;
+    }
     if (display_width > 0 && display_height > display_width) {
         int swap = display_width; display_width = display_height; display_height = swap;
     }

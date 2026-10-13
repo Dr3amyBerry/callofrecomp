@@ -32,6 +32,28 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### Android modest-device profiles and tutorial objectives — 2026-10-12
+
+- User clarified objectives appeared together rather than completing themselves.
+  Inspection of owned `maps/training.gsc` confirms all eleven are registered by
+  concurrent startup threads; individual completion waits on their original
+  triggers/events. No tutorial script or mission behavior was modified.
+- Added persistent launcher graphics profiles: balanced (up to 1280×720), light
+  (up to 960×540), and native. Low-RAM Android devices default to light, others
+  balanced. Resolution budgets preserve the display ratio without upscaling.
+  SurfaceHolder fixed-size buffers lower actual GPU raster work while Android
+  scales the image across the full view; RetroTouch/menu overlays remain full size.
+  SDL fallback touch coordinates are transformed from view to buffer space.
+- Lower profiles reduce texture/LOD expense, dynamic lights and shadows; light
+  additionally simplifies sky/detail textures. Original graphics cvars are applied
+  before renderer initialization, including old profiles. High mode restores these
+  settings. Android frame pacing sleeps during the final fractional interval
+  instead of repeatedly yielding; audio mixing computes its rate ratio once per
+  voice/buffer rather than every output frame.
+- Manual performance, surface scaling and input verification remain with the user
+  in flash mode. The cap remains 60 FPS, with no guarantee of reaching it on all
+  phones. This change has not been benchmarked on a physical modest ARM64 device.
+
 ### Native widescreen configuration — 2026-10-12
 
 - User reported stretched 4:3 presentation and supplied the original custom-mode

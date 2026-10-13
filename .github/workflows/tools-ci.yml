@@ -47,6 +47,8 @@ jobs:
           java -cp build-android-check org.callofrecomp.InstallationTest
           javac -d build-android-check android/java/org/callofrecomp/TouchInput.java tests/android/TouchInputTest.java
           java -cp build-android-check org.callofrecomp.TouchInputTest
+          javac -d build-android-check android/java/org/callofrecomp/RenderProfile.java tests/android/RenderProfileTest.java
+          java -cp build-android-check org.callofrecomp.RenderProfileTest
 
       - name: Smoke-test analysis CLIs
         run: |

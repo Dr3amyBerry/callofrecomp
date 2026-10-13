@@ -114,6 +114,7 @@ void audio_mix(float *output, uint32_t frames, uint32_t rate) {
         if (!s->allocated || s->playing != 4) continue;
         float left = s->volume * (s->pan > 0.5f ? 2.0f * (1.0f - s->pan) : 1.0f);
         float right = s->volume * (s->pan < 0.5f ? 2.0f * s->pan : 1.0f);
+        const double step = (double)s->rate / rate;
         for (uint32_t f = 0; f < frames; f++) {
             uint32_t count;
             float *pcm = current_pcm(s, &count);
@@ -121,7 +122,7 @@ void audio_mix(float *output, uint32_t frames, uint32_t rate) {
             uint32_t p = (uint32_t)s->cursor;
             output[2 * f] += pcm[2 * p] * left;
             output[2 * f + 1] += pcm[2 * p + 1] * right;
-            s->cursor += (double)s->rate / rate;
+            s->cursor += step;
         }
         uint32_t ignored; current_pcm(s, &ignored);
     }
