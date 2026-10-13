@@ -22,6 +22,11 @@ cachés de CMake, scripts y comandos existentes.
 Todo `.local/` está excluido de Git. No subir recursos del juego, APK privado,
 fuentes generadas del original ni capturas privadas.
 
+VS Code oculta las rutas antiguas de compatibilidad con `.vscode/settings.json`.
+Los archivos locales se navegan desde `.local/`; las búsquedas y los monitores
+de archivos excluyen las compilaciones y los datos privados para evitar duplicados
+y trabajo innecesario del editor.
+
 ## Referencias descargadas
 
 Las copias incluyen los submódulos declarados y conservan sus licencias originales.

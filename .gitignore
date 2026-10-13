@@ -45,7 +45,8 @@ __pycache__/
 *.til
 
 # Editors / OS
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .idea/
 .DS_Store
 Thumbs.db

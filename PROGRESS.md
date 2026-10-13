@@ -11,6 +11,8 @@
 
 ### Local workspace organization — 2026-10-13
 
+- Follow-up: tracked VS Code settings hide legacy root aliases and exclude local/private build trees from search and file watchers. The editor now presents local material through `.local/` rather than duplicate root entries.
+
 - Downloaded clean Git references for Quake3e, openmohaa, gl4es and opencod1, including declared submodules; revisions recorded in `docs/WORKSPACE.md` and the ignored local manifest.
 - Installed the official Windows Android Performance Analyzer 0.9.0 portable distribution under `.local/toolchains/`; ZIP CRC verified and SHA-256 recorded. No visual inspection or phone capture performed.
 - Grouped local build trees, pinned dependencies and private inputs under `.local/`, preserving old absolute paths through Windows junctions. Locked `build-retrotouch` and `recomp_out` remain physically in their original locations with reverse junctions into the organized folders.

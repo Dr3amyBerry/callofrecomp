@@ -1,0 +1,29 @@
+{
+  "files.exclude": {
+    "build": true,
+    "build-*": true,
+    "Call of Duty Deluxe Edition": true,
+    "decomp": true,
+    "ghidra_projects": true,
+    "recomp_out": true,
+    "**/__pycache__": true
+  },
+  "search.exclude": {
+    ".local": true,
+    "build": true,
+    "build-*": true,
+    "Call of Duty Deluxe Edition": true,
+    "decomp": true,
+    "ghidra_projects": true,
+    "recomp_out": true
+  },
+  "files.watcherExclude": {
+    "**/.local/**": true,
+    "**/build/**": true,
+    "**/build-*/**": true,
+    "**/Call of Duty Deluxe Edition/**": true,
+    "**/decomp/**": true,
+    "**/ghidra_projects/**": true,
+    "**/recomp_out/**": true
+  }
+}
