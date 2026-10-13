@@ -6,7 +6,7 @@
 **Naturaleza:** auditoría estática, comparación de referencias y protocolo experimental; NO constituye una medición en teléfono de la versión 0.2.3  
 **Protección de datos:** informe publicable que usa exclusivamente código y documentación públicos. No contiene ROM/EXE/DLL/PK3, código generado privado, mapas, trazas privadas ni perfiles brutos.
 
-> Esta investigación amplía el informe anterior sin sustituirlo: no se pudo abrir el archivo local ignorado bajo .local/profiles, ya que el único workspace registrado por RigorCore Dev MCP, llamado demo, corresponde a Case-Recomp y no a callofrecomp. No escribir dentro de ese otro workspace. Los experimentos que requieren el árbol local y la APK ARM64 real siguen pendientes.
+> Esta investigación amplía el informe anterior sin sustituirlo. El material local ignorado bajo .local/profiles y los perfiles brutos permanecen privados; su revisión y las mediciones sobre Android ARM64 real siguen pendientes.
 
 ## 0. Resumen ejecutivo y grado de certeza
 
