@@ -1,5 +1,13 @@
 # CallofRecomp
 
+**ES:** Proyecto experimental para llevar *Call of Duty* clásico de PC (versión 1.5) a Android mediante recompilación estática. Es necesario aportar una copia compatible del juego; **el repositorio y las APK no incluyen sus archivos comerciales**.
+
+**EN:** Experimental static recompilation project bringing classic *Call of Duty* PC 1.5 to Android. Requires your own compatible PC installation. **The repository and APKs do not include copyrighted game assets.**
+
+**Estado / Status:** versión de prueba (pre-release). Menús y componentes están en pruebas; **todavía no se ha verificado que toda la campaña pueda completarse en dispositivos Android reales**.
+
+**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.0) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Estado técnico / Progress](PROGRESS.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
+
 **Call of Duty clásico para Android, mediante recompilación estática de la versión PC 1.5.**
 
 Proyecto independiente en desarrollo, centrado en la campaña de un jugador.
