@@ -28,3 +28,88 @@ Audio mixing evaluates its rate ratio once per voice per output buffer. Neither
 change alters objective scripts or simulation timing. Automated budget tests and
 build/regression checks do not establish performance or presentation on a real
 phone; manual checks remain with the user in flash mode.
+
+## WSA x86_64 A/B and writable overlay microbenchmark (2026-10-13)
+
+Recompiled `9147588` as an x86_64 WSA APK from an isolated, clean worktree.
+The comparison used the same imported installation and saved training mission
+at Camp Toccoa, the same view and Balanced graphics settings. For each APK,
+we captured **60 one-second `frame stats:` summary windows** after
+`CL_InitCGame`, without touching the controls during collection.
+
+| Engine measure | Previous WSA APK | `9147588` |
+| --- | ---: | ---: |
+| Median FPS across summary windows | 54.5 | 54.5 |
+| Median per-window averaged frame time | 18.36 ms | 18.34 ms |
+| p95 of per-window averaged frame time | 20.187 ms | 20.119 ms |
+| Median thread CPU time per-window average | 17.920 ms | 17.855 ms |
+| `CL_InitCGame` (one load only) | 7.07 s | 6.71 s |
+
+These are **percentiles of one-second averages**, not frame percentiles.
+No significant FPS benefit was demonstrated for the GL pointer bridge fix or
+the binary-search OpenGL name lookup on this scene. The initial 44.3 FPS
+reference was measured elsewhere in the level and cannot be compared.
+
+The writable overlay's first-write path previously called `fgetc/fputc` once
+per byte to copy an original file. The buffered replacement uses a 16-KiB
+scratch array and rejects/removes partial copies on read/write/close errors.
+A synthetic 16-MiB Windows host microbenchmark (five alternating trials per
+implementation, high-resolution wall timer) measured **291.540 ms median**
+byte-by-byte versus **11.919 ms median** buffered (24.46x). This applies
+only to this copying operation, **not** general map loading, game FPS or
+Android device storage performance. The original immutable PK3 files are read
+via the separate existing path.
+
+WSA exposes x86_64 and a Windows-provided OpenGL ES translator. Real ARM64
+GPU/driver results must be measured separately before shipping a performance
+claim or enabling additional guest OpenGL extensions.
+
+## Opt-in GL call accounting in a WSA training scene
+
+Using the diagnostic x86_64 APK built with CODRECOMP_GL_PROFILING=ON and the
+private gl_stats marker, one stable five-second interval of the Camp Toccoa
+entrance rendered **274 frames**. The game's requests to the OpenGL bridge were:
+
+| Operation | Five-second window | Average per native frame |
+| --- | ---: | ---: |
+| glDrawElements | 9,590 | 35 |
+| glDrawRangeElements | 18,632 | 68 |
+| All indexed draws | 28,222 | 103 |
+| glBindTexture | 31,784 | 116 |
+| glActiveTexture / glActiveTextureARB | 11,234 | 41 |
+| glLockArrays / glUnlockArrays pairs | 8,494 | 31 |
+| Requested index count | 42,018,996 | 153,354 |
+| Guest glBindBufferARB operations | 0 | 0 |
+
+These are **guest bridge invocation counts**, not GLES-level draw counts, time
+spent in GL4ES, GPU time or triangle counts. No guest VBO use was observed in
+this interval; GL4ES can independently use internal VBOs. The large number of
+indexed draws and locks makes GL4ES array-conversion and batch handling a
+priority for controlled tests. The profiling build is not the normal APK.
+
+## A/B de GL4ES con VBO interno modo 2 y modo 3 en WSA (2026-10-13)
+
+Tras medir 103 llamadas indexadas del motor y 31 pares glLockArrays /
+glUnlockArrays por cuadro, se probaron de manera aislada dos ajustes
+opcionales de GL4ES: LIBGL_USEVBO=2 y LIBGL_USEVBO=3. Cada APK se compiló en
+un worktree de experimentación, sin alterar el código publicado. El punto
+fue el mismo training guardado, vista inicial estática y perfil Equilibrado.
+
+| Métrica (60 ventanas de un segundo) | VBO normal 1 | VBO 3 | VBO 2 |
+| --- | ---: | ---: | ---: |
+| Mediana FPS de promedios por ventana | 54.50 | 51.55 | 49.25 |
+| Mediana tiempo medio del cuadro | 18.34 ms | 19.39 ms | 20.305 ms |
+| Mediana CPU de hilo | 17.855 ms | 19.35 ms | 20.29 ms |
+| FPS respecto al normal | referencia | -5.4% | -9.6% |
+
+Los resultados son de UNA ejecución por variante (60 ventanas por
+ejecución): una regresión reproducible en esa escena, no una conclusión
+universal sobre todos los dispositivos. Ambos modos mostraron visualmente
+la misma escena inicial, pero eso no es validación exhaustiva gráfica ni
+de jugabilidad. No se introduce ninguno en main. La APK normal se reinstaló,
+su SHA-256 se comparó con la copia sin instrumentación y se confirmó que no
+incluye la variable experimental LIBGL_USEVBO. Se conservaron los guardados.
+
+Próxima hipótesis: medir trabajo real dentro de GL4ES (transformaciones,
+copias de índices y llamadas a GLES) para reducir el coste de la vía
+actual sin exponer extensiones guest que puedan cambiar el render.

@@ -9,6 +9,29 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### A/B de modos VBO internos de GL4ES en WSA — 2026-10-13
+
+- [x] Prueba A/B aislada sin alterar main: se forzó LIBGL_USEVBO=2 y LIBGL_USEVBO=3 por separado en android/native_host.c de un worktree temporal y se compilaron APK x86_64 firmadas. Ambos modos llegaron a la misma entrada de training con la misma partida y perfil Equilibrado.
+- [x] Valores de 60 ventanas de ~1 segundo de frame stats del motor: modo normal 1 FPS mediano 54.5 / CPU hilo mediana 17.855 ms / tiempo de cuadro medio de ventana mediana 18.34 ms; modo 3: 51.55 FPS / 19.35 ms CPU / 19.39 ms cuadro; modo 2: 49.25 FPS / 20.29 ms CPU / 20.305 ms cuadro. Los modos experimentales empeoran ~5.4% y ~9.6% FPS en esta escena de WSA; no se habilitan.
+- [x] Restaurada APK normal con profiling GL deshabilitado y modo VBO por defecto; comprobado SHA-256 de APK instalada contra copia normal y ausencia de cadenas del modo experimental en libmain.so. La partida de entrenamiento se conserva. Se revirtió android/native_host.c del worktree temporal.
+- [ ] Pendiente: analizar rutas internas reales de draw y copias de GL4ES, probar escena exigente con varios soldados, y medir en teléfono ARM64 real. No extrapolar resultados de WSA a GPU móvil.
+
+### Opt-in WSA OpenGL bridge counters — 2026-10-13
+
+- [x] Built a separate x86_64 APK from commit 9147588 with CODRECOMP_GL_PROFILING=ON; a private gl_stats marker enabled actual guest OpenGL call counters during the preserved Camp Toccoa training scene.
+- [x] One stable approximately 5-second window recorded 274 native frames, 9,590 glDrawElements, 18,632 glDrawRangeElements, 31,784 glBindTexture, 11,234 active-texture calls, 8,494 glLockArrays pairs and 42,018,996 requested indices. Per-frame averages: **103 indexed draw requests; 116 texture bind calls; 41 active texture calls; 31 lock/unlock pairs; 153,354 indices**.
+- [x] No explicit guest VBO bind/buffer uploads appeared during that steady scene. GL4ES can still use internal buffers, so these metrics do **not** establish what the GPU did or the relative CPU cost of these GL operations.
+- [ ] Performance hypothesis to test in isolated builds: GL4ES usevbo=2/3 compiled-array pathways; do not enable them in normal APKs unless repeated WSA A/B, visual correctness, and real ARM64 device validation support the change.
+
+### WSA reproducible performance check and first-open overlay copies — 2026-10-13
+
+- [x] Built signed x86_64 APK from detached clean worktree at commit `9147588`, installed with `adb install -r`, and confirmed loading/resuming the preserved Camp Toccoa training save in WSA. All private original game content remained external.
+- [x] Compared original WSA v0.2.3 APK and `9147588` with the same save, camera direction, Balanced graphics settings, 60 one-second engine-log windows at the start of the training mission. Median of window-averaged FPS **54.5 vs 54.5**, CPU thread window medians **17.920 vs 17.855 ms**, median window-averaged frame times **18.36 vs 18.34 ms**, p95 of window averages **20.187 vs 20.119 ms**. **No established FPS improvement**: the prior snapshot at 44.3 FPS came from a different scene and was not a valid A/B.
+- [x] `CL_InitCGame` took 7.07 s before and 6.71 s after in one run each; this is not enough repetitions to establish a load-time improvement.
+- [x] Improved copy-on-first-write into the app's writable overlay: use a 16-KiB buffered stream rather than byte-by-byte `fgetc/fputc`; check errors/close and remove incomplete overlays. It does **not** change read-only PK3 handling or simulation logic.
+- [x] Synthetic Windows host microbenchmark with 16 MiB and 5 trials per method: byte-copy median 291.540 ms vs buffered median 11.919 ms (**24.46x for this microbenchmark only**). Runtime copy fixtures cover binary content, empty streams and NULL pointers; all 22 host CTest tests pass. Android ARM64 libmain builds.
+- [ ] Further work: capture opt-in GL bridge counts, attribute GL4ES internal draws/copies, and test actual ARM64 phone scenes. WSA's integrated OpenGL ES translator is not representative of a Mali/Adreno mobile GPU.
+
 ### GL bridge performance implementation — 2026-10-13
 
 - [x] Implemented correct guest-side GL_ARRAY_BUFFER and GL_ELEMENT_ARRAY_BUFFER binding state in the generated GL thunks. Attribute and index pointers become byte offsets only while the corresponding target is bound; unbind, deletion and gl_load reset state. The advertised guest extension list is deliberately unchanged.

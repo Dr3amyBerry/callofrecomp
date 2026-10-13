@@ -59,6 +59,24 @@ int main(int argc, char **argv) {
     if (!call("MoveFileA", 2, move_args)) return 11;
     if (call("MoveFileA", 2, move_args)) return 12; // source was consumed
     if (call("GetLastError", 0, NULL) != 2) return 13; // ERROR_FILE_NOT_FOUND
+    // Copy-on-write OPEN_EXISTING must reproduce the entire binary original
+    // when the overlay does not yet contain the file.
+    uint32_t original_copy = guest_strdup("C:\\cod\\copy_fixture.bin");
+    uint32_t copy_args[7] = {original_copy, 0xC0000000u, 1, 0, 3, 0, 0};
+    uint32_t copy_h = call("CreateFileA", 7, copy_args);
+    if (copy_h == UINT32_MAX) return 28;
+    uint32_t copy_buf = guest_alloc(4096), copy_count = guest_alloc(4);
+    uint32_t copy_read[5] = {copy_h, copy_buf, 4096, copy_count, 0};
+    for (uint32_t pos = 0; pos < 16 * 1024 + 147; ) {
+        uint32_t size = (16 * 1024 + 147) - pos;
+        if (size > 4096) size = 4096;
+        copy_read[2] = size;
+        if (!call("ReadFile", 5, copy_read) || mem32(copy_count) != size) return 29;
+        for (uint32_t i = 0; i < size; i++)
+            if (((uint8_t *)G(copy_buf))[i] != (uint8_t)(((pos + i) * 53 + 71) & 255)) return 30;
+        pos += size;
+    }
+    if (!call("CloseHandle", 1, &copy_h)) return 31;
     // Real engine clocks must advance with elapsed time, not once per call.
     // Otherwise CPU calibration selects the no-prediction low-spec profile.
     shim_realtime = 1;

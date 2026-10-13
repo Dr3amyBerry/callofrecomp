@@ -13,6 +13,7 @@
 #include <time.h>
 
 #include "recomp_rt.h"
+#include "file_copy.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -119,10 +120,14 @@ K(CreateFileA) {
             char src[1100];
             if (!resolve_read(S(0), src, sizeof src, &st)) return INVALID;
             FILE *a = fopen(src, "rb"), *b = fopen(path, "wb");
-            int c;
-            while (a && b && (c = fgetc(a)) != EOF) fputc(c, b);
-            if (a) fclose(a);
-            if (b) fclose(b);
+            int copied = file_copy_stream(a, b);
+            if (a && fclose(a)) copied = 0;
+            if (b && fclose(b)) copied = 0;
+            if (!copied) {
+                // Never expose a partly copied original as a valid overlay.
+                (void)remove(path);
+                return INVALID;
+            }
             have = 1;
         }
         if (disp == 1 && have) return INVALID;  // CREATE_NEW

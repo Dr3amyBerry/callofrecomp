@@ -624,3 +624,72 @@ y OFF (cadena ausente). El build quedó restaurado al valor OFF por defecto.
    a arenas liberadas ni estados GL de otro contexto.
 5. Comparar kernels nativos o -O2 selectivo solo con datos por función, no con
    la compilación estática (+4% de .text) considerada en el informe previo.
+
+## 21. Pruebas A/B en WSA y copia de archivos original → overlay (2026-10-13)
+
+Se compiló de forma aislada `9147588` para WSA x86_64, se instaló preservando
+los datos importados y se repitió el **mismo punto de inicio de training**,
+misma orientación de cámara y perfil Equilibrado, en la APK anterior y nueva.
+Cada captura utilizó las últimas 60 ventanas de aproximadamente un segundo de
+`frame stats:` posteriores a `CL_InitCGame`:
+
+- FPS mediano de ventanas: **54.5 frente a 54.5**. No hay mejora medida.
+- Tiempo promedio de cuadro, mediana de ventanas: 18.36 vs 18.34 ms.
+- p95 **de los promedios de ventana**, no de cuadros: 20.187 vs 20.119 ms.
+- CPU del hilo, mediana de promedios por ventana: 17.920 vs 17.855 ms.
+- `CL_InitCGame`: 7.07 s vs 6.71 s, una muestra por versión (no significativo).
+
+La prueba anterior a 44.3 FPS se ejecutó desde otra zona del mapa y **no**
+puede usarse para probar una ganancia de casi 10 FPS. WSA no representa un
+móvil Mali/Adreno.
+
+También se integró y cubrió con pruebas `file_copy_stream` para copiar
+archivos del juego al overlay de escritura en bloques de 16 KiB, en vez de
+copiar byte a byte, y eliminar copias fallidas. Benchmark de archivos
+sintéticos de 16 MiB en Windows, cinco muestras: medianas 291.540 ms y
+11.919 ms respectivamente (24.46x **solo para esa copia**). No constituye
+un resultado de carga de mapas ni de FPS.
+
+Pendiente: instrumentar cantidad de draws de GL4ES realmente emitidos a GLES,
+probar casos de render más exigentes y ejecutar un A/B en ARM64 real.
+
+## 22. Conteos GL en Camp Toccoa: build diagnóstico WSA (2026-10-13)
+
+Con los contadores opt-in de GL de 9147588 activados, una ventana estable de
+aproximadamente cinco segundos abarcó 274 cuadros nativos:
+
+- glDrawElements: 9,590 / 274 = 35 llamadas por cuadro.
+- glDrawRangeElements: 18,632 / 274 = 68 llamadas por cuadro.
+- Total: **103 dibujos indexados solicitados por cuadro**.
+- glBindTexture: 116 llamadas por cuadro; active texture: 41.
+- glLockArrays/glUnlockArrays: 31 pares por cuadro.
+- Índices solicitados: 153,354 por cuadro; buffers VBO explícitos guest: 0.
+
+**No son llamadas GLES internas ni tiempos GPU**; GL4ES puede transformar o
+agrupar las llamadas y crear sus propios buffers. La vía de arrays compilados
+es una hipótesis concreta para probar con A/B y comparación visual, sin
+alterar todavía el comportamiento por defecto en ARM64.
+
+## 23. Modos VBO internos GL4ES: dos experimentos descartados (2026-10-13)
+
+En el mismo punto estático del entrenamiento y sin modificar el código
+de producción se probaron LIBGL_USEVBO=3 y LIBGL_USEVBO=2 con 60 ventanas
+de medición cada uno, frente al modo normal de GL4ES (por defecto, 1).
+
+| GL4ES | FPS mediano | CPU del hilo, mediana | Cuadro medio, mediana |
+| --- | ---: | ---: | ---: |
+| Modo normal 1 | 54.50 | 17.855 ms | 18.34 ms |
+| Modo 3 | 51.55 | 19.35 ms | 19.39 ms |
+| Modo 2 | 49.25 | 20.29 ms | 20.305 ms |
+
+En este WSA x86_64, los modos especiales penalizaron la mediana de FPS
+aproximadamente 5.4% y 9.6%. Cada variante representa una ejecución
+del escenario estático, no un experimento multi-dispositivo ni un
+diagnóstico del tiempo real de GPU. Se rechaza habilitarlos de forma
+predeterminada o publicar una supuesta aceleración. La prueba de pantalla
+solo verifica que el escenario se mostró; no garantiza exactitud completa.
+
+Se restauró la APK normal y se verificó con SHA-256 contra la copia
+conocida, con los contadores compilados fuera y sin LIBGL_USEVBO forzado.
+El worktree experimental volvió a su estado original. No se distribuyen
+los PK3 ni los archivos originales del juego.
