@@ -1,7 +1,7 @@
 #pragma once
 #include <stdatomic.h>
 #include <string.h>
-typedef struct { atomic_int phase; int pending; char line[512]; unsigned used; } loading_status;
+typedef struct { atomic_int phase; int pending, initialized, mission; char line[512]; unsigned used; } loading_status;
 static inline void loading_status_init(loading_status *s){
     memset(s,0,sizeof *s);atomic_init(&s->phase,1);
 }
@@ -10,10 +10,17 @@ static inline void loading_status_line(loading_status *s){
     int phase=0;
     if(strstr(s->line,"FS_Startup"))phase=2;
     else if(strstr(s->line,"Initializing OpenGL"))phase=3;
-    else if(strstr(s->line,"Server Initialization")||strstr(s->line,"Loading "))phase=5;
-    else if(strstr(s->line,"Parsing menu file")&&loading_status_get(s)!=5)phase=4;
+    else if(strstr(s->line,"Server Initialization")||strstr(s->line,"Loading surfaces")){
+        s->mission=1;phase=5;
+    }
+    else if(s->mission&&strstr(s->line,"Loading "))phase=5;
+    else if(strstr(s->line,"Parsing menu file")&&!s->mission)phase=4;
     if(phase){s->pending=0;atomic_store_explicit(&s->phase,phase,memory_order_relaxed);}
     if(strstr(s->line,"Common Initialization Complete")||strstr(s->line,"CL_InitCGame:")){
+        s->initialized=1;s->mission=0;
+        s->pending=1;atomic_store_explicit(&s->phase,6,memory_order_relaxed);
+    }else if(s->initialized&&!s->mission&&loading_status_get(s)==4
+            &&strstr(s->line,"UI menu load time =")){
         s->pending=1;atomic_store_explicit(&s->phase,6,memory_order_relaxed);
     }
 }

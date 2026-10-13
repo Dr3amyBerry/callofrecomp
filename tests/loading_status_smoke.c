@@ -13,10 +13,16 @@ int main(void){
     loading_status_feed(&status,"--- Common Initialization Complete ---\n");
     if(loading_status_get(&status)!=6)return 5;
     loading_status_frame(&status);if(loading_status_get(&status)!=0)return 6;
+    // A menu-only video restart has no second Common Initialization milestone.
+    loading_status_feed(&status,"Initializing OpenGL subsystem\nParsing menu file:ui/main.menu\nUI menu load time = 100 milli seconds\n");
+    loading_status_frame(&status);if(loading_status_get(&status)!=0)return 10;
     loading_status_feed(&status,"------ Server Initialization ------\nLoading surfaces...\n");
     if(loading_status_get(&status)!=5)return 7;
     loading_status_feed(&status,"----- Client Initialization Complete -----\n");
     loading_status_frame(&status);if(loading_status_get(&status)!=5)return 8;
+    // Reinitializing graphics and parsing UI during a mission is not readiness.
+    loading_status_feed(&status,"Initializing OpenGL subsystem\nParsing menu file:ui/main.menu\nUI menu load time = 100 milli seconds\n");
+    loading_status_frame(&status);if(loading_status_get(&status)==0)return 11;
     loading_status_feed(&status,"CL_InitCGame: 11.82 seconds\n");
     loading_status_frame(&status);if(loading_status_get(&status)!=0)return 9;
     puts("Loading state: split output, menu, mission, presentation barrier OK");return 0;

@@ -57,6 +57,10 @@ I should not stop merely because a task is large. Work should be split into phas
   original console milestones and waits for a presented frame before hiding;
   no fabricated percentage or timer-based readiness. Android polls four times
   per second and suspends polling in the background.
+- A regression check also covers menu-only graphics restarts: they do not emit
+  Common Initialization a second time, so a finished menu parse followed by
+  presentation releases the overlay. Mission parsing remains blocked until
+  CL_InitCGame completes even if graphics are restarted during mission loading.
 - Read-only PK3 handles use demand-paged mappings on Android/POSIX, with bounded
   copies, logical seek/EOF behavior and FILE fallback. Archives are neither
   extracted again nor copied wholesale into RAM. Windows/writable handles retain
