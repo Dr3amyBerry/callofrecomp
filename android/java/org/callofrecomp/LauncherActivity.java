@@ -22,7 +22,7 @@ import java.util.Locale;
 
 public final class LauncherActivity extends Activity {
     private TextView status;
-    private Button play, choose;
+    private Button play, choose, choosePackage;
     private boolean importing;
     public static File originals(Context c) { return new File(c.getExternalFilesDir(null), "originals"); }
     public static File profile(Context c) { return new File(c.getFilesDir(), "profile"); }
@@ -47,6 +47,10 @@ public final class LauncherActivity extends Activity {
         choose = new Button(this); choose.setText("Elegir carpeta del juego"); layout.addView(choose);
         choose.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION), 1));
+        choosePackage = new Button(this); choosePackage.setText("Importar paquete .codpack"); layout.addView(choosePackage);
+        choosePackage.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), 2));
         TextView graphicsLabel = new TextView(this);
         graphicsLabel.setText("Calidad gráfica · Ligero prioriza fluidez; Alta usa resolución nativa.\nSe aplica al iniciar el juego.");
         layout.addView(graphicsLabel);
@@ -70,19 +74,24 @@ public final class LauncherActivity extends Activity {
     @Override protected void onResume() { super.onResume(); if (status != null && !importing) refresh(); }
     private void refresh() {
         boolean ready = valid(originals(this)); play.setEnabled(ready && !importing);
-        choose.setEnabled(!importing); status.setText(ready ? "Instalación lista.\n" : "Faltan archivos o la instalación no coincide con la versión 1.5 compatible.\n");
+        choose.setEnabled(!importing); choosePackage.setEnabled(!importing); status.setText(ready ? "Instalación lista.\n" : "Faltan archivos o la instalación no coincide con la versión 1.5 compatible.\n");
     }
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
-        if (request != 1 || result != RESULT_OK || data == null || data.getData() == null) return;
+        if ((request != 1 && request != 2) || result != RESULT_OK || data == null || data.getData() == null || importing) return;
         Uri tree = data.getData();
-        importing = true; play.setEnabled(false); choose.setEnabled(false); status.setText("Importando…");
+        importing = true; play.setEnabled(false); choose.setEnabled(false); choosePackage.setEnabled(false); status.setText("Importando…");
         new Thread(() -> {
             String message;
             File stage = new File(getExternalFilesDir(null), "import-pending");
             try {
                 erase(stage); if (!stage.mkdirs()) throw new IOException("No se pudo crear la carpeta de importación");
-                copyTree(tree, DocumentsContract.getTreeDocumentId(tree), stage, false);
+                if (request == 2) {
+                    try (InputStream in = getContentResolver().openInputStream(tree)) {
+                        if (in == null) throw new IOException("No se pudo abrir el paquete");
+                        GamePackage.unpack(in, stage, name -> runOnUiThread(() -> status.setText("Importando " + name + "…")));
+                    }
+                } else copyTree(tree, DocumentsContract.getTreeDocumentId(tree), stage, false);
                 if (!valid(stage)) throw new IOException("Carpeta incompleta o binarios incompatibles: selecciona la instalación 1.5 compatible");
                 File previous = new File(getExternalFilesDir(null), "originals-previous");
                 erase(previous);
@@ -93,7 +102,10 @@ public final class LauncherActivity extends Activity {
                     throw new IOException("No se pudo activar la instalación importada");
                 }
                 erase(previous); message = "Importación terminada.";
-            } catch (Exception e) { message = "No se pudo importar: " + e.getMessage(); }
+            } catch (Exception e) {
+                message = "No se pudo importar: " + e.getMessage();
+                try { erase(stage); } catch (IOException cleanup) { message += ". No se pudo limpiar la carpeta temporal"; }
+            }
             final String resultMessage = message;
             runOnUiThread(() -> { importing = false; refresh(); status.setText(resultMessage + "\n"); });
         }, "original-import").start();

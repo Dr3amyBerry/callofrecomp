@@ -6,6 +6,7 @@ on:
     paths:
       - "tools/**"
       - "android/**"
+      - "web/**"
       - "analysis/baselines/**"
       - "include/**"
       - "src/**"
@@ -16,6 +17,7 @@ on:
     paths:
       - "tools/**"
       - "android/**"
+      - "web/**"
       - "analysis/baselines/**"
       - "include/**"
       - "src/**"
@@ -39,6 +41,17 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Package browser files and decode them on Android JVM
+        run: |
+          mkdir -p build-android-check
+          node tests/test_game_package.mjs build-android-check/web-fixture.codpack
+          javac -encoding UTF-8 -d build-android-check android/java/org/callofrecomp/GamePackage.java tests/android/GamePackageTest.java
+          java -cp build-android-check org.callofrecomp.GamePackageTest build-android-check/web-fixture.codpack
 
       - name: Reject incompatible Android installation data
         run: |

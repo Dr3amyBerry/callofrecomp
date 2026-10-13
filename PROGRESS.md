@@ -32,6 +32,25 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### Public package importer and release preparation — 2026-10-12
+
+- Added a browser-local, dependency-free installation packager under `web/dist/`.
+  It checks the four baseline PE hashes, excludes saves/configuration, and streams
+  uncompressed CODPACK1 files with per-file CRC32. Large packages use Chrome/Edge
+  file-system writes; in-memory download fallback is limited to 512 MiB.
+- Android now accepts `.codpack` through the document picker, extracts into staging,
+  rejects unsafe names/duplicates/truncation/CRC errors/oversized inputs, then checks
+  the existing SHA-256 baseline before replacing resources. Failed extraction cleans
+  staging and preserves the previous installation; profile data stays separate.
+- Added synthetic Java/JavaScript tests, including browser-writer → Java-reader
+  interoperability, and CI coverage. Android package version is now 0.2.0 (code 2).
+- Reworked the README around installation, performance profiles, honest verification
+  limits and development requirements; retained the detailed analysis guide separately.
+- Public release assets must be the regular ARM64/x86_64 APKs only. The ignored
+  preimported private APK and all original game files must remain local.
+- Visual checks and real-device gameplay remain delegated to the user as requested;
+  this import feature does not establish that campaign objectives are completable.
+
 ### Android modest-device profiles and tutorial objectives — 2026-10-12
 
 - User clarified objectives appeared together rather than completing themselves.

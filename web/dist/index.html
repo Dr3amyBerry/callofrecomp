@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Prepara tu instalación propia de Call of Duty 1.5 para CallofRecomp en Android. Todo se procesa localmente, sin subir los archivos del juego.">
+  <meta name="color-scheme" content="dark"><title>CallofRecomp · Preparar el juego</title>
+  <link rel="stylesheet" href="style.css"><script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <header class="shell top"><a class="brand" href="./"><span class="mark" aria-hidden="true">C/R</span> CALLOFRECOMP</a><a href="https://github.com/Dr3amyBerry/callofrecomp" target="_blank" rel="noopener">Código ↗</a></header>
+  <main class="shell">
+    <div class="intro"><p class="eyebrow">CALL OF DUTY 1.5 · ANDROID</p><h1>Tu juego de PC.<br><span>Listo para llevar.</span></h1><p class="lead">Convierte tu instalación en un paquete que puedes importar en CallofRecomp. Tus archivos se quedan contigo.</p></div>
+    <div class="workspace">
+      <section class="panel" aria-labelledby="prepare-title">
+        <div class="panel-head"><span class="step">01 / PREPARAR</span><span class="local"><span aria-hidden="true">●</span> Procesamiento local</span></div>
+        <h2 id="prepare-title">Selecciona la carpeta del juego</h2><p>Elige la carpeta que contiene <code>CoDSP.exe</code>, las tres DLL y la carpeta <code>main</code>. Usaremos los binarios compatibles y todos sus PK3; las partidas y ajustes quedan fuera.</p>
+        <label class="folder" for="folder"><svg width="42" height="34" viewBox="0 0 42 34" fill="none" aria-hidden="true"><path d="M2 7h14l4 5h20v20H2V7Z" stroke="currentColor" stroke-width="2"/><path d="M2 12V2h13l5 5h16v5" stroke="currentColor" stroke-width="2"/></svg><strong>Elegir carpeta de instalación</strong><span>Una copia propia de Call of Duty para PC, parche 1.5</span><input id="folder" type="file" webkitdirectory multiple></label>
+        <div id="selection" class="selection" hidden></div>
+        <p id="status" class="status" role="status" aria-live="polite">Los archivos no se envían a ningún servidor.</p>
+        <progress id="progress" max="100" value="0" hidden aria-label="Progreso del paquete"></progress>
+        <div class="actions"><button id="prepare" disabled>Crear paquete .codpack <span aria-hidden="true">↓</span></button><button id="cancel" class="secondary" hidden>Cancelar</button></div>
+        <p class="hint">Para instalaciones grandes, usa Chrome o Edge en PC: el paquete se escribe directamente en el disco. En otros navegadores, el límite de descarga es 512 MiB.</p>
+      </section>
+      <aside class="instructions" aria-labelledby="next-title"><span class="step">02 / JUGAR</span><h2 id="next-title">Del paquete al teléfono</h2><ol><li><strong>Descarga el APK ARM64.</strong><p>La versión pública no incluye los archivos del juego.</p></li><li><strong>Copia el .codpack al teléfono.</strong><p>Necesitarás espacio para el paquete y para la instalación extraída.</p></li><li><strong>Abre CallofRecomp.</strong><p>Toca «Importar paquete .codpack», selecciona el archivo y espera a que termine. Después toca «Jugar».</p></li></ol><a class="download" href="https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.0">Descargar APK y ver notas ↗</a><div class="note"><strong>Versión de prueba</strong><p>Android 8 o posterior, ARM64 y OpenGL ES 2.0. Para teléfonos modestos, empieza con el perfil Ligero. El rendimiento y la campaña completa siguen pendientes de pruebas en dispositivos reales.</p></div></aside>
+    </div>
+    <section class="details"><div><span class="step">SIN SUBIDAS</span><h3>Privado por diseño</h3><p>Sin cuentas, sin analítica y sin subir recursos. El navegador lee tus archivos y genera el paquete en tu equipo.</p></div><div><span class="step">SIN RECOMPRESIÓN</span><h3>Preparado por bloques</h3><p>Los PK3 ya están comprimidos. Los copiamos con una comprobación de integridad para evitar trabajo innecesario.</p></div><div><span class="step">TUS PARTIDAS</span><h3>Guardadas por separado</h3><p>La importación reemplaza los recursos del juego después de validarlos. Tus partidas permanecen en el perfil de Android.</p></div></section>
+  </main>
+  <footer class="shell"><span>CallofRecomp · Proyecto independiente en desarrollo</span><a href="https://github.com/Dr3amyBerry/callofrecomp#readme">Guía y estado del proyecto ↗</a></footer>
+</body>
+</html>
