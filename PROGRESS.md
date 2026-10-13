@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### Performance study of downloaded references — 2026-10-13
+
+- Reviewed public runtime dispatch/GL bridge, Android compiler flags and targeted renderer, VM, filesystem and animation code in the four local upstream references.
+- The full study remains local and ignored because it uses private diagnostic evidence. No private measurements or derived original-code analysis are published in this note.
+- Follow-up proposals: measure the current baseline, compare selective compiler optimization, investigate native kernels, count graphics conversion work and separate loading stages. These are candidates rather than verified improvements.
+- Study only: no game behavior changes, device execution or visual checks. New performance improvements remain proposed and unmeasured.
+
 ### Local workspace organization — 2026-10-13
 
 - Follow-up: tracked VS Code settings hide legacy root aliases and exclude local/private build trees from search and file watchers. The editor now presents local material through `.local/` rather than duplicate root entries.
