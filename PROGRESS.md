@@ -47,9 +47,14 @@ I should not stop merely because a task is large. Work should be split into phas
   This is a microbenchmark, not measured whole-game FPS or a Tecno result.
   Compiled synthetic equivalence checks cover 1,000 random register states,
   overlapping byte aliases, conditional paths, memory stores and x87 conversions.
-- Full WSA baseline training initialization: 16.46 seconds. Optimized Android
-  builds and the corresponding comparison are in progress. Generated-code builds
-  retain line tables instead of enormous per-temporary variable debug records.
+- Full WSA training initialization, alternating baseline/optimized twice with no
+  compiler running: 13.50 / 8.85 and 13.77 / 8.97 seconds (CL_InitCGame), about
+  35% less initialization time. Same WSA/profile, warm caches; this measures
+  initialization rather than gameplay FPS. The earlier 16.46-second baseline ran
+  during compilation and is excluded from the comparison. Both final ABI APKs
+  are signed and verified; ARM64 shrank from about 74.6 to 57.7 MB. Generated-code
+  builds retain line tables instead of enormous per-temporary debug records.
+  Removed the temporary benchmark autoexec and restored the normal APK in WSA.
   The Tecno is unavailable for further tests; the user requested continuing with
   automated comparisons. WSA cannot simulate its Mali GPU or certify its FPS.
 - Added a native-driven, indeterminate loading indicator for engine startup,
