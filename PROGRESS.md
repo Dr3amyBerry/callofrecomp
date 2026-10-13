@@ -32,6 +32,20 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### Native widescreen configuration — 2026-10-12
+
+- User reported stretched 4:3 presentation and supplied the original custom-mode
+  workaround. The Android host previously set only custom width/height, omitting
+  `r_customaspect` and camera FOV. Added the actual display ratio and a horizontal
+  FOV derived from the original 80-degree 4:3 view, preserving vertical coverage
+  while revealing more of the world horizontally (about 96.42 degrees at 16:9).
+- PC startup now uses the current display dimensions and ratio too; explicit
+  command-line arguments can override its defaults. Android applies its landscape
+  display settings on launch, including existing profiles. Uses the original
+  renderer's custom mode, with no asset rescaling or projection interception.
+- Visual validation belongs to the user in flash mode. Check world geometry,
+  aiming, menus/HUD and touch alignment; legacy 2D artwork has not been redesigned.
+
 ### 60 FPS and campaign fixes packaged — 2026-10-12
 
 - Added monotonic presentation pacing with a 60 FPS ceiling, no catch-up burst

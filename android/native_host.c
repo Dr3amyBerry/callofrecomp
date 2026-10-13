@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include "../tools/recomp/runtime/widescreen.h"
 #define main engine_main
 #include "../tools/recomp/hosts/engine_host.c"
 #undef main
@@ -32,16 +33,28 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) { fprintf(stderr, "SDL: %s\n", SDL_GetError()); return 2; }
     SDL_DisplayMode dm = {0};
     SDL_GetCurrentDisplayMode(0, &dm);
-    char width[16], height[16];
-    snprintf(width, sizeof width, "%d", dm.w > 0 ? dm.w : 1280);
-    snprintf(height, sizeof height, "%d", dm.h > 0 ? dm.h : 720);
+    /* The activity is landscape; a device can initially report portrait mode. */
+    int display_width = dm.w, display_height = dm.h;
+    if (display_width > 0 && display_height > display_width) {
+        int swap = display_width; display_width = display_height; display_height = swap;
+    }
+    widescreen_config display = widescreen_for_display(display_width, display_height);
+    char width[16], height[16], aspect[32], fov[32];
+    snprintf(width, sizeof width, "%d", display.width);
+    snprintf(height, sizeof height, "%d", display.height);
+    snprintf(aspect, sizeof aspect, "%.8f", display.aspect);
+    snprintf(fov, sizeof fov, "%.6f", display.fov);
     char *extra[] = {"+set", "r_mode", "-1", "+set", "r_customwidth", width,
-                    "+set", "r_customheight", height, "+set", "r_fullscreen", "0"};
-    char **args = calloc((size_t)argc + 13, sizeof *args);
+                    "+set", "r_customheight", height, "+set", "r_customaspect", aspect,
+                    "+set", "cg_fov", fov, "+set", "r_fullscreen", "0"};
+    const int extra_count = (int)(sizeof extra / sizeof *extra);
+    char **args = calloc((size_t)argc + extra_count + 1, sizeof *args);
     if (!args) return 3;
     memcpy(args, argv, (size_t)argc * sizeof *args);
     memcpy(args + argc, extra, sizeof extra);
-    int result = engine_main(argc + 12, args);
+    fprintf(stdout, "codrecomp: widescreen %dx%d aspect=%s horizontal FOV=%s\n",
+        display.width, display.height, aspect, fov);
+    int result = engine_main(argc + extra_count, args);
     free(args);
     return result;
 }

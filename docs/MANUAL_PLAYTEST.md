@@ -5,6 +5,11 @@ Los arranques y las pruebas automáticas no certifican todos los objetivos.
 
 ## Primero: entrenamiento
 
+- Comprobar el modo panorámico: ver más escenario a los lados, con personas y
+  objetos proporcionados. Probar también apuntar y la posición de menús/HUD.
+  El arranque aplica resolución nativa, `r_mode -1`, `r_customaspect` y un FOV
+  ajustado a la pantalla; no hace falta editar la configuración del juego.
+
 - Iniciar una partida nueva y entrar al entrenamiento original.
 - Moverse, girar despacio, apuntar y recargar: buscar saltos, aceleraciones o
   entradas que se queden pulsadas. El límite es 60 FPS; puede rendir menos.

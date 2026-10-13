@@ -3,9 +3,11 @@
 // recompiled modules; Win32 services come from the runtime shims.
 #include <stdio.h>
 #include <stdlib.h>
+#include <SDL.h>
 
 #include "gl_thunks.h"
 #include "audio.h"
+#include "widescreen.h"
 
 extern const recomp_module recomp_module_codsp, recomp_module_uix86, recomp_module_cgamex86, recomp_module_gamex86;
 
@@ -37,6 +39,18 @@ int main(int argc, char **argv) {
     files_game_dir = argv[1];
     files_home_dir = argc > 2 && argv[2][0] != '+' ? argv[2] : "codrecomp_home";
     static char cmd[4096] = "CoDSP.exe";
+#ifndef __ANDROID__
+    /* Defaults precede explicit user arguments, which may override them. */
+    SDL_DisplayMode mode = {0};
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+        fprintf(stderr, "SDL display: %s\n", SDL_GetError()); return 2;
+    }
+    SDL_GetCurrentDisplayMode(0, &mode);
+    widescreen_config display = widescreen_for_display(mode.w, mode.h);
+    snprintf(cmd, sizeof cmd, "CoDSP.exe +set r_mode -1 +set r_customwidth %d"
+        " +set r_customheight %d +set r_customaspect %.8f +set cg_fov %.6f",
+        display.width, display.height, display.aspect, display.fov);
+#endif
     for (int i = 2; i < argc; i++)
         if (argv[i][0] == '+' || argv[i][0] == '-' || i > 2) {
             strncat(cmd, " ", sizeof cmd - strlen(cmd) - 1);
