@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### Public release v0.2.3 — published 2026-10-13
+
+- Published [v0.2.3](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3) from commit `ebc663373a0825c49f39c70854cbec830c9e8094` with the latest CPU optimizations and updated release notes/README.
+- Public ARM64 APK: version 0.2.3/code 5, 50,217,788 bytes. GitHub asset digest matches local SHA-256 `5a8a8026c9909821d7dcdcbc0a8bc66947b3fe64252cabd283e9ddbdb7970369`; Android v2/v3 signatures verified before upload.
+- Release contains only `callofrecomp-arm64.apk` and `SHA256SUMS.txt`. Public APK contains no original game resources; the bundled private APK remains local.
+- This release updates ARM64 only; WSA x86_64 remains available in v0.2.2. Gameplay FPS and the training wire scene still require user verification.
+
 ---
 
 ## 1. Operating objective
