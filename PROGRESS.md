@@ -32,6 +32,25 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### Further CPU and memory commitment optimization — 2026-10-13
+
+- Confirmed ARM64 signed divisions were calling the 128-bit `__divti3` helper
+  for operands no wider than 64 bits. Native signed division/remainder now
+  replaces that path, with explicit MIN/-1 overflow handling before truncation;
+  genuinely wider inputs retain the original implementation. Unsigned division
+  was already compiled into a native instruction and was left unchanged.
+- Compiled equivalence tests cover all 64 input-width pairs from 1 through
+  8 bytes, 128,000 deterministic input combinations including signed extrema.
+  Isolated WSA division benchmark: 7.27 ns/op baseline versus 2.31 ns/op native,
+  identical checksum. This does not measure game FPS or the Tecno.
+- Guest memory commitment now batches consecutive new 4-KiB pages into one
+  OS call, stopping at already committed pages and preserving their contents.
+  A fresh 64-MiB range requires one call instead of 16,384. WSA isolated
+  commitment CPU time averaged 2,596.15 versus 4.56 microseconds over eight
+  allocations; page faults/data initialization are excluded from this probe.
+- 18 host tests pass; independent review found no blocking correctness issue.
+  Final ARM64 build is in progress. No visual checks or phone tests were made.
+
 ### Android loading feedback and runtime overhead — 2026-10-13
 
 - Follow-up: instruction temporaries now use compact local storage when byte-level

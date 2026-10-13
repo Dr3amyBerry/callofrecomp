@@ -147,6 +147,16 @@ class Gen:
             return self.wr(out, m(f'({a}{"/" if mnem == "INT_DIV" else "%"}{b})'))
         if mnem in ('INT_SDIV', 'INT_SREM'):
             o = '/' if mnem == 'INT_SDIV' else '%'
+            if isz <= 8 and ins[1][2] <= 8:
+                left = f'(int64_t){sa(a, isz)}'
+                right = f'(int64_t){sa(b, ins[1][2])}'
+                expr = f'(u128)({left}{o}{right})'
+                # The wide reference can represent MIN/-1. Native signed
+                # division cannot, even when the eventual output is narrowed.
+                if isz == 8:
+                    overflow = '(u128)0' if o == '%' else '((u128)1<<63)'
+                    expr = f'(({left}==INT64_MIN && {right}==-1) ? {overflow} : {expr})'
+                return self.wr(out, m(expr))
             return self.wr(out, m(f'(u128)({sa(a, isz)}{o}{sa(b, ins[1][2])})'))
         if mnem == 'INT_LEFT':
             return self.wr(out, m(f'shl({a},{b})'))

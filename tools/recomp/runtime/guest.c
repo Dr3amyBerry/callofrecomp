@@ -4,6 +4,7 @@
 #include "module_lifecycle.h"
 #include "heap_lifecycle.h"
 #include "dispatch_index.h"
+#include "commit_runs.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -72,15 +73,16 @@ static uint8_t committed[1u << 20];  // one flag per 4 KiB page
 void guest_commit(uint32_t addr, uint32_t size) {
     if ((uint64_t)addr + size > (1ull << 32)) guest_fatal("commit outside guest memory");
     uint32_t first = addr >> 12, last = (uint32_t)(((uint64_t)addr + size + 4095) >> 12);
-    for (uint32_t p = first; p < last; p++) {
-        if (committed[p]) continue;
+    uint32_t cursor = first, p, count;
+    while (commit_next_run(committed, &cursor, last, &p, &count)) {
+        size_t length = (size_t)count << 12;
 #ifdef _WIN32
-        if (!VirtualAlloc(MEM + ((uint64_t)p << 12), 4096, MEM_COMMIT, PAGE_READWRITE))
+        if (!VirtualAlloc(MEM + ((uint64_t)p << 12), length, MEM_COMMIT, PAGE_READWRITE))
 #else
-        if (mprotect(MEM + ((uint64_t)p << 12), 4096, PROT_READ | PROT_WRITE))
+        if (mprotect(MEM + ((uint64_t)p << 12), length, PROT_READ | PROT_WRITE))
 #endif
             guest_fatal("commit failed at %08x", p << 12);
-        committed[p] = 1;
+        memset(committed + p, 1, count);
     }
 }
 
