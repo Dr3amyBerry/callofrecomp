@@ -579,3 +579,48 @@ Se realizó una compilación Android aarch64 aislada, sin sustituir los objetos 
 Se creó un analizador local reproducible que separa menú, carga y ralentización sostenida por marcadores reales y considera que el muestreador opt-in imprime los seis máximos cada ventana, no todas las llamadas. Sus sumas y la columna calls no deben interpretarse como porcentajes globales ni conteos exactos. Deben reunirse métricas actuales en ARM64 físico con tiempos de cuadros individuales, ATrace/Perfetto/APA, y contadores de caminos direct/intercepted/list de GL4ES, estado/shader, tipos de índices, bytes copiados y carga de recursos.
 
 **Estado:** investigación extendida e informe privado local; ninguna modificación al motor; no hay validación nueva de FPS en teléfono ARM64 para v0.2.3.
+
+## 20. Primer bloque implementado en el runtime OpenGL (2026-10-13)
+
+Este bloque ya tiene código ejecutable y pruebas. Se separa claramente de las
+hipótesis sobre posibles FPS adicionales:
+
+- **Corregido el puente para parámetros de índices/atributos**: el estado
+  ARRAY_BUFFER y ELEMENT_ARRAY_BUFFER se registra en el runtime invitado.
+  Client arrays siguen pasando direcciones guest; con un buffer enlazado se
+  pasan offsets en bytes. Se conserva el estado ante unbind, borrado de objetos
+  y gl_load. Cambió tanto el generador como la versión generada.
+- **No se anunció GL_ARB_vertex_buffer_object al juego**: habilitar VBO requiere
+  pruebas GL4ES y comparación visual/campaña con un dispositivo real.
+- **Contadores GL opt-in**, compilados solo con CODRECOMP_GL_PROFILING=ON,
+  habilitados en runtime por marcador privado gl_stats. El log gl profile
+  resume cada 5s las llamadas que envía el CoD recompilado al bridge,
+  cantidad de elementos solicitados, cambios de textura y bytes declarados de
+  subidas de buffers. No es tiempo GPU ni cuenta los draws de GLES emitidos
+  internamente por GL4ES.
+- **Menos coste de resolución de símbolos OpenGL**: wglGetProcAddress busca
+  binariamente en la tabla de thunks ya ordenada, en vez de recorrerla por
+  completo. Beneficio potencial para arranque, no demostrado para FPS.
+- **Compilación privada reproducible**:
+  build_android.py ofrece --cpu-profile y --gl-profile sin modificar los
+  flags OFF por defecto del APK normal.
+
+**Pruebas realmente realizadas**: 21 pruebas CTest pasaron, incluidas las nuevas
+de buffer/lookup/metricas y los tests Python del generador. Se compiló y enlazó
+libmain.so ARM64 con el Android NDK en el workspace. Los dos archivos clave
+gl_thunks.c/window.c compilaron también como objetos aislados y el enlace
+completo ARM64 se verificó con instrumentación ON (cadena de perfil presente)
+y OFF (cadena ausente). El build quedó restaurado al valor OFF por defecto.
+**No** se instaló una APK ni se midieron FPS en un teléfono nuevo.
+
+### Pendiente antes de afirmar aceleración en la escena exigente
+
+1. Capturar FPS p50/p95/p99 reales en v0.2.3 (o siguiente versión) y diferenciar
+   coste renderer guest, GL4ES y GPU.
+2. Instrumentar el punto de entrada y salida de caminos directos/interceptados
+   de GL4ES, bytes copiados, shaders y list processing cuando un perfil lo señale.
+3. Evaluar VBO/IBO invitado solo después de los tests de equivalencia visual.
+4. Evaluar reutilización de menús y recursos por separado, sin guardar punteros
+   a arenas liberadas ni estados GL de otro contexto.
+5. Comparar kernels nativos o -O2 selectivo solo con datos por función, no con
+   la compilación estática (+4% de .text) considerada en el informe previo.

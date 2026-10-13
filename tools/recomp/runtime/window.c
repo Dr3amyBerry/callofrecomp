@@ -11,6 +11,7 @@
 #endif
 
 #include "gl_thunks.h"
+#include "gl_lookup.h"
 #include "frame_pacing.h"
 #include "loading_status.h"
 
@@ -539,6 +540,7 @@ K(SwapBuffers) {
         if (stats) end_tick = SDL_GetPerformanceCounter();
     }
     if (win) loading_status_frame(&load_status);
+    gl_perf_frame(SDL_GetTicks64());
     if (pending_menu_click) {
         pending_menu_click = 0;
         mouse_buttons |= 1; post(0x0201, mouse_buttons, pending_menu_position);
@@ -620,9 +622,11 @@ K(wglGetCurrentDC) { (void)esp; return ctx ? HDC_MAIN : 0; }
 K(wglSwapIntervalEXT) { (void)esp; disable_driver_vsync(); return 1; }
 
 static uint32_t gl_proc(const char *name) {
-    for (const thunk_def *d = gl_thunks; d->name; d++)
-        if (!strcmp(d->name, name)) return thunk_address(d->dll, d->name, d->fn, d->pop);
-    return 0;
+    // gen_gl.py sorts names: repeated wglGetProcAddress probes should be O(log N).
+    static size_t count;
+    if (!count) while (gl_thunks[count].name) count++;
+    const thunk_def *d = gl_find_sorted_thunk(gl_thunks, count, name);
+    return d ? thunk_address(d->dll, d->name, d->fn, d->pop) : 0;
 }
 K(wglGetProcAddress) {
     const char *n = S(0);

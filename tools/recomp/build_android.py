@@ -39,6 +39,10 @@ def main():
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--abi", choices=("arm64-v8a", "x86_64"), default="arm64-v8a")
     parser.add_argument("--recomp-opt", choices=("0", "1"), default="1")
+    parser.add_argument("--cpu-profile", action="store_true",
+                        help="compile optional sampled guest CPU diagnostics")
+    parser.add_argument("--gl-profile", action="store_true",
+                        help="compile optional guest OpenGL call counters")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
     if not args.sdk or not args.java:
@@ -74,7 +78,8 @@ def main():
             f"-DCMAKE_TOOLCHAIN_FILE={(ndk / 'build/cmake/android.toolchain.cmake').as_posix()}",
             f"-DANDROID_ABI={args.abi}", "-DANDROID_PLATFORM=android-26", "-DCMAKE_BUILD_TYPE=Release",
             f"-DRECOMP_OPTIMIZATION={args.recomp_opt}",
-            "-DCODRECOMP_CPU_PROFILING=OFF",
+            f"-DCODRECOMP_CPU_PROFILING={'ON' if args.cpu_profile else 'OFF'}",
+            f"-DCODRECOMP_GL_PROFILING={'ON' if args.gl_profile else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")
         run("cmake", "--build", native, "--parallel", args.jobs)
     classes, dex = package / "classes", package / "dex"

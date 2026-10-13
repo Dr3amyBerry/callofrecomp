@@ -39,6 +39,26 @@ If unique inputs can cross instructions or modules, regenerate all linked module
 with that option; mixing global readers and local writers would lose their values.
 The generator change does not optimize already generated C automatically.
 
+For a diagnostic **private APK** (without altering the regular default),
+build with `--gl-profile` and/or `--cpu-profile`:
+
+```powershell
+python tools/recomp/build_android.py --sdk "$env:ANDROID_HOME" --java "$env:JAVA_HOME" --gl-profile --cpu-profile
+```
+
+Both options are OFF unless explicitly given. They only change small runtime
+sources, not the massive private recompilation units.
+
+Guest OpenGL call diagnostics are **compiled out by default**. To test, configure
+Android CMake with `-DCODRECOMP_GL_PROFILING=ON`, rebuild the native runtime,
+and place a `gl_stats` marker alongside the existing `frame_stats` marker in
+the app's private profile directory (`files/profile/gl_stats`). Every five
+seconds the log prints `gl profile:` with counts of guest bridge draws, index
+or vertex quantities, texture calls, buffer uploads and lock/unlock calls.
+The counts are **not GLES draw calls, GPU time, bytes uploaded by GL4ES, or
+CPU percentages**. Remove the marker for normal diagnostic APK play; ship
+regular release builds with the CMake option OFF.
+
 Sampled thread CPU diagnostics require configuring Android CMake with
 `-DCODRECOMP_CPU_PROFILING=ON` and creating `files/profile/cpu_stats` inside the
 app's private data. Normal builds compile out the sampling path. The log lists

@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### GL bridge performance implementation — 2026-10-13
+
+- [x] Implemented correct guest-side GL_ARRAY_BUFFER and GL_ELEMENT_ARRAY_BUFFER binding state in the generated GL thunks. Attribute and index pointers become byte offsets only while the corresponding target is bound; unbind, deletion and gl_load reset state. The advertised guest extension list is deliberately unchanged.
+- [x] Generator tools/recomp/gen_gl.py now reproduces the pointer semantics and optional instrumentation; synthetic generator test and the real GL thunk bridge smoke test cover the behavior.
+- [x] Added compile-time OFF-by-default CODRECOMP_GL_PROFILING and a private gl_stats marker to count guest draw requests, elements/vertices, texture operations, buffer-upload bytes and lock/unlock, aggregated every ~5 seconds without per-draw logs. Host metrics regression and Android Clang diagnostic compilation pass. This does not measure real GLES submissions or GPU execution time.
+- [x] Changed wglGetProcAddress thunk-table resolution from linear scan to binary search, relying on generator-enforced sorted names. Synthetic lookup and actual guest shim resolution tests pass.
+- [x] Added --cpu-profile and --gl-profile opt-in flags to the private Android builder, explicitly OFF by default. Defaults preserve normal noninstrumented code.
+- [x] Host CMake+CTest all 21 tests passed. ARM64 NDK libmain.so linked with GL profiling ON (profile format present), then profiling OFF (profile format absent); the local default is restored to OFF. No APK install or actual ARM64 device run was performed.
+- [ ] Pending: current ARM64 frame/GPU baseline, GL4ES direct/intercept byte-copy attribution, risky guest VBO exposure (not enabled), reducing duplicate menu parsing with correct allocator lifetimes, profiling exact hot renderer functions and any native NEON replacement. No unsupported FPS claims.
+
 ### Performance study of downloaded references — 2026-10-13
 
 - Reviewed public runtime dispatch/GL bridge, Android compiler flags and targeted renderer, VM, filesystem and animation code in the four local upstream references.

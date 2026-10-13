@@ -21,6 +21,11 @@ static inline void gl_guest_pointer(uint32_t output, const void *host) {
 }
 uint32_t gl_guest_string(unsigned int name, const void *host);
 void gl_load(void *(*getproc)(const char *));
+#if defined(CODRECOMP_GL_PROFILING)
+void gl_perf_frame(uint64_t now_ms);
+#else
+#define gl_perf_frame(ms) ((void)0)
+#endif
 extern const thunk_def gl_thunks[];
 // UI-thread input: 0 absolute menu pointer, 1 scancode, 2 mouse button,
 // 3 relative look, 4 menu activation after a frame (control 1 cancels).

@@ -43,6 +43,15 @@ if(CODRECOMP_CPU_PROFILING)
   set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND
     PROPERTY COMPILE_DEFINITIONS CODRECOMP_CPU_PROFILING)
 endif()
+# Diagnostic only: compile both producer and frame boundary without rebuilding
+# the large private generated C. The normal APK has no GL counter overhead.
+option(CODRECOMP_GL_PROFILING "Compile opt-in guest GL call counters" OFF)
+if(CODRECOMP_GL_PROFILING)
+  foreach(source gl_thunks.c window.c)
+    set_property(SOURCE "${ROOT}/tools/recomp/runtime/${source}" APPEND
+      PROPERTY COMPILE_DEFINITIONS CODRECOMP_GL_PROFILING)
+  endforeach()
+endif()
 target_compile_options(main PRIVATE -O1 -Wno-unused-function)
 target_link_libraries(main PRIVATE SDL2 GL log android m dl)
 target_link_libraries(GL m dl)
