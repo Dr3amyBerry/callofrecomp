@@ -135,6 +135,9 @@ alineación de las librerías nativas. La build actual usa una clave local de
 desarrollo. La web está en `web/dist/`, no necesita dependencias ni backend y
 puede servirse con `python -m http.server 8080 --directory web/dist`.
 
+El mapa de carpetas, las referencias descargadas y el acceso al perfilador están
+en [Entorno local de trabajo](docs/WORKSPACE.md).
+
 Call of Duty y sus recursos pertenecen a sus respectivos titulares. Este proyecto
 no está afiliado a Activision. Las licencias de las dependencias se incluyen en
 el APK y se detallan en el [registro técnico](PROGRESS.md).

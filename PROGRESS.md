@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### Local workspace organization — 2026-10-13
+
+- Downloaded clean Git references for Quake3e, openmohaa, gl4es and opencod1, including declared submodules; revisions recorded in `docs/WORKSPACE.md` and the ignored local manifest.
+- Installed the official Windows Android Performance Analyzer 0.9.0 portable distribution under `.local/toolchains/`; ZIP CRC verified and SHA-256 recorded. No visual inspection or phone capture performed.
+- Grouped local build trees, pinned dependencies and private inputs under `.local/`, preserving old absolute paths through Windows junctions. Locked `build-retrotouch` and `recomp_out` remain physically in their original locations with reverse junctions into the organized folders.
+- Added repeatable organization and APA launcher scripts; `.local/` is ignored. Game code and build dependency revisions are unchanged.
+- Verified clean reference checkouts/submodules, accessible original build/APK paths, successful host build and all 19 CTest tests. Re-running the organization script completed without changes.
+
 ### Public release v0.2.3 — published 2026-10-13
 
 - Published [v0.2.3](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3) from commit `ebc663373a0825c49f39c70854cbec830c9e8094` with the latest CPU optimizations and updated release notes/README.

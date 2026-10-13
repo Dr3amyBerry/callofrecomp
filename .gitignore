@@ -1,4 +1,5 @@
 # Original game files must never be committed.
+.local/
 originals/
 input/
 dumps/
