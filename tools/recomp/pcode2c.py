@@ -233,7 +233,7 @@ class Gen:
 
 
 def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
-             local_temporaries: bool = True):
+             local_temporaries: bool = True, separate_spaces: bool = True):
     """Return ([part sources], main source, unsupported ops)."""
     g = Gen(userops)
     # Silent per-module fallback could mix local writers with another module's
@@ -250,6 +250,8 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
     bodies = [list(header) for _ in range(parts)]
     for ci, chunk in enumerate(chunks):
         out = bodies[ci * parts // len(chunks)]
+        start = len(out)
+        unsupported_before = dict(g.unsupported)
         addrs = {a for a, _, _ in chunk}
         out.append(f'void {ident}_chunk_{ci}(void) {{')
         out.append(' goto dyn;')
@@ -288,6 +290,19 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
         out.append(' }')
         out.append('}')
         out.append('')
+        if separate_spaces and g.unsupported == unsupported_before:
+            # guest_init reserves RAM separately from the static register array.
+            # Restrict only these two spaces, not addresses within either space.
+            # Fatal diagnostics read global registers: retain their old path.
+            body = [line.replace('R+', 'guest_regs+').replace('G(', 'GR(')
+                    for line in out[start:]]
+            body[0] = (f'static void {ident}_chunk_{ci}_spaces('
+                       'uint8_t *restrict guest_regs, uint8_t *restrict guest_mem) {')
+            body[1:1] = ['#define GR(a) (guest_mem + (uint32_t)(a))']
+            body.append('#undef GR')
+            body.append(f'void {ident}_chunk_{ci}(void) {{ '
+                        f'{ident}_chunk_{ci}_spaces(R, MEM); }}')
+            out[start:] = body
     out = list(header)
     out.extend(f'void {ident}_chunk_{ci}(void);' for ci in range(len(chunks)))
     out.append('static const recomp_chunk chunks[] = {')
@@ -321,6 +336,8 @@ def main() -> int:
     ap.add_argument('--parts', type=int, default=1, help='split chunk code into N files for parallel builds')
     ap.add_argument('--global-temporaries', action='store_true',
                     help='diagnostic: retain global unique space consistently for all linked modules')
+    ap.add_argument('--shared-spaces', action='store_true',
+                    help='diagnostic: omit disjoint RAM/register alias information')
     args = ap.parse_args()
     insns, userops, _ = parse(args.pcode)
     limits = {'r': 0x2000, 'u': 0x400000}  # must match R[] / U[] in runtime/guest.c
@@ -332,7 +349,7 @@ def main() -> int:
     pe = PEFile(args.pe)
     ident = ''.join(c if c.isalnum() else '_' for c in args.pe.stem.lower())
     bodies, main_src, unsupported = generate(insns, userops, pe, args.pe.name, ident, args.parts,
-                                             not args.global_temporaries)
+                                             not args.global_temporaries, not args.shared_spaces)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]

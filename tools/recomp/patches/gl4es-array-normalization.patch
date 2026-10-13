@@ -1,0 +1,19 @@
+diff --git a/src/gl/array.c b/src/gl/array.c
+--- a/src/gl/array.c
++++ b/src/gl/array.c
+@@ -441,6 +441,7 @@
+ void normalize_indices_us(GLushort *indices, GLsizei *max, GLsizei *min, GLsizei count) {
+     getminmax_indices_us(indices, max, min, count);
++    if (count > 0 && *min == 0) return;
+     for (int i = 0; i < count; i++) {
+         indices[i] -= *min;
+     }
+ }
+@@ -458,6 +459,7 @@
+ void normalize_indices_ui(GLuint *indices, GLsizei *max, GLsizei *min, GLsizei count) {
+     getminmax_indices_ui(indices, max, min, count);
++    if (count > 0 && *min == 0) return;
+     for (int i = 0; i < count; i++) {
+         indices[i] -= *min;
+     }
+ }

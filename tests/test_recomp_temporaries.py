@@ -32,18 +32,25 @@ class TemporaryTests(unittest.TestCase):
                copy(('u', 200, 4), ('c', 2, 4)),
                copy(('r', 24, 4), ('u', 200, 4)),
                ('STORE', None, [('c', 0, 8), ('c', 128, 4), ('r', 16, 8)]),
+               copy(('r', 40, 4), ('c', 129, 4)),
+               ('LOAD', ('r', 44, 4), [('c', 0, 8), ('r', 40, 4)]),
+               ('STORE', None, [('c', 0, 8), ('r', 40, 4), ('r', 44, 4)]),
+               copy(('r', 17, 2), ('r', 44, 2)),
                ('FLOAT2FLOAT', ('u', 1000, 10), [('r', 32, 4)]),
                ('FLOAT_ADD', ('u', 1010, 10), [('u', 1000, 10), ('u', 1000, 10)]),
                ('FLOAT2FLOAT', ('r', 36, 4), [('u', 1010, 10)])]
         insns = [(0x1000, 1, ops)]
-        sources = [generate(insns, {}, pe, 'synthetic', name, local_temporaries=local)[0][0]
-                   for name, local in [('global', False), ('local', True)]]
-        self.assertIn('uint8_t T[', sources[1])
+        sources = [generate(insns, {}, pe, 'synthetic', name, local_temporaries=local,
+                            separate_spaces=separate)[0][0]
+                   for name, local, separate in [('global', False, False),
+                                                 ('shared', True, False),
+                                                 ('local', True, True)]]
+        self.assertIn('uint8_t T[', sources[2])
         host = r'''
 #include "recomp_rt.h"
 #include <stdlib.h>
 uint8_t *MEM, R[0x2000], U[0x400000]; uint32_t PC; int recomp_miss;
-void global_chunk_0(void); void local_chunk_0(void);
+void global_chunk_0(void); void shared_chunk_0(void); void local_chunk_0(void);
 int main(void) {
     uint8_t initial[sizeof R], expected[sizeof R], expected_memory[256];
     MEM = calloc(1,256); if(!MEM)return 1;
@@ -52,10 +59,10 @@ int main(void) {
         for(unsigned i=0;i<sizeof R;i++) {
             random = random*1664525u+1013904223u; initial[i]=(uint8_t)(random>>24);
         }
-        for(int local=0;local<2;local++) {
+        for(int local=0;local<3;local++) {
             memcpy(R,initial,sizeof R); memset(MEM,0,256); memset(U,0xa5,sizeof U);
             PC=0x1000; recomp_miss=0;
-            if(local)local_chunk_0();else global_chunk_0();
+            if(local==2)local_chunk_0();else if(local==1)shared_chunk_0();else global_chunk_0();
             if(PC!=0x1001 || recomp_miss)return 2;
             if(!local){memcpy(expected,R,sizeof R);memcpy(expected_memory,MEM,256);}
             else if(memcmp(expected,R,sizeof R)||memcmp(expected_memory,MEM,256))return 3;
@@ -69,11 +76,21 @@ int main(void) {
             source = Path(directory) / 'fixture.c'
             source.write_text('\n'.join(sources) + host)
             executable = Path(directory) / ('fixture.exe' if os.name == 'nt' else 'fixture')
-            built = subprocess.run([compiler, '-O1', '-I' + str(root / 'tools/recomp'),
-                                    str(source), '-lm', '-o', str(executable)],
-                                   capture_output=True, text=True)
-            self.assertEqual(built.returncode, 0, built.stderr)
-            subprocess.run([str(executable)], check=True, timeout=20)
+            for optimization in ('-O1', '-O2'):
+                built = subprocess.run([compiler, optimization, '-I' + str(root / 'tools/recomp'),
+                                        str(source), '-lm', '-o', str(executable)],
+                                       capture_output=True, text=True)
+                self.assertEqual(built.returncode, 0, built.stderr)
+                subprocess.run([str(executable)], check=True, timeout=20)
+
+    def test_unsupported_chunk_retains_global_diagnostic_access(self):
+        pe = SimpleNamespace(imports=lambda: [], exports=lambda: [], image_base=0x1000,
+                             size_of_image=0x1000, entry_rva=0)
+        insns = [(0x1000, 1, [copy(('r', 0, 4), ('c', 3, 4)),
+                              ('UNSUPPORTED_TEST', None, [])])]
+        baseline = generate(insns, {}, pe, 'synthetic', 'probe', separate_spaces=False)
+        optimized = generate(insns, {}, pe, 'synthetic', 'probe', separate_spaces=True)
+        self.assertEqual(baseline, optimized)
 
     def test_overlapping_bytes_keep_their_aliases(self):
         ops = [copy(('u', 0x100, 8), ('c', 123, 8)),

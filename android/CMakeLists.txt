@@ -38,7 +38,10 @@ target_include_directories(main PRIVATE "${ROOT}/tools/recomp" "${ROOT}/tools/re
 target_compile_definitions(main PRIVATE SDL_MAIN_HANDLED)
 option(CODRECOMP_CPU_PROFILING "Compile opt-in sampled CPU diagnostics" OFF)
 if(CODRECOMP_CPU_PROFILING)
-  target_compile_definitions(main PRIVATE CODRECOMP_CPU_PROFILING)
+  # Only guest.c consumes this flag. Do not recompile all private generated
+  # modules just to turn local diagnostics on or off.
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND
+    PROPERTY COMPILE_DEFINITIONS CODRECOMP_CPU_PROFILING)
 endif()
 target_compile_options(main PRIVATE -O1 -Wno-unused-function)
 target_link_libraries(main PRIVATE SDL2 GL log android m dl)

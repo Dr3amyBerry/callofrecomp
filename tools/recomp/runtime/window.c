@@ -7,6 +7,7 @@
 #include <strings.h>
 #ifdef __ANDROID__
 #include <gl4esinit.h>
+#include <time.h>
 #endif
 
 #include "gl_thunks.h"
@@ -491,6 +492,9 @@ K(GetDeviceGammaRamp) {
 
 K(SwapBuffers) {
     (void)esp;
+    static int stats = -1;
+    if (stats < 0) stats = getenv("CODRECOMP_FRAME_STATS") != NULL;
+    Uint64 entry_tick = stats ? SDL_GetPerformanceCounter() : 0, swap_tick = 0, end_tick = 0;
     /* Pace presentation itself, including the first frame after a stall.
      * The original millisecond limiter rounds 60 Hz to 16 ms. */
     if (win && shim_realtime) {
@@ -525,35 +529,55 @@ K(SwapBuffers) {
             now = SDL_GetPerformanceCounter();
             delay = now < deadline ? deadline - now : 0;
         }
+        if (stats) swap_tick = SDL_GetPerformanceCounter();
         SDL_GL_SwapWindow(win);
+        if (stats) end_tick = SDL_GetPerformanceCounter();
         previous = SDL_GetPerformanceCounter();
-    } else if (win) SDL_GL_SwapWindow(win);
+    } else if (win) {
+        if (stats) swap_tick = SDL_GetPerformanceCounter();
+        SDL_GL_SwapWindow(win);
+        if (stats) end_tick = SDL_GetPerformanceCounter();
+    }
     if (win) loading_status_frame(&load_status);
     if (pending_menu_click) {
         pending_menu_click = 0;
         mouse_buttons |= 1; post(0x0201, mouse_buttons, pending_menu_position);
         mouse_buttons &= ~1u; post(0x0202, mouse_buttons, pending_menu_position);
     }
-    static int stats = -1;
-    if (stats < 0) stats = getenv("CODRECOMP_FRAME_STATS") != NULL;
     if (stats) {
         static Uint64 previous, start;
         static uint32_t frames;
-        static double sum, minimum = 1e30, maximum;
+        static double sum, minimum = 1e30, maximum, cpu_sum, swap_sum, pace_sum;
         Uint64 now = SDL_GetPerformanceCounter(), frequency = SDL_GetPerformanceFrequency();
+        static uint64_t cpu_previous;
+        uint64_t cpu_now = 0;
+#ifdef __ANDROID__
+        struct timespec thread_time;
+        if (!clock_gettime(CLOCK_THREAD_CPUTIME_ID, &thread_time))
+            cpu_now = (uint64_t)thread_time.tv_sec * 1000000000ull + thread_time.tv_nsec;
+#endif
         if (previous) {
             double ms = (double)(now - previous) * 1000 / frequency;
             sum += ms; frames++;
+            if (cpu_previous && cpu_now >= cpu_previous)
+                cpu_sum += (double)(cpu_now - cpu_previous) / 1000000;
+            if (swap_tick && end_tick >= swap_tick)
+                swap_sum += (double)(end_tick - swap_tick) * 1000 / frequency;
+            if (swap_tick >= entry_tick)
+                pace_sum += (double)(swap_tick - entry_tick) * 1000 / frequency;
             if (ms < minimum) minimum = ms;
             if (ms > maximum) maximum = ms;
             if (now - start >= frequency) {
-                printf("frame stats: fps=%.1f ms avg=%.2f min=%.2f max=%.2f\n",
-                    frames * 1000 / sum, sum / frames, minimum, maximum);
+                printf("frame stats: fps=%.1f ms avg=%.2f min=%.2f max=%.2f cpu=%.2f swap=%.2f pace=%.2f\n",
+                    frames * 1000 / sum, sum / frames, minimum, maximum,
+                    cpu_sum / frames, swap_sum / frames, pace_sum / frames);
                 fflush(stdout);
-                frames = 0; sum = maximum = 0; minimum = 1e30; start = now;
+                frames = 0; sum = maximum = cpu_sum = swap_sum = pace_sum = 0;
+                minimum = 1e30; start = now;
             }
         } else start = now;
         previous = now;
+        cpu_previous = cpu_now;
     }
     return 1;
 }

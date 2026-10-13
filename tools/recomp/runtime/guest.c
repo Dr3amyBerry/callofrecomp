@@ -441,7 +441,8 @@ static dispatch_index code_index;
 /* Local, opt-in CPU diagnostics. Sample calls rather than logging each branch. */
 static int cpu_profile = -1;
 static unsigned profile_sequence;
-static uint64_t profile_time[4097], profile_count[4097], profile_report;
+enum { PROFILE_SLOTS = 4096 + THUNK_MAX };
+static uint64_t profile_time[PROFILE_SLOTS], profile_count[PROFILE_SLOTS], profile_report;
 static uint64_t profile_clock(int clock) {
     struct timespec t;
     clock_gettime(clock, &t);
@@ -461,15 +462,20 @@ static void profile_end(unsigned slot, uint64_t start) {
     if (now - profile_report < 5000000000ull) return;
     for (int rank = 0; rank < 6; rank++) {
         unsigned best = 0;
-        for (unsigned i = 1; i < 4097; i++)
+        for (unsigned i = 1; i < PROFILE_SLOTS; i++)
             if (profile_time[i] > profile_time[best]) best = i;
         if (!profile_time[best]) break;
-        fprintf(stdout, "cpu sample: %s %08x-%08x time_us=%llu calls=%llu\n",
-            best == 4096 ? "host" : "chunk",
-            best == 4096 ? 0 : all_chunks[best].start,
-            best == 4096 ? 0 : all_chunks[best].end,
-            (unsigned long long)(profile_time[best] / 1000),
-            (unsigned long long)profile_count[best]);
+        if (best >= 4096) {
+            thunk_slot *host = &thunks[best - 4096];
+            fprintf(stdout, "cpu sample: host %s!%s time_us=%llu calls=%llu\n",
+                host->dll, host->name, (unsigned long long)(profile_time[best] / 1000),
+                (unsigned long long)profile_count[best]);
+        } else {
+            fprintf(stdout, "cpu sample: chunk %08x-%08x time_us=%llu calls=%llu\n",
+                all_chunks[best].start, all_chunks[best].end,
+                (unsigned long long)(profile_time[best] / 1000),
+                (unsigned long long)profile_count[best]);
+        }
         profile_time[best] = 0;
     }
     memset(profile_time, 0, sizeof profile_time);
@@ -608,7 +614,7 @@ void guest_run(void) {
             uint32_t esp = reg32(REG_ESP), ret = mem32(esp);
             uint64_t sample = profile_begin();
             set_reg32(REG_EAX, t->fn(esp));
-            profile_end(4096, sample);
+            profile_end(4096 + (unsigned)(t - thunks), sample);
             set_reg32(REG_ESP, esp + 4 + t->pop);
             PC = ret;
             continue;

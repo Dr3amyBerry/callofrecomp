@@ -32,7 +32,45 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### CPU recompilation and graphics translation optimization — 2026-10-13
+
+- Working without phones or visual checks. Generated supported chunks now expose
+  the existing disjoint register/RAM invariant through scoped restrict parameters.
+  Byte aliases within each space remain legal. Unsupported operations retain the
+  identical global diagnostic path; `--shared-spaces` selects the old baseline.
+- Compiled differential tests compare full registers, RAM and next PC for global
+  temporaries, local baseline and local separated spaces, at O1 and O2. Includes
+  overlapping registers, overlapping RAM, indirect addresses, branches and x87.
+  Reproducible owned benchmark: `tools/recomp/bench_spaces.py`; host O1 baseline
+  228–229 ms versus 59–76 ms optimized, identical checksum across three runs.
+  NDK ARM64 O1 assembly for the same workload shrinks from 337 to 77 instructions,
+  with loads reduced from 133 to 8; this is static code inspection, not a timer.
+  This is an isolated memory/register workload, not phone FPS or mission loading.
+- Pinned GL4ES patch skips subtracting zero from every ushort/uint draw index.
+  Min/max and empty-array behavior stay exact. 40,000 differential cases pass;
+  protected-memory probes prove this path no longer writes the index buffer.
+  This reduces CPU graphics translation work; GPU frame-time improvement remains
+  unmeasured. The build applies the patch idempotently and rejects foreign edits.
+- Normal Android builds explicitly disable sampled CPU profiling, including when
+  a prior diagnostic CMake cache enabled it. All 18 host tests pass. ARM64 rebuild
+  and private local packaging are in progress; no game resources are published.
+
 ### Further CPU and memory commitment optimization — 2026-10-13
+
+- Real Tecno follow-up after installation: CL_InitCGame 46.87 seconds; gameplay
+  intervals ranged from 4–17 FPS in parts of the route to 26–39 FPS elsewhere.
+  The user still reports deplorable performance. The isolated improvements do
+  not resolve the device's loading/gameplay bottleneck; do not claim otherwise.
+- Added opt-in frame timing for engine-thread CPU, swap wait and host pacing,
+  and split sampled host CPU by DLL/function rather than one combined bucket.
+  Profiling compile flags affect guest.c only, avoiding a full generated-code
+  rebuild when enabling diagnostics. The detailed diagnostic is installed on
+  the Tecno as a small local update reusing already imported original files.
+  Detailed gameplay: roughly 9–15 FPS with profiling, frame wall time 90–110 ms,
+  engine-thread CPU 85–107 ms, swap 2–4 ms, pacing approximately zero. Includes
+  profiling overhead and CPU graphics translation; short swap does not prove
+  GPU work is free. Normal profiling remains OFF. Periodic sampling can alias
+  repeated call sequences; sampled times are candidates, not exact percentages.
 
 - Confirmed ARM64 signed divisions were calling the 128-bit `__divti3` helper
   for operands no wider than 64 bits. Native signed division/remainder now
