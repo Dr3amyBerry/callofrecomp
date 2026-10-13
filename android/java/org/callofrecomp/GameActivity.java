@@ -42,6 +42,7 @@ public final class GameActivity extends SDLActivity {
                 "bind n \"weapnext\"\nbind v \"+melee\"\n").getBytes(StandardCharsets.UTF_8));
         } catch (IOException error) { throw new IllegalStateException("No se pudieron guardar los controles", error); }
         super.onCreate(saved);
+        setWindowStyle(true);
         if (mLayout != null) {
             controls = new TouchControls(this);
             mLayout.addView(controls, new ViewGroup.LayoutParams(-1, -1));

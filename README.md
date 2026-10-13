@@ -15,7 +15,7 @@ Usa los menús y recursos de tu instalación de PC, con controles táctiles
 [RetroTouch](https://github.com/Andiweli/RetroTouch), pantalla panorámica y un
 límite de 60 FPS. Necesitas tu propia copia del juego.
 
-[**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.0)
+[**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.1)
 · [**Preparar los archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
 · [Estado técnico](PROGRESS.md)
 

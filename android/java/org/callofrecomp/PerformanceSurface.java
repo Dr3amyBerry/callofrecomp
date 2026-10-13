@@ -5,14 +5,21 @@ import android.graphics.Matrix;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 import org.libsdl.app.SDLSurface;
 
 /** Lower EGL-buffer resolution, with Android scaling it across the full view. */
 final class PerformanceSurface extends SDLSurface {
     private final int mode;
-    private boolean started;
     PerformanceSurface(Context context, int mode) {
         super(context); this.mode = mode;
+        // SDL adds this view to a RelativeLayout without explicit parameters.
+        // WRAP_CONTENT measures a fixed-size SurfaceView at its buffer size,
+        // leaving most of a high-resolution phone black. Fill the display view;
+        // setFixedSize controls only the cheaper EGL buffer inside it.
+        setLayoutParams(new RelativeLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         configure(metrics.widthPixels, metrics.heightPixels);
     }
@@ -22,10 +29,16 @@ final class PerformanceSurface extends SDLSurface {
     }
     @Override protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        if (!started && w > 0 && h > 0) configure(w, h);
+        if (w > 0 && h > 0) configure(w, h);
     }
     @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        started = true;
+        if (getWidth() > 0 && getHeight() > 0) {
+            int[] expected = RenderProfile.size(getWidth(), getHeight(), mode);
+            if (width != expected[0] || height != expected[1]) {
+                configure(getWidth(), getHeight());
+                return; // Do not start SDL with the pre-layout/portrait buffer.
+            }
+        }
         super.surfaceChanged(holder, format, width, height);
     }
     @Override public boolean onTouch(android.view.View view, MotionEvent event) {

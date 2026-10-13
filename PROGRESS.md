@@ -32,6 +32,19 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### Tecno full-screen surface sizing — 2026-10-13
+
+- Read-only ADB diagnostics on the connected TECNO CK6n (1080×2400) confirmed
+  the private APK's SurfaceView occupied only 1280×602 pixels, with no compositor
+  upscaling. SDL's default RelativeLayout parameters were WRAP_CONTENT, which
+  measured the fixed-size rendering buffer as the display view itself.
+- PerformanceSurface now supplies MATCH_PARENT parameters before SDL adds it,
+  retains the lower-resolution EGL buffer, recalculates its aspect after layout
+  changes, and defers SDL startup for stale pre-layout buffer callbacks.
+- GameActivity requests immersive full-screen mode. Package version is 0.2.1
+  (code 3). Private bundled APK stays local; public release excludes all game data.
+- No screenshots or visual checks were performed; the user verifies appearance.
+
 ### Public package importer and published 0.2.0 prerelease — 2026-10-12
 
 - Added a browser-local, dependency-free installation packager under `web/dist/`.
