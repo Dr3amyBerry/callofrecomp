@@ -32,6 +32,42 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### Crowded training scene CPU work — 2026-10-13
+
+- User reports Samsung near 5 FPS at the wire/machinegun/crawling-soldier area.
+  They confirm this is the previously installed APK, not the later local APK
+  containing disjoint register/RAM parameters. The scene is not reproduced here:
+  phones remain unused and all visual/gameplay checks stay with the user.
+- Added conservative byte-level liveness of CF/PF/ZF/SF/OF across p-code control
+  flow. Only pure writes proven overwritten before any read on every future path
+  are replaced by semicolons; operation indices and branch labels remain stable.
+  External/indirect exits, host/user ops and unknown instructions observe all flags.
+  Faulting memory operands and arithmetic with effects are not removed. Diagnostic
+  `--keep-dead-flags` retains the original generation path.
+- Existing sampled hot chunks at 0x505485 and 0x5069dd lose 886/8,605 and
+  471/7,339 statements respectively; 0x41aa7e loses 689/10,365. This counts
+  generator statements, not time saved. Compiled full-state differential tests
+  at O1/O2 cover every synthetic instruction entry, branch outcomes, overlapping
+  reads, bounded relative loops and RAM effects; 14 dataflow regression tests pass.
+- Reproducible owned `bench_flags.py`: paired host O1 runs 622/574/575 ms baseline
+  versus 458/458/452 ms optimized, same full register image and checksum. It does
+  not measure Samsung FPS. `bench_float.py` times are smaller and variable:
+  25/28/26 ms versus 22/20/25 ms for ten million canonical conversions.
+- Added an exact normal binary80-to-double fast path for values with zero low
+  eleven significand bits and representable normalized double exponents. Arbitrary
+  encodings, infinities, NaNs, underflow/overflow and rounding use the old path.
+  262,144 raw binary80 patterns across all sign/exponent encodings match the frozen
+  reference bit for bit, including O1/O2 builds. Existing edge tests also pass.
+- Graphics audit found ordinary GLES2 arrays already passed directly to the
+  backend. The earlier identity-normalization patch applies to intercepted/list
+  paths and is not established as active for the user's scene. No speculative
+  VBO/batching settings or gameplay/quality reductions were introduced.
+- All 18 CTest targets pass; independent review found no production blockers.
+  Review's empty-block/unsorted-input robustness issue was fixed and regression
+  tested. ARM64 version 0.2.3 (code 5) is compiling with profiling OFF; public and
+  private local APKs will include the preceding optimization as well. Phone FPS
+  and GPU frame time remain unverified; original resources will not be published.
+
 ### CPU recompilation and graphics translation optimization — 2026-10-13
 
 - Working without phones or visual checks. Generated supported chunks now expose

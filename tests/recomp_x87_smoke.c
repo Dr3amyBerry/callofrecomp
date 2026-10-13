@@ -1,6 +1,7 @@
 #include "recomp_rt.h"
 #include <float.h>
 #include <stdio.h>
+#include "fixtures/recomp_float_reference.h"
 
 static u128 ext(uint16_t exponent, uint64_t significand) {
     return ((u128)exponent << 64) | significand;
@@ -55,6 +56,18 @@ int main(void) {
     CHECK(f2d(ext(0x3bcc, UINT64_C(0x8000000000000001)), 10) == 0x1p-1074);
     CHECK(f2d(ext(0x43fe, UINT64_MAX), 10) == INFINITY);
     CHECK(d2f(1.0, 4) == 0x3f800000 && d2f(1.0, 8) == UINT64_C(0x3ff0000000000000));
+    /* Compare raw binary80 bit patterns, including unsupported encodings, and
+       canonical promoted values across every exponent/sign and rounding class. */
+    for (unsigned se = 0; se < 65536; se++) {
+        for (unsigned i = 0; i < 4; i++) {
+            state ^= state << 13; state ^= state >> 7; state ^= state << 17;
+            uint64_t significand = state;
+            if (i == 1) significand = (state | (UINT64_C(1) << 63)) & ~UINT64_C(0x7ff);
+            if (i == 2) significand |= UINT64_C(0x8000000000000400);
+            u128 input = ext((uint16_t)se, significand);
+            CHECK(bits(f2d(input, 10)) == bits(reference_f2d(input, 10)));
+        }
+    }
     puts("binary80 encoding, rounding, limits and unsupported inputs passed");
     return 0;
 }

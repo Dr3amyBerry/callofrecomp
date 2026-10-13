@@ -17,6 +17,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pe_inspect import PEFile  # noqa: E402
+from flag_liveness import dead_flag_writes
 
 CHUNK = 1500
 
@@ -233,7 +234,8 @@ class Gen:
 
 
 def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
-             local_temporaries: bool = True, separate_spaces: bool = True):
+             local_temporaries: bool = True, separate_spaces: bool = True,
+             eliminate_dead_flags: bool = True):
     """Return ([part sources], main source, unsupported ops)."""
     g = Gen(userops)
     # Silent per-module fallback could mix local writers with another module's
@@ -249,6 +251,7 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
               '#include "recomp_rt.h"', '']
     bodies = [list(header) for _ in range(parts)]
     for ci, chunk in enumerate(chunks):
+        dead_flags = dead_flag_writes(chunk) if eliminate_dead_flags else set()
         out = bodies[ci * parts // len(chunks)]
         start = len(out)
         unsupported_before = dict(g.unsupported)
@@ -275,7 +278,9 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
                 jump.__defaults__[0][0] = i
                 if i in rel_targets:
                     out.append(f' L_{addr:x}_{i}:;')
-                out.append(' ' + g.op(mn, o, ins, jump, None))
+                # Keep every p-code index/label: relative branches use indices.
+                out.append(' ;' if (idx, i) in dead_flags else
+                           ' ' + g.op(mn, o, ins, jump, None))
             if len(ops) in rel_targets:
                 out.append(f' L_{addr:x}_{len(ops)}:;')
             following = chunk[idx + 1][0] if idx + 1 < len(chunk) else None
@@ -338,6 +343,8 @@ def main() -> int:
                     help='diagnostic: retain global unique space consistently for all linked modules')
     ap.add_argument('--shared-spaces', action='store_true',
                     help='diagnostic: omit disjoint RAM/register alias information')
+    ap.add_argument('--keep-dead-flags', action='store_true',
+                    help='diagnostic: retain flag writes even when provably unobserved')
     args = ap.parse_args()
     insns, userops, _ = parse(args.pcode)
     limits = {'r': 0x2000, 'u': 0x400000}  # must match R[] / U[] in runtime/guest.c
@@ -349,7 +356,8 @@ def main() -> int:
     pe = PEFile(args.pe)
     ident = ''.join(c if c.isalnum() else '_' for c in args.pe.stem.lower())
     bodies, main_src, unsupported = generate(insns, userops, pe, args.pe.name, ident, args.parts,
-                                             not args.global_temporaries, not args.shared_spaces)
+                                             not args.global_temporaries, not args.shared_spaces,
+                                             not args.keep_dead_flags)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]
