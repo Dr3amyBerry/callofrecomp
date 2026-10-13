@@ -552,3 +552,30 @@ La investigación descarta el enfoque de "más optimización por intuición". La
 La segunda frontera importante es GL4ES: solo un perfil real decidirá si el coste principal está en conversiones, dibujo de superficies pequeñas, cambios de estado, generación de shaders o código recompilado alrededor de esas llamadas. Para la carga, es imprescindible separar PK3, descompresión, modelos, textura/shaders y CL_InitCGame.
 
 **Estado final de este documento:** investigación estática ampliada, con subsistemas concretos, hipótesis falsables, métricas, matriz de experimentos y criterios de aceptación. Sin modificaciones al motor, sin benchmark nuevo en teléfono y sin afirmaciones de FPS ganados.
+
+
+## 19. Actualización tras acceder al workspace local (2026-10-13)
+
+Este apéndice resume únicamente conclusiones técnicas compartibles, sin copiar archivos derivados de los ejecutables originales, logs, código generado privado o proyectos de Ghidra. La evidencia detallada, los scripts y los objetos experimentales están en el workspace ignorado por Git, bajo la carpeta local de perfiles de rendimiento.
+
+### 19.1 Carga de interfaz: repetición de parseo
+
+En dos ejecuciones históricas de una sesión con transición a training se observó el análisis de un conjunto de 25 menús en dos ocasiones, con reinicializaciones del renderer y del sistema de archivos. Esto no demuestra por sí solo un bug, ya que el cambio de nivel puede invalidar las estructuras de UI y recursos gráficos; sí justifica separar el tiempo de lectura/parseo del tiempo de recreación de imágenes, fuentes y memoria dependiente del nivel. Cualquier caché debe respetar ownership del hunk, idioma, searchpath y pérdida/recreación de contexto.
+
+### 19.2 CPU detectada como legado sin SSE
+
+En runtime/guest.c, cpuid_ptr() devuelve la dirección de la zona SCRATCH sin indicadores de capacidades. El invitado usa por ello rutas compatibles con un x86 antiguo, sin SSE. Esto puede evitar alternativas de optimización presentes en el binario original. No se debe anunciar SSE artificialmente: la generación de instrucciones y los efectos de precisión/estado requieren soporte y pruebas completos. Priorizar equivalentes ARM64/NEON de kernels identificados y verificados, no cambiar el CPUID en producción.
+
+### 19.3 VBO invitado ≠ VBO interno GL4ES
+
+La lista de extensiones que ve el renderer no anuncia GL_ARB_vertex_buffer_object. En paralelo, el GL4ES fijado en el proyecto configura LIBGL_USEVBO con valor 1 por defecto para GLES2: una cosa es la capacidad del juego invitado y otra el uso interno de buffers de GL4ES. Los modos 2 y 3 incluyen caminos específicos basados en glLockArrays y ToBuffer con subida a buffers temporales. Activarlos sin medir puede incrementar uploads, copias o uso de CPU. La traducción de offsets de índices/atributos en gl_thunks.c debe resolverse antes de exponer VBO al invitado.
+
+### 19.4 Compilación de una partición crítica con -O2
+
+Se realizó una compilación Android aarch64 aislada, sin sustituir los objetos existentes, para una partición que contiene bloques recurrentes del renderer. El resultado de código ejecutable (.text) fue +4,0 % respecto a la compilación -O1. La prueba confirma que Clang compila esa variante, pero **no valida equivalencia funcional ni mejora FPS**. No cambiar -O1 globalmente por esta prueba; medir las rutinas específicas, footprints e I-cache y efectuar A/B real.
+
+### 19.5 Metodología necesaria para el siguiente salto
+
+Se creó un analizador local reproducible que separa menú, carga y ralentización sostenida por marcadores reales y considera que el muestreador opt-in imprime los seis máximos cada ventana, no todas las llamadas. Sus sumas y la columna calls no deben interpretarse como porcentajes globales ni conteos exactos. Deben reunirse métricas actuales en ARM64 físico con tiempos de cuadros individuales, ATrace/Perfetto/APA, y contadores de caminos direct/intercepted/list de GL4ES, estado/shader, tipos de índices, bytes copiados y carga de recursos.
+
+**Estado:** investigación extendida e informe privado local; ninguna modificación al motor; no hay validación nueva de FPS en teléfono ARM64 para v0.2.3.
