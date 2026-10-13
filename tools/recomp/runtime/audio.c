@@ -330,6 +330,30 @@ K(wav_info) {
     if (!guest_range(info, 36) || !guest_range(data, 12) || mem32(data) != 0x46464952u || mem32(data + 8) != 0x45564157u) return 0;
     uint64_t total = (uint64_t)mem32(data + 4) + 8;
     if (total > AUDIO_LIMIT || !guest_range(data, (uint32_t)total)) return 0;
+    /* Miles metadata borrows the WAV payload. Copying every PCM file into the
+     * guest heap leaked an entire sound bank each time a map was loaded. */
+    uint32_t fmt = 0, payload = 0, payload_size = 0;
+    for (uint64_t offset = 12; offset + 8 <= total;) {
+        uint32_t chunk = data + (uint32_t)offset, length = mem32(chunk + 4);
+        if ((uint64_t)length > total - offset - 8) return 0;
+        if (mem32(chunk) == 0x20746d66u && length >= 16) fmt = chunk + 8;
+        if (mem32(chunk) == 0x61746164u && !payload) {
+            payload = chunk + 8; payload_size = length;
+        }
+        offset += 8ull + length + (length & 1);
+    }
+    if (fmt && payload && rd(G(fmt), 2) == 1) {
+        uint32_t channels = (uint32_t)rd(G(fmt + 2), 2);
+        uint32_t rate = mem32(fmt + 4), bits = (uint32_t)rd(G(fmt + 14), 2);
+        uint32_t block = channels * (bits / 8);
+        if ((channels != 1 && channels != 2) || (bits != 8 && bits != 16)
+                || rate < 1000 || rate > 384000 || !payload_size
+                || rd(G(fmt + 12), 2) != block || payload_size % block) return 0;
+        uint32_t words[9] = {1, payload, payload_size, rate, bits, channels,
+            payload_size / block, block, payload};
+        memcpy(G(info), words, sizeof words);
+        return 1;
+    }
     SDL_AudioSpec spec; Uint8 *bytes = NULL; Uint32 count = 0;
     if (!SDL_LoadWAV_RW(SDL_RWFromConstMem(G(data), (int)total), 1, &spec, &bytes, &count)) { error(SDL_GetError()); return 0; }
     if (!count || count > AUDIO_LIMIT || spec.channels < 1 || spec.channels > 2

@@ -16,7 +16,7 @@ public final class GameActivity extends SDLActivity {
         // SDL supplies argv[0] itself; these begin at argv[1].
         return new String[]{LauncherActivity.originals(this).getAbsolutePath(),
             LauncherActivity.profile(this).getAbsolutePath(), "+set", "com_introplayed", "1",
-            "+set", "cg_nopredict", "0", "+set", "cl_language",
+            "+set", "com_maxfps", "60", "+set", "cg_nopredict", "0", "+set", "cl_language",
             Installation.language(LauncherActivity.originals(this)), "+exec", "android_touch.cfg"};
     }
     @Override protected void onCreate(Bundle saved) {

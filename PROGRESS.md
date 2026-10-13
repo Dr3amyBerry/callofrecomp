@@ -32,6 +32,37 @@ I should not stop merely because a task is large. Work should be split into phas
 
 ## 2. Current status
 
+### 60 FPS and campaign fixes packaged — 2026-10-12
+
+- Added monotonic presentation pacing with a 60 FPS ceiling, no catch-up burst
+  after slow frames, and an Android `com_maxfps 60` startup setting. Fractional
+  touch-look deltas now accumulate instead of losing slow camera movements.
+- Found a real campaign blocker: ten-byte x87 slots contained padded doubles,
+  while the original embedded CRT expected binary80. Corrected slot encoding;
+  arithmetic remains double precision/range, not a full x87 implementation.
+  A private original-function probe reproduced infinite yaw before the fix and
+  six correct vector angles afterward. Rebuilt native PC objects now load and
+  exit Brecourt and Hurtgen, both of which previously timed out.
+- Added reproducible private static campaign/resource auditing and native map
+  startup probing. Static graph: 33 reachable maps, 26 gameplay/training, six
+  briefings and credits. All 33 initialized and exited normally in the numeric-fix
+  startup sweep. This sweep preceded the subsequent lifecycle/audio changes.
+  Objective completion, AI/trigger reachability and every exit remain
+  separate interactive obligations; neither static checks nor forced-success
+  fixtures certify that all missions are completable.
+- A private forced-success fixture exposed stale navigation data after changing
+  levels: `FreeLibrary` was a no-op. Its isolated unload/reload experiment reached
+  training → us_intro → pathfinder, then exhausted memory. Implemented DLL
+  reference counts, detach/unload, dispatch removal and zeroed image reloads.
+  Private CRT heaps now have distinct owners and real `HeapDestroy` reclamation;
+  freed TLS slots are cleared and reused across DLL reloads;
+  PCM WAV metadata borrows original payload bytes instead of leaking copies.
+- Final PC, Android ARM64 and native WSA x86-64 builds completed. All 15 CTests
+  and Java installation/touch checks pass. No final gameplay/visual verification
+  was performed: the user explicitly requested flash mode and took responsibility
+  for manual checks. Entire campaign completability remains unverified.
+  See `docs/MANUAL_PLAYTEST.md` and `docs/CAMPAIGN_VERIFICATION.md`.
+
 ### Original menus and Android host checkpoint — 2026-10-12
 
 - Current user priority is RetroTouch controls that can be hidden for menus,

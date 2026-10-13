@@ -123,6 +123,10 @@ if(CODRECOMP_BUILD_TESTS)
         endif()
     endif()
 
+    add_executable(codrecomp_frame_pacing_smoke tests/frame_pacing_smoke.c)
+    target_include_directories(codrecomp_frame_pacing_smoke PRIVATE tools/recomp/runtime)
+    add_test(NAME frame_pacing_smoke COMMAND codrecomp_frame_pacing_smoke)
+
     # Offline unit tests cover the PE parser and VM probe using synthetic
     # fixtures. CI already invokes CTest, so no workflow edit is required.
     find_package(Python3 COMPONENTS Interpreter QUIET)
@@ -141,6 +145,14 @@ if(CODRECOMP_BUILD_TESTS)
     include(CheckCSourceCompiles)
     check_c_source_compiles("int main(void) { unsigned __int128 x = 1; return (int)(x - 1); }"
         CODRECOMP_HAS_INT128)
+    if(CODRECOMP_HAS_INT128)
+        add_executable(codrecomp_recomp_x87_smoke tests/recomp_x87_smoke.c)
+        target_include_directories(codrecomp_recomp_x87_smoke PRIVATE tools/recomp)
+        if(NOT WIN32)
+            target_link_libraries(codrecomp_recomp_x87_smoke PRIVATE m)
+        endif()
+        add_test(NAME recomp_x87_smoke COMMAND codrecomp_recomp_x87_smoke)
+    endif()
     if(CODRECOMP_HAS_INT128 AND Python3_Interpreter_FOUND)
         add_library(codrecomp_pcode_runtime STATIC
             tools/recomp/runtime/guest.c tools/recomp/runtime/kernel32.c
@@ -153,6 +165,11 @@ if(CODRECOMP_BUILD_TESTS)
         target_link_libraries(codrecomp_recomp_files_smoke PRIVATE codrecomp_pcode_runtime)
         add_executable(codrecomp_recomp_memory_smoke tests/recomp_memory_smoke.c)
         target_link_libraries(codrecomp_recomp_memory_smoke PRIVATE codrecomp_pcode_runtime)
+        add_executable(codrecomp_recomp_module_lifecycle_smoke tests/recomp_module_lifecycle_smoke.c)
+        target_link_libraries(codrecomp_recomp_module_lifecycle_smoke PRIVATE codrecomp_pcode_runtime)
+        add_test(NAME recomp_module_lifecycle_smoke COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_recomp_module_lifecycle_smoke.py
+            $<TARGET_FILE:codrecomp_recomp_module_lifecycle_smoke>)
         add_test(NAME recomp_memory_smoke COMMAND codrecomp_recomp_memory_smoke)
         add_test(NAME recomp_files_smoke COMMAND ${Python3_EXECUTABLE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_recomp_files_smoke.py

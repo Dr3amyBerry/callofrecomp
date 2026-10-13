@@ -21,6 +21,11 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     int fd = open(log, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if (fd >= 0) { dup2(fd, STDOUT_FILENO); dup2(fd, STDERR_FILENO); close(fd); }
     setvbuf(stdout, NULL, _IOLBF, 0);
+    /* Opt-in local diagnostics; absent in normal play to avoid log I/O. */
+    char frame_stats[4096];
+    snprintf(frame_stats, sizeof frame_stats, "%s/frame_stats", argv[2]);
+    if (access(frame_stats, F_OK) == 0) setenv("CODRECOMP_FRAME_STATS", "1", 1);
+    else unsetenv("CODRECOMP_FRAME_STATS");
     setenv("LIBGL_ES", "2", 1);
     setenv("LIBGL_GL", "21", 1);
     setenv("LIBGL_NOBANNER", "1", 1);

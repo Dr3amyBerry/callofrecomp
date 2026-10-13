@@ -25,6 +25,17 @@ public final class TouchInputTest {
             throw new AssertionError("Duplicate action notifications must not leave aiming held");
         events.clear(); input.action("unknown", true);
         if (!events.isEmpty()) throw new AssertionError("Unregistered actions must not inject keys");
+        for (int i = 0; i < 100; i++) input.look(.25f / 720, -.25f / 720);
+        int totalX = 0, totalY = 0;
+        for (String event : events) {
+            String[] fields = event.split(":");
+            totalX += Integer.parseInt(fields[2]); totalY += Integer.parseInt(fields[3]);
+        }
+        if (totalX != 25 || totalY != -25)
+            throw new AssertionError("Slow look must accumulate subpixel movement without losing distance");
+        events.clear(); input.look(.25f / 720, .25f / 720); input.releaseAll();
+        events.clear(); input.look(.25f / 720, .25f / 720);
+        if (!events.isEmpty()) throw new AssertionError("Hiding controls must discard fractional look remainder");
         input.action("prone", true); input.action("lean_left", true);
         input.action("lean_right", true); input.action("objectives", true);
         input.releaseAll();

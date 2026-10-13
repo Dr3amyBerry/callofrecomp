@@ -5,6 +5,7 @@ final class TouchInput {
     interface Sink { void send(int kind, int code, int x, int y); }
     private final Sink sink;
     private final boolean[] keys = new boolean[512], buttons = new boolean[4];
+    private double lookRemainderX, lookRemainderY;
     TouchInput(Sink sink) { this.sink = sink; }
     private void key(int code, boolean pressed) {
         if (keys[code] == pressed) return;
@@ -41,11 +42,15 @@ final class TouchInput {
         for (int i = 0; i < codes.length; i++) if (wanted[i]) key(codes[i], true);
     }
     void look(float dx, float dy) {
-        int x = Math.max(-32768, Math.min(32767, Math.round(dx * 720)));
-        int y = Math.max(-32768, Math.min(32767, Math.round(dy * 720)));
+        if (!Float.isFinite(dx) || !Float.isFinite(dy)) return;
+        double wantedX = Math.max(-32768, Math.min(32767, dx * 720.0 + lookRemainderX));
+        double wantedY = Math.max(-32768, Math.min(32767, dy * 720.0 + lookRemainderY));
+        int x = (int)Math.round(wantedX), y = (int)Math.round(wantedY);
+        lookRemainderX = wantedX - x; lookRemainderY = wantedY - y;
         if (x != 0 || y != 0) sink.send(3, 0, x, y);
     }
     void releaseAll() {
+        lookRemainderX = lookRemainderY = 0;
         for (int i = 1; i < keys.length; i++) if (keys[i]) key(i, false);
         for (int i = 1; i < buttons.length; i++) if (buttons[i]) button(i, false);
         sink.send(4, 1, 0, 0);

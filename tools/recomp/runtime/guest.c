@@ -1,6 +1,8 @@
 // Portable runtime for recompiled 32-bit x86 modules: guest address space,
 // multi-module dispatch, host thunks and a PE section loader.
 #include "recomp_rt.h"
+#include "module_lifecycle.h"
+#include "heap_lifecycle.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -86,7 +88,14 @@ static uint32_t heap_top = HEAP_BASE;
 typedef struct heap_block {
     uint32_t base, span, size;
     struct heap_block *next;
+    uint32_t owner;
 } heap_block;
+static uint32_t heap_handles[128], next_heap_handle = 0x00710001u;
+static int heap_handle_valid(uint32_t handle) {
+    if (handle == 0x00710000u) return 1;
+    for (unsigned i = 0; i < 128; i++) if (heap_handles[i] == handle && handle) return 1;
+    return 0;
+}
 static heap_block *heap_live[4096], *heap_free;
 static unsigned heap_hash(uint32_t address) { return (address >> 4) & 4095; }
 static heap_block *heap_find(uint32_t address) {
@@ -114,7 +123,7 @@ uint32_t guest_heap_alloc(uint32_t size) {
         b = malloc(sizeof *b); if (!b) return 0;
         b->base = heap_top; heap_top += span;
     }
-    b->span = span; b->size = size;
+    b->span = span; b->size = size; b->owner = 0x00710000u;
     uint32_t p = b->base + 16;
     unsigned hash = heap_hash(p); b->next = heap_live[hash]; heap_live[hash] = b;
     guest_commit(b->base, span); wr(G(b->base), 4, size);
@@ -147,8 +156,49 @@ uint32_t guest_heap_realloc(uint32_t address, uint32_t size, uint32_t flags) {
     }
     if (flags & 0x10) return 0; // HEAP_REALLOC_IN_PLACE_ONLY
     uint32_t p = guest_heap_alloc(size); if (!p) return 0;
+    heap_find(p)->owner = b->owner;
     memcpy(G(p), G(address), b->size < size ? b->size : size);
     guest_heap_free(address); return p;
+}
+
+uint32_t guest_heap_create(void) {
+    for (unsigned i = 0; i < 128; i++) if (!heap_handles[i]) {
+        if (next_heap_handle == UINT32_MAX) return 0;
+        return heap_handles[i] = next_heap_handle++;
+    }
+    return 0;
+}
+int guest_heap_destroy(uint32_t handle) {
+    if (!heap_handle_valid(handle) || handle == 0x00710000u) return 0;
+    for (unsigned i = 0; i < 4096; i++) {
+        heap_block *b = heap_live[i];
+        while (b) {
+            heap_block *next = b->next;
+            if (b->owner == handle) guest_heap_free(b->base + 16);
+            b = next;
+        }
+    }
+    for (unsigned i = 0; i < 128; i++) if (heap_handles[i] == handle) heap_handles[i] = 0;
+    return 1;
+}
+uint32_t guest_heap_owned_alloc(uint32_t handle, uint32_t size) {
+    if (!heap_handle_valid(handle)) return 0;
+    uint32_t p = guest_heap_alloc(size);
+    if (p) heap_find(p)->owner = handle;
+    return p;
+}
+static int heap_owns(uint32_t handle, uint32_t address) {
+    heap_block *b = heap_find(address);
+    return heap_handle_valid(handle) && b && b->owner == handle;
+}
+int guest_heap_owned_free(uint32_t handle, uint32_t address) {
+    return heap_owns(handle, address) ? guest_heap_free(address) : 0;
+}
+uint32_t guest_heap_owned_size(uint32_t handle, uint32_t address) {
+    return heap_owns(handle, address) ? guest_heap_size(address) : UINT32_MAX;
+}
+uint32_t guest_heap_owned_realloc(uint32_t handle, uint32_t address, uint32_t size, uint32_t flags) {
+    return heap_owns(handle, address) ? guest_heap_realloc(address, size, flags) : 0;
 }
 
 uint32_t guest_alloc(uint32_t size) {
@@ -375,6 +425,7 @@ static uint32_t resolve_import(const char *dll, const char *name) {
 // ---------------------------------------------------------------- modules
 
 static const recomp_module *loaded[16];
+static unsigned loaded_references[16];
 static int loaded_count;
 static struct { const recomp_module *m; const char *path; } available[16];
 static int available_count;
@@ -423,8 +474,41 @@ static int cmp_chunk(const void *a, const void *b) {
     return x < y ? -1 : x > y;
 }
 
+unsigned module_references(uint32_t base) {
+    for (int i = 0; i < loaded_count; i++)
+        if (loaded[i]->image_base == base) return loaded_references[i];
+    return 0;
+}
+
+int module_unload(uint32_t base) {
+    for (int i = 0; i < loaded_count; i++) {
+        if (loaded[i]->image_base != base) continue;
+        if (--loaded_references[i]) return 1;
+        memset(G(base), 0, loaded[i]->image_size);
+        memmove(loaded + i, loaded + i + 1, (loaded_count - i - 1) * sizeof *loaded);
+        memmove(loaded_references + i, loaded_references + i + 1,
+            (loaded_count - i - 1) * sizeof *loaded_references);
+        loaded_count--;
+        all_chunk_count = 0;
+        for (int j = 0; j < loaded_count; j++)
+            for (int k = 0; k < loaded[j]->chunk_count; k++)
+                all_chunks[all_chunk_count++] = loaded[j]->chunks[k];
+        qsort(all_chunks, all_chunk_count, sizeof all_chunks[0], cmp_chunk);
+        return 1;
+    }
+    return 0;
+}
+
 int module_load(const recomp_module *m, const char *path) {
-    if (module_by_name(m->name)) return 1;
+    for (int i = 0; i < loaded_count; i++) {
+        if (!strcasecmp(loaded[i]->name, m->name)) {
+            if (loaded_references[i] == UINT32_MAX) return 0;
+            loaded_references[i]++;
+            return 1;
+        }
+    }
+    if (loaded_count == 16 || m->chunk_count < 0
+            || m->chunk_count > 4096 - all_chunk_count) return 0;
     FILE *f = fopen(path, "rb");
     if (!f) return 0;
     fseek(f, 0, SEEK_END);
@@ -435,6 +519,7 @@ int module_load(const recomp_module *m, const char *path) {
     fclose(f);
 
     guest_commit(m->image_base, m->image_size);
+    memset(G(m->image_base), 0, m->image_size);
     uint32_t pe;
     memcpy(&pe, buf + 0x3c, 4);
     uint16_t nsec = (uint16_t)rd(buf + pe + 6, 2), optsz = (uint16_t)rd(buf + pe + 20, 2);
@@ -449,6 +534,7 @@ int module_load(const recomp_module *m, const char *path) {
     }
     free(buf);
 
+    loaded_references[loaded_count] = 1;
     loaded[loaded_count++] = m;
     for (int i = 0; i < m->chunk_count; i++) all_chunks[all_chunk_count++] = m->chunks[i];
     qsort(all_chunks, all_chunk_count, sizeof all_chunks[0], cmp_chunk);

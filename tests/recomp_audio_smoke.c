@@ -130,6 +130,7 @@ int main(void) {
             || mem32(info + 12) != 22050 || mem32(info + 16) != 16
             || mem32(info + 20) != 1 || mem32(info + 24) != 4
             || memcmp(G(mem32(info + 4)), G(pcm), 8)) return 20;
+    if (mem32(info + 4) != wav + 44) return 30; // metadata must borrow PCM bytes
     args[1] = 0;
     if (invoke("_AIL_WAV_info@8", 2, args)) return 21;
     args[0] = sample;

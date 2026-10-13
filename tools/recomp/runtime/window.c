@@ -10,6 +10,7 @@
 #endif
 
 #include "gl_thunks.h"
+#include "frame_pacing.h"
 
 #define HDC_MAIN 0x00002001u
 #define HGLRC_MAIN 0x00003001u
@@ -21,6 +22,16 @@ static int win_w = 640, win_h = 480, desk_w = 1280, desk_h = 720;
 static uint32_t cursor_x, cursor_y;
 static uint32_t warp_x, warp_y;
 static int cursor_count, active;
+
+static void disable_driver_vsync(void) {
+    if (SDL_GL_SetSwapInterval(0) < 0) {
+        static int warned;
+        if (!warned) {
+            fprintf(stderr, "Frame pacing: driver could not disable VSync: %s\n", SDL_GetError());
+            warned = 1;
+        }
+    }
+}
 
 // ---------------------------------------------------------------- classes / windows
 
@@ -475,7 +486,38 @@ K(GetDeviceGammaRamp) {
 
 K(SwapBuffers) {
     (void)esp;
-    if (win) SDL_GL_SwapWindow(win);
+    /* Pace presentation itself, including the first frame after a stall.
+     * The original millisecond limiter rounds 60 Hz to 16 ms. */
+    if (win && shim_realtime) {
+        static Uint64 previous;
+        int interval = SDL_GL_GetSwapInterval(), refresh = 0;
+        if (interval != 0) {
+            SDL_DisplayMode mode;
+            int display = SDL_GetWindowDisplayIndex(win);
+            if (display >= 0 && SDL_GetCurrentDisplayMode(display, &mode) == 0)
+                refresh = mode.refresh_rate;
+        }
+        int use_vsync = frame_vsync_caps_60(interval, refresh);
+        static int last_interval, last_refresh;
+        if (interval != 0 && (interval != last_interval || refresh != last_refresh)) {
+            fprintf(stderr, "Frame pacing: effective swap interval=%d display=%d Hz; %s\n",
+                interval, refresh, use_vsync ? "using VSync alone (at most 60 FPS)"
+                : "WARNING: retaining strict host cap; driver VSync may reduce FPS");
+        }
+        last_interval = interval; last_refresh = refresh;
+        Uint64 frequency = SDL_GetPerformanceFrequency();
+        Uint64 now = SDL_GetPerformanceCounter();
+        Uint64 delay = use_vsync ? 0 : frame_delay_ticks(previous, now, frequency);
+        Uint64 deadline = now + delay;
+        while (delay) {
+            Uint64 ms = delay * 1000 / frequency;
+            SDL_Delay(ms > 1 ? (Uint32)(ms - 1) : 0);
+            now = SDL_GetPerformanceCounter();
+            delay = now < deadline ? deadline - now : 0;
+        }
+        SDL_GL_SwapWindow(win);
+        previous = SDL_GetPerformanceCounter();
+    } else if (win) SDL_GL_SwapWindow(win);
     if (pending_menu_click) {
         pending_menu_click = 0;
         mouse_buttons |= 1; post(0x0201, mouse_buttons, pending_menu_position);
@@ -518,6 +560,8 @@ K(wglCreateContext) {
     if (!ctx) {
         ctx = SDL_GL_CreateContext(win);
         if (!ctx) guest_fatal("SDL_GL_CreateContext: %s", SDL_GetError());
+        /* One host clock owns pacing; a second VSync wait can halve FPS. */
+        disable_driver_vsync();
 #ifdef __ANDROID__
         set_getprocaddress(SDL_GL_GetProcAddress);
         set_getmainfbsize(framebuffer_size);
@@ -538,7 +582,7 @@ K(wglMakeCurrent) {
 K(wglDeleteContext) { (void)esp; return 1; }
 K(wglGetCurrentContext) { (void)esp; return ctx ? HGLRC_MAIN : 0; }
 K(wglGetCurrentDC) { (void)esp; return ctx ? HDC_MAIN : 0; }
-K(wglSwapIntervalEXT) { SDL_GL_SetSwapInterval((int)A(0)); return 1; }
+K(wglSwapIntervalEXT) { (void)esp; disable_driver_vsync(); return 1; }
 
 static uint32_t gl_proc(const char *name) {
     for (const thunk_def *d = gl_thunks; d->name; d++)

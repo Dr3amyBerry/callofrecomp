@@ -77,5 +77,37 @@ int main(void) {
     if (call("HeapAlloc", 3, a)) return 23;
     va[0] = 0xfffff000; va[1] = 8192;
     if (call("VirtualAlloc", 4, va)) return 24;
+    uint32_t create[3] = {0, 0, 0};
+    uint32_t h1 = call("HeapCreate", 3, create), h2 = call("HeapCreate", 3, create);
+    if (!h1 || !h2 || h1 == h2) return 29;
+    a[0] = h1; a[1] = 8; a[2] = 16u << 20;
+    p = call("HeapAlloc", 3, a); if (!p) return 30;
+    a[0] = h2; a[2] = p;
+    if (call("HeapFree", 3, a) || call("HeapSize", 3, a) != UINT32_MAX) return 31;
+    a[0] = h1;
+    if (!call("HeapDestroy", 1, a) || call("HeapDestroy", 1, a)) return 32;
+    if (call("HeapSize", 3, a) != UINT32_MAX) return 33;
+    a[0] = h2; a[2] = 16u << 20;
+    q = call("HeapAlloc", 3, a); if (q != p) return 34;
+    if (!call("HeapDestroy", 1, a)) return 35;
+    for (int i = 0; i < 20; i++) {
+        a[0] = call("HeapCreate", 3, create); a[2] = 16u << 20;
+        if (!a[0] || !call("HeapAlloc", 3, a) || !call("HeapDestroy", 1, a)) return 36;
+    }
+    uint32_t slots[64];
+    for (unsigned i = 0; i < 64; i++) {
+        slots[i] = call("TlsAlloc", 0, NULL); if (slots[i] != i) return 37;
+    }
+    if (call("TlsAlloc", 0, NULL) != UINT32_MAX) return 38;
+    a[0] = 5; a[1] = 123;
+    if (!call("TlsSetValue", 2, a) || call("TlsGetValue", 1, a) != 123) return 39;
+    if (!call("TlsFree", 1, a) || call("TlsFree", 1, a)) return 40;
+    if (call("TlsAlloc", 0, NULL) != 5 || call("TlsGetValue", 1, a)) return 41;
+    for (unsigned i = 0; i < 64; i++) { a[0] = slots[i]; if (!call("TlsFree", 1, a)) return 42; }
+    for (unsigned i = 0; i < 100; i++) {
+        a[0] = call("TlsAlloc", 0, NULL);
+        if (a[0] == UINT32_MAX || !call("TlsFree", 1, a)) return 43;
+    }
+    a[0] = UINT32_MAX; if (call("TlsSetValue", 2, a) || call("TlsFree", 1, a)) return 44;
     puts("recompiled memory lifecycle passed"); return 0;
 }

@@ -35,3 +35,17 @@ after switching back.
 
 The Win32 performance-counter contract is documented by
 [Microsoft](https://learn.microsoft.com/en-us/windows/win32/api/profileapi/nf-profileapi-queryperformancecounter).
+
+The SDL host also limits presentation to 60 FPS in real-time mode. It waits
+before swapping, using the actual previous swap's timestamp. Integer clock
+periods round upward, and slow frames do not create catch-up bursts. The host
+disables SDL's swap interval so driver VSync and the software limiter do not
+introduce two independent waits. This is a ceiling, not a guarantee that slower
+devices can render every frame in 16.67 ms. Deterministic/headless tests retain
+their existing clock behavior. Android additionally starts with `com_maxfps 60`.
+
+For private Android performance measurements, create
+`files/profile/frame_stats` using `run-as org.callofrecomp`, then restart the
+game. Remove that file and restart to disable frame statistics. Diagnostics
+are written to the existing private game log. Slow touch-look deltas retain
+fractional pixels across events; hiding controls clears that residual input.

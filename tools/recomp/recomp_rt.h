@@ -30,14 +30,70 @@ static inline u128 scarry(u128 a, u128 b, int n) { s128 r = sx(a, n) + sx(b, n);
 static inline u128 sborrow(u128 a, u128 b, int n) { s128 r = sx(a, n) - sx(b, n); return sx(mask((u128)r, n), n) != r; }
 static inline u128 popc(u128 v) { return __builtin_popcountll((uint64_t)v) + __builtin_popcountll((uint64_t)(v >> 64)); }
 
-// Floats: 4 = float bits, 8 = double bits, 10 (x87) = double bits in the low 8 bytes.
+// Floats: 4 = binary32, 8 = binary64, 10 = Intel binary80 (explicit J bit).
+// Arithmetic still uses double precision/range. Binary80 narrowing uses nearest
+// ties-to-even; x87 control-word rounding and unmasked exceptions are not modeled.
+static inline uint64_t x87_round_shift(uint64_t value, unsigned shift) {
+    if (shift > 64) return 0;
+    if (shift == 64) return value > UINT64_C(0x8000000000000000);
+    uint64_t result = value >> shift;
+    uint64_t remainder = value & ((UINT64_C(1) << shift) - 1);
+    uint64_t half = UINT64_C(1) << (shift - 1);
+    return result + (remainder > half || (remainder == half && (result & 1)));
+}
 static inline double f2d(u128 v, int n) {
     if (n == 4) { uint32_t b = (uint32_t)v; float f; memcpy(&f, &b, 4); return f; }
-    uint64_t b = (uint64_t)v; double d; memcpy(&d, &b, 8); return d;
+    uint64_t b = (uint64_t)v;
+    if (n == 10) {
+        uint64_t significand = b;
+        unsigned se = (unsigned)(v >> 64) & 0xffff;
+        unsigned exponent = se & 0x7fff;
+        uint64_t sign = (uint64_t)(se & 0x8000) << 48;
+        if (exponent && !(significand >> 63)) {
+            // Intel unsupported encodings (unnormals/pseudo-infinity/NaN):
+            // fail closed to real indefinite rather than interpreting as finite.
+            b = UINT64_C(0xfff8000000000000);
+        } else if (exponent == 0x7fff) {
+            uint64_t fraction = significand & UINT64_C(0x7fffffffffffffff);
+            b = sign | UINT64_C(0x7ff0000000000000);
+            if (fraction) b |= (fraction >> 11) | UINT64_C(0x0008000000000000);
+        } else {
+            // E=0,J=1 pseudo-denormals have the same value as E=1,J=1.
+            int e = (int)(exponent ? exponent : 1) - 16383 + 1023;
+            if (e >= 2047) b = sign | UINT64_C(0x7ff0000000000000);
+            else if (e <= 0) {
+                b = sign | x87_round_shift(significand, (unsigned)(12 - e));
+            } else {
+                uint64_t rounded = x87_round_shift(significand, 11);
+                // Adding the rounded fraction also handles carry to next exponent.
+                b = sign | (((uint64_t)(e - 1) << 52) + rounded);
+            }
+        }
+    }
+    double d; memcpy(&d, &b, 8); return d;
 }
 static inline u128 d2f(double d, int n) {
     if (n == 4) { float f = (float)d; uint32_t b; memcpy(&b, &f, 4); return b; }
-    uint64_t b; memcpy(&b, &d, 8); return b;
+    uint64_t b; memcpy(&b, &d, 8);
+    if (n == 10) {
+        unsigned exponent = (unsigned)(b >> 52) & 0x7ff;
+        unsigned se = (unsigned)(b >> 48) & 0x8000;
+        uint64_t fraction = b & UINT64_C(0x000fffffffffffff);
+        uint64_t significand = 0;
+        if (exponent == 0x7ff) {
+            se |= 0x7fff;
+            significand = UINT64_C(0x8000000000000000) | (fraction << 11);
+        } else if (exponent) {
+            se |= exponent + (16383 - 1023);
+            significand = UINT64_C(0x8000000000000000) | (fraction << 11);
+        } else if (fraction) {
+            unsigned top = 63 - (unsigned)__builtin_clzll(fraction);
+            se |= 16383 - 1074 + top;
+            significand = fraction << (63 - top);
+        }
+        return ((u128)se << 64) | significand;
+    }
+    return b;
 }
 static inline int64_t ftrunc(double d) { return isnan(d) || fabs(d) > 9.2e18 ? INT64_MIN : (int64_t)d; }
 static inline double x87_fsin(double a) { return sin(a); }
