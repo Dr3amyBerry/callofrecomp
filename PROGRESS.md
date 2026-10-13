@@ -69,9 +69,14 @@ I should not stop merely because a task is large. Work should be split into phas
   a diagnostic correctness fix, not an FPS optimization.
 - All 19 CTest targets pass; independent review found no production blockers.
   Review's empty-block/unsorted-input robustness issue was fixed and regression
-  tested. ARM64 version 0.2.3 (code 5) is compiling with profiling OFF; public and
-  private local APKs will include the preceding optimization as well. Phone FPS
-  and GPU frame time remain unverified; original resources will not be published.
+  tested. ARM64 version 0.2.3 (code 5) builds with profiling OFF; public and
+  private local APKs include the preceding optimization as well. Public APK is
+  50,217,788 bytes without original resources; private is 1,312,803,540 bytes.
+  Signatures, alignment and private payload CRC pass; both native libraries match.
+  Final sampler-enabled Android guest source compiles separately; normal native
+  library contains no sampling strings. Code commit a829e80 passes GitHub CI.
+  Phone FPS and GPU frame time remain unverified; original resources remain local.
+  Published release v0.2.2 is unchanged. No phones or visual checks were used.
 
 ### CPU recompilation and graphics translation optimization — 2026-10-13
 

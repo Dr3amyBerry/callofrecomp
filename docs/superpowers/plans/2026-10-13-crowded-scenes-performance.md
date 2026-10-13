@@ -14,8 +14,8 @@ or blind GL4ES switches are not justified by that source audit.
 - [x] Integrate only proven dead flag writes while preserving p-code indices.
 - [x] Compile baseline/optimized randomized full-state tests, including branches.
 - [x] Measure owned crowded-work analogues; regenerate private native modules.
-- [ ] Full host tests, independent review, ARM64 build and local APK verification.
-- [ ] Update progress, commit and push; leave gameplay checks to user.
+- [x] Full host tests, independent review, ARM64 build and local APK verification.
+- [x] Update progress, commit and push; leave gameplay checks to user.
 
 ## Rulings
 
@@ -33,3 +33,7 @@ or blind GL4ES switches are not justified by that source audit.
 - ARM64 full rebuild pending. No phones, visual checks or speculative graphics switches.
 
 - Ruling: withdraw binary80 fast-path experiment after ARM64 hot chunk186 grew186724->201664 bytes (8%). Tiny host conversion gain does not justify added instruction-cache footprint. Final floating conversion remains unchanged; removed redundant comparison fixture/benchmark. Rebuilt host suite passes.
+
+- Final artifacts: ARM64 public resource-free50217788 bytes, private1312803540 bytes, version0.2.3/code5. Signature/alignment/payloadCRC pass; native libraries match. ProfilingOFF cache and absence of sampling strings verified. Build replay incorporated final guest source without regenerating game objects.
+- Sampler aliasing fix:4044samples coverall257periodicphases; disablednormalAPKs. All19hosttargets pass; diagnosticAndroidguest source also compiles withprofilingON. Independentreview no blockers;codeCIa829e80passed.
+- No phone/visualrun, noFPSclaim, and no originalresourcesuploaded. Public releasev0.2.2 unchanged.
