@@ -1,0 +1,114 @@
+"""Offline smoke tests for the non-destructive WSA ANGLE activation guard."""
+import sys
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"tools/recomp/diagnostics"))
+import angle_wsa_trial as trial
+
+
+def baseline():
+    return {
+        "api": 33, "abi": "x86_64", "device": "windows_x86_64",
+        "game_installed": True, "game_debuggable": True,
+        "angle_installed": False, "game_running": False,
+        "settings": {k: None for k in trial.SETTINGS},
+    }
+
+
+class AngleWSATrialTests(unittest.TestCase):
+    def test_clean_wsa_is_candidate(self):
+        self.assertEqual(trial.safe_for_trial(baseline()), [])
+    def test_refuses_running_game(self):
+        x = baseline()
+        x["game_running"] = True
+        self.assertTrue(trial.safe_for_trial(x))
+    def test_refuses_another_device_or_custom_settings(self):
+        x = baseline()
+        x["abi"] = "arm64-v8a"
+        x["settings"]["angle_debug_package"] = "another.package"
+        self.assertGreaterEqual(len(trial.safe_for_trial(x)), 2)
+    def test_refuses_overwriting_angle_package(self):
+        x = baseline()
+        x["angle_installed"] = True
+        self.assertTrue(trial.safe_for_trial(x))
+    def test_restore_settings_after_partial_install(self):
+        x = baseline()
+        with patch.object(trial, "adb", return_value="") as cmd, patch.object(
+            trial, "setting_value", return_value=None
+        ):
+            errs = trial.restore("127.0.0.1:58526", x, True, True)
+        self.assertEqual(errs, [])
+        commands = [c.args for c in cmd.call_args_list]
+        for k in trial.SETTINGS:
+            self.assertIn(("127.0.0.1:58526", "shell", "settings", "delete", "global", k),
+                          commands)
+        self.assertIn(("127.0.0.1:58526", "uninstall", trial.ANGLE), commands)
+        self.assertIn(("127.0.0.1:58526", "shell", "am", "force-stop", trial.GAME),
+                      commands)
+    def test_log_not_confused_with_fps(self):
+        text = ("I GraphicsEnvironment: ANGLE package enabled: org.chromium.angle\n"
+                "I ANGLE   : Version (2.1), Renderer (Vulkan 1.3)\n")
+        x = trial.logcat_verdict(text)
+        self.assertTrue(x["android_angle_package_selected"])
+        self.assertTrue(x["angle_vulkan_renderer_reported"])
+        self.assertFalse(x["gameplay_fps_measured"])
+        self.assertFalse(trial.logcat_verdict("GraphicsEnvironment ANGLE missing")[
+            "angle_vulkan_renderer_reported"
+        ])
+    def test_partial_failure_still_restores(self):
+        x = baseline()
+        def fake_adb(serial, *args, **kwargs):
+            if args[:5] == ("shell", "settings", "put", "global", "angle_debug_package"):
+                raise trial.TrialError("simulated settings failure")
+            if args[:3] == ("shell", "pm", "path"):
+                return "package:/data/app/debug/base.apk"
+            return ""
+        with patch.object(trial, "snapshot", return_value=x), patch.object(
+            trial, "inspect", return_value={"ready_for_isolated_trial": True,
+                                           "sha256": "1"*64}
+        ), patch.object(trial, "adb", side_effect=fake_adb), patch.object(
+            trial, "restore", return_value=[]
+        ) as cleanup:
+            with self.assertRaisesRegex(trial.TrialError, "rollback:"):
+                trial.run_trial(trial.SERIAL, Path("test.apk"), "1"*64,
+                                "aapt", "apksigner", 10)
+        self.assertEqual(cleanup.call_count, 1)
+        self.assertTrue(cleanup.call_args.args[2])
+
+    def test_runner_declares_no_fps_even_on_angle_logs(self):
+        x = baseline()
+        def fake_adb(serial, *args, **kwargs):
+            if args[:3] == ("shell", "pm", "path"):
+                return "package:/data/app/debug/base.apk"
+            if args[:2] == ("logcat", "-d"):
+                return "GraphicsEnvironment: ANGLE package enabled: org.chromium.angle\\nANGLE: Renderer (Vulkan 1.3)\\n"
+            return ""
+        with patch.object(trial, "snapshot", return_value=x), patch.object(
+            trial, "inspect", return_value={"ready_for_isolated_trial": True,
+                                           "sha256": "1"*64}
+        ), patch.object(trial, "adb", side_effect=fake_adb), patch.object(
+            trial, "restore", return_value=[]
+        ) as cleanup, patch.object(trial.time, "sleep"):
+            outcome = trial.run_trial(trial.SERIAL, Path("test.apk"), "1"*64,
+                                      "aapt", "apksigner", 10)
+        self.assertTrue(outcome["configuration_restored"])
+        self.assertTrue(outcome["angle_vulkan_renderer_reported"])
+        self.assertFalse(outcome["gameplay_fps_measured"])
+        self.assertTrue(cleanup.called)
+
+    def test_blocks_before_install_if_running(self):
+        x = baseline()
+        x["game_running"] = True
+        with patch.object(trial, "snapshot", return_value=x), patch.object(
+            trial, "adb"
+        ) as cmd:
+            with self.assertRaises(trial.TrialError):
+                trial.run_trial(trial.SERIAL, Path("sample.apk"), "0"*64,
+                                "aapt", "apksigner", 20)
+        cmd.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -23,6 +23,24 @@ python tools/recomp/diagnostics/verify_angle_apk.py RUTA/AngleLibraries.apk --aa
 
 El comando es de **solo lectura**. Devuelve código 0 únicamente si encuentra `org.chromium.angle`, firma Android válida, librerías EGL/GLESv2 x86_64 con cabeceras ELF correctas y checksum coincidente cuando se facilita. Es un filtro estructural, no demuestra que el código sea seguro, que la firma sea de Google o que ANGLE ejecute Vulkan. Sin `aapt`/`apksigner`, rechaza aprobar la APK.
 
+## Ensayo WSA acotado y reversible (preparado, no ejecutado)
+
+La nueva herramienta `tools/recomp/diagnostics/angle_wsa_trial.py` se ejecuta de forma **solo lectura por defecto**:
+
+```text
+python tools/recomp/diagnostics/angle_wsa_trial.py --json-out .local/profiles/angle-research/wsa-angle-trial-preflight.json
+```
+
+El preflight se ejecutó en WSA y confirmó API 33 x86_64, `windows_x86_64`, CallofRecomp debuggable, juego detenido, ANGLE ausente y cuatro configuraciones de driver sin cambios. No activa Vulkan ni mide FPS.
+
+Solo cuando un APK auténtico supere la verificación anterior, una ejecución **explícita** y temporal puede hacerse con:
+
+```text
+python tools/recomp/diagnostics/angle_wsa_trial.py --execute --apk RUTA/AngleLibraries.apk --aapt RUTA/aapt --apksigner RUTA/apksigner --expected-sha256 SHA256_DEL_ARTIFACTO --seconds 30 --json-out .local/profiles/angle-research/angle-trial.json
+```
+
+El ensayo rechaza otros dispositivos, ANGLE previamente instalado, juego activo, apps no depurables y configuraciones preexistentes. Solo selecciona `org.callofrecomp`, intenta abrir su LauncherActivity, obtiene un extracto diagnóstico de Logcat y, **también ante errores**, intenta detener el proceso, restaurar las cuatro preferencias y desinstalar el paquete temporal. Verifica el rollback y produce un error si falla. No modifica binarios, datos comerciales ni guardados de CallofRecomp. Un arranque del launcher y mensajes ANGLE no prueban visuales correctos ni FPS del gameplay: la comparación A/B/A permanece pendiente. Los procesos abruptamente terminados o pérdida del enlace ADB podrían interrumpir la restauración: auditar settings y paquete antes de repetir.
+
 ## Condiciones obligatorias antes de tocar WSA
 
 1. Verificar el resultado completo del workflow, commit upstream pinneado y la identidad de la APK; inspeccionar el manifiesto para `org.chromium.angle`, las bibliotecas `lib/x86_64/` EGL+GLESv2 y la firma Android. **Un SHA local únicamente demuestra integridad de archivo, no que Google haya firmado el paquete**.

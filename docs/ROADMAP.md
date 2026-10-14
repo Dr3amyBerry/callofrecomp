@@ -4,6 +4,12 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## ANGLE: ensayo reversible por aplicación WSA (2026-10-14)
+
+- [x] `angle_wsa_trial.py`: preflight de solo lectura y protocolo explícito de instalación temporal tras verificar identidad/firma/ABI/SHA, selección de un único paquete, diagnóstico Logcat y rollback en `finally`.
+- [x] Preflight WSA real sin modificaciones: aplicación depurable, juego detenido, no hay ANGLE instalado, opciones null, sin bloqueos. Ensayo con driver real todavía **pendiente**.
+- [ ] Una vez termine el build Linux y el artefacto supere `verify_angle_apk.py`, ejecutar prueba puntual; confirmar qué renderer se cargó, restaurar y después planificar gameplay A/B/A. [Guía](ANGLE_BUILD_PIPELINE_2026-10-14.md).
+
 ## Preparación de build ANGLE en Linux sin afectar Windows ni WSA (2026-10-14)
 
 - [x] `tools/recomp/diagnostics/build_angle_android_linux.sh`: descarga oficial fijada, dependencias Chromium sincronizadas y compilación de `AngleLibraries.apk` x86_64/Vulkan bajo Linux; queda como receta, no se ha ejecutado.

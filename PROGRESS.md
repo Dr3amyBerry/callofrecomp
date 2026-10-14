@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — WSA ANGLE: prueba transaccional aislada preparada (0/5)
+
+- [x] Añadido `tools/recomp/diagnostics/angle_wsa_trial.py` con **preflight de solo lectura**, verificación offline de APK antes de instalar, selección exclusivamente para `org.callofrecomp`, salida de Logcat y restauración de settings/paquete en bloque `finally`.
+- [x] Preflight real WSA: API 33 x86_64, juego debuggable **no ejecutándose**, no existe ANGLE instalado, ajustes del driver `null`, ningún bloqueo de entorno. No se ejecutó la opción `--execute` ni se cambiaron preferencias.
+- [ ] La ejecución GitHub Actions `38591658796` sigue sin APK validada; cualquier eventual carga de ANGLE y FPS del juego deben probarse por separado. [Guía](docs/ANGLE_BUILD_PIPELINE_2026-10-14.md). Contador oficial **0/5**.
+
 ### 2026-10-14 — Build Linux ANGLE preparado para ejecución manual, APK aún ausente (0/5)
 
 - [x] Añadidos script Linux fijado al commit oficial ANGLE `43140711d13063716fd32a15de829885d0bce469`, `gclient sync` con dependencias Android, build `x64` con Vulkan, SHA-256 y manifiesto de procedencia.
