@@ -292,3 +292,22 @@ Instrument/trace the original menu parser ownership and renderer resource
 handles before attempting this; validate actual startup, level transition,
 graphics restarts, menu interaction, and save reloads in isolated builds.
 No renderer settings or stable APK behavior were changed by this audit.
+
+### Follow-up: UI-module compiler experiment and CPU sampling
+
+Controlled WSA startup tests (same installation and training transition)
+measured two UI parse/reload passes per run. Aggregate engine-reported
+menu loading time was **2,065 / 2,017 ms** using the normal `-O1` build,
+versus **2,006 / 2,026 ms** using a private APK with **only the original
+UI module** compiled with `-O2`. This is not a demonstrated improvement:
+the small variation lies within the observed run-to-run spread, so the
+experimental option was removed. All four runs reached `CL_InitCGame`
+and parsed the same 25 menus in each initialization.
+
+Separately, a guest-CPU-sampled run produced 2,435 ms total parse time;
+the additional profiling overhead prevents direct comparison with normal
+APKs. The top samples include generated engine chunks, so the cost
+cannot safely be assigned entirely to UI-module compilation or filesystem
+access. This does not demonstrate duplicate rendering per frame or an
+in-game FPS improvement. The noninstrumented normal WSA APK and save were
+restored.

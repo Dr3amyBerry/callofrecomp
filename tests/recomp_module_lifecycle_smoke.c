@@ -73,6 +73,19 @@ int main(int argc, char **argv) {
     module_register_available(&fixture, argv[1]);
     uint32_t name = guest_strdup("lifecycle.dll"), symbol = guest_strdup("fixture_export");
     uint32_t a[2] = {name, 0};
+    // A bad PE must not commit/modify guest memory or mark a module loaded.
+    FILE *corrupt = fopen(argv[1], "rb+");
+    CHECK(corrupt && fputc('X', corrupt) != EOF && fclose(corrupt) == 0);
+    CHECK(call("LoadLibraryA", 1, a) == 0);
+    CHECK(!module_loaded_at(BASE) && !guest_committed(BASE + 0x2000));
+    CHECK(write_fixture(argv[1]));
+    corrupt = fopen(argv[1], "rb+");
+    CHECK(corrupt && fseek(corrupt, 0x178 + 12, SEEK_SET) == 0);
+    uint8_t bad_va[4] = {0, 0x3f, 0, 0};
+    CHECK(fwrite(bad_va, 1, 4, corrupt) == 4 && fclose(corrupt) == 0);
+    CHECK(call("LoadLibraryA", 1, a) == 0);
+    CHECK(!module_loaded_at(BASE) && !guest_committed(BASE + 0x2000));
+    CHECK(write_fixture(argv[1]));
     CHECK(call("LoadLibraryA", 1, a) == BASE);
     CHECK(attaches == 1 && !detaches && !attach_bss && !bad_arguments);
     CHECK(mem32(BASE + 0x2000) == 0x5a5a5a5a && mem32(BASE + 0x3500) == 0);

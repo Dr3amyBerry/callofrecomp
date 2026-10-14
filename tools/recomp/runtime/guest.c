@@ -4,8 +4,10 @@
 #include "module_lifecycle.h"
 #include "heap_lifecycle.h"
 #include "dispatch_index.h"
+#include "pe_loader_bounds.h"
 #include "commit_runs.h"
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -566,28 +568,35 @@ int module_load(const recomp_module *m, const char *path) {
     }
     if (loaded_count == 16 || m->chunk_count < 0
             || m->chunk_count > 4096 - all_chunk_count) return 0;
+    if (!m->image_size ||
+        (uint64_t)m->image_base + m->image_size > UINT64_C(0x100000000)) return 0;
     FILE *f = fopen(path, "rb");
     if (!f) return 0;
-    fseek(f, 0, SEEK_END);
+    if (fseek(f, 0, SEEK_END)) { fclose(f); return 0; }
     long n = ftell(f);
-    fseek(f, 0, SEEK_SET);
+    if (n < 64 || n > 512L * 1024 * 1024 || fseek(f, 0, SEEK_SET)) {
+        fclose(f); errno = ENOEXEC; return 0;
+    }
     uint8_t *buf = malloc((size_t)n);
-    if (!buf || fread(buf, 1, (size_t)n, f) != (size_t)n) guest_fatal("cannot read %s", path);
-    fclose(f);
-
+    if (!buf) { fclose(f); return 0; }
+    int ok = fread(buf, 1, (size_t)n, f) == (size_t)n;
+    if (fclose(f)) ok = 0;
+    pe_plan plan;
+    if (!ok || !pe_prepare(buf, (size_t)n, m->image_size, &plan)) {
+        free(buf); errno = ENOEXEC; return 0;
+    }
+    for (const recomp_import *im = m->imports; im->dll; ++im) {
+        uint64_t offset = (uint64_t)im->iat_va - m->image_base;
+        if (im->iat_va < m->image_base || offset + 4 > m->image_size) {
+            free(buf); errno = ENOEXEC; return 0;
+        }
+    }
     guest_commit(m->image_base, m->image_size);
     memset(G(m->image_base), 0, m->image_size);
-    uint32_t pe;
-    memcpy(&pe, buf + 0x3c, 4);
-    uint16_t nsec = (uint16_t)rd(buf + pe + 6, 2), optsz = (uint16_t)rd(buf + pe + 20, 2);
-    uint32_t hdrs = (uint32_t)rd(buf + pe + 24 + 60, 4);
-    memcpy(G(m->image_base), buf, hdrs);
-    for (int i = 0; i < nsec; i++) {
-        uint8_t *s = buf + pe + 24 + optsz + 40 * i;
-        uint32_t va = (uint32_t)rd(s + 12, 4), rawsz = (uint32_t)rd(s + 16, 4), raw = (uint32_t)rd(s + 20, 4);
-        uint32_t vsz = (uint32_t)rd(s + 8, 4);
-        if (rawsz > vsz && vsz) rawsz = vsz;
-        if (raw + rawsz <= (uint32_t)n) memcpy(G(m->image_base + va), buf + raw, rawsz);
+    memcpy(G(m->image_base), buf, plan.headers);
+    for (unsigned i = 0; i < plan.count; i++) {
+        pe_copy s = plan.sec[i];
+        if (s.n) memcpy(G(m->image_base + s.dst), buf + s.src, s.n);
     }
     free(buf);
 

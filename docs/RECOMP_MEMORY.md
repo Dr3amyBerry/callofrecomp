@@ -25,9 +25,10 @@ These semantics follow Microsoft's [VirtualAlloc](https://learn.microsoft.com/en
 [VirtualFree](https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualfree)
 and [HeapReAlloc](https://learn.microsoft.com/en-us/windows/win32/api/heapapi/nf-heapapi-heaprealloc)
 contracts for the exercised paths. This is not a complete Win32 memory subsystem:
-HeapCreate still exposes one shared heap, HeapDestroy/VirtualProtect are existing
-stubs, allocation protection modes are not modeled, and MEM_TOP_DOWN does not
-alter placement. Nonzero fixed virtual reservations must lie in the dedicated
+HeapCreate issues distinct logical heap handles; allocations are tagged by
+owner and HeapDestroy reclaims allocations owned by the destroyed handle.
+VirtualProtect remains a compatibility stub, allocation protection modes are
+not modeled, and MEM_TOP_DOWN does not alter placement. Nonzero fixed virtual reservations must lie in the dedicated
 arena. Error-code/exception-generation and multithreaded heap semantics remain
 unfinished. Unknown allocation flags fail instead of claiming support.
 

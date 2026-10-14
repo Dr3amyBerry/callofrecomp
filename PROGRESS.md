@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — PE32 load validation and controlled menu optimization trial
+
+- [x] Hardened the recompiled module loader: validate MZ/PE32 headers, image size, all section source/destination bounds and guest IAT targets **before committing the guest image**. Reject corrupt binaries safely rather than reading/writing unbounded addresses.
+- [x] Added synthetic malformed-PE regression cases and a module-lifecycle test proving failed loads do not register modules or commit guest image memory; 25/25 host CTest targets pass.
+- [x] Measured two current WSA menu-load baselines (2,065 and 2,017 ms total for two renderer initialization passes) and two isolated UI-module -O2 candidates (2,006 and 2,026 ms). Difference too small to show an improvement; trial-only build setting removed and normal installed APK restored with matching SHA-256.
+- [x] Diagnostic guest CPU sampling shows hot guest chunks across renderer/menu initialization, but its overhead increased total UI parse time to 2,435 ms. Do not compare instrumented time as an A/B or claim a gameplay FPS gain.
+- [ ] Repeated menu parsing remains a legitimate lifecycle after Hunk_Clear; prove safe data ownership and GPU-handle reinitialization before a parsing cache or bypass.
+- [x] Compiled and signed the normal x86_64 WSA and ARM64 Android debug APKs (v2/v3 signing; CPU/GL profiling OFF). Reinstalled updated x86_64 WSA APK, exercised the original menus, training mission, save, and continued frames successfully (15 stable one-second windows, 51.5 FPS median). This is functional compatibility evidence, not an FPS improvement; no physical ARM64 device was available.
+
 ### 2026-10-14 — Verified repeat menu parsing and added safe log analyzer
 
 - [x] Reconfirmed two R_Init cycles around the training transition (second follows RE_Shutdown(0) and Hunk_Clear) in two WSA logs. The same 25 original UI menu paths are parsed in both cycles; this is initialization work, not proof of duplicated per-frame draws.

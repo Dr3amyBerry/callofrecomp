@@ -123,6 +123,10 @@ if(CODRECOMP_BUILD_TESTS)
         endif()
     endif()
 
+    add_executable(codrecomp_pe_loader_bounds_smoke tests/pe_loader_bounds_smoke.c)
+    target_include_directories(codrecomp_pe_loader_bounds_smoke PRIVATE tools/recomp/runtime)
+    add_test(NAME pe_loader_bounds_smoke COMMAND codrecomp_pe_loader_bounds_smoke)
+
     add_executable(codrecomp_frame_pacing_smoke tests/frame_pacing_smoke.c)
     target_include_directories(codrecomp_frame_pacing_smoke PRIVATE tools/recomp/runtime)
     add_test(NAME frame_pacing_smoke COMMAND codrecomp_frame_pacing_smoke)
