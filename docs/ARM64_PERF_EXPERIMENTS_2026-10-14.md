@@ -56,3 +56,7 @@ Comando: `python tools/recomp/build_android.py --hot-x87-transform --visibility-
 4. **Preservar de forma acumulativa** el fast path x87 demostrado (+19,58 %) y las correcciones completas del HUD. Ninguno de estos dos nuevos ensayos alcanza el objetivo de 60 FPS.
 
 Información vinculada: [perfil original](TECNO_CK6N_ARM64_PERF_2026-10-14.md), [análisis de procedencia de funciones](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) y [plan](ROADMAP.md).
+
+## Continuación: clasificador NaN binary80 (sin mejora aceptada)
+
+Una nueva ruta de conversión/NaN en CoDSP `p1/p8` se comparó en TECNO ARM64 con el runtime existente: **955.360 casos idénticos**, 98 Python (4 omitidas), 29/29 CTest. Las cinco corridas A/B/A/B/A no confirman aumento real de FPS cuando la última referencia llega a **25,45 FPS**. Flag nuevo `--x87-nan-bits` **OFF por defecto**. [Investigación y datos](ARM64_X87_NAN_BITS_2026-10-14.md).

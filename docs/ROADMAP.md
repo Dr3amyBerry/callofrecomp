@@ -15,6 +15,22 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## Próximo cuello de botella por instrucción: comparaciones x87
+
+- [x] Atribución aproximada del perfil ARM64 de 5.476 muestras al C anterior y Ghidra v2, corrigiendo primero el desplazamiento de líneas del C generado `p1`. La visibilidad `0x004D94C0` concentra **37 de sus 150 muestras** en `0x004D9511`; geometría `0x0041B8F0` concentra 23/247 en `0x0041B986`.
+- [x] Confirmado que la sola instrucción `0x004D9511` tiene **30 p-code ops**, incluidas NaN, comparación y banderas. El fast path limitado a NaN no elimina la mayor parte del trabajo.
+- [ ] Próxima fase: fast path optativo para una comparación x87 completa en estos puntos, **solo** tras demostrar estado exacto y retorno seguros; medir CPU/FPS A/B/A. Meta **60 FPS en spawn** pendiente.
+
+## TECNO ARM64: clasificación NaN binary80 (equivalente, FPS sin mejora acreditada)
+
+- [x] `--x87-nan-bits` optativo **OFF por defecto** en CoDSP `p1/p8`; 1.178 expresiones estáticas acelerables con parcheador que valida las etiquetas originales.
+- [x] Comparación de **955.360 casos binary80** sobre hardware TECNO ARM64 contra `isnan(f2d(v,10))` del recompilador; igualdad completa. Regresión **98 Python (4 omitidas), 29/29 CTest**.
+- [x] A/B/A/B/A físico del entrenamiento: referencia **24,75 / 24,75 / 25,45 FPS**, candidata **25,60 / 25,70 FPS**. La ventaja respecto a A3 de solo 0,15–0,25 FPS está dentro de la variabilidad; **no activar ni anunciar una ganancia de FPS**.
+- [x] Mantener x87 (+19,58 % verificado antes) y correcciones de HUD. Dispositivo y build local restaurados al perfil de referencia.
+- [ ] Próximo experimento: aislar PC originales calientes dentro de colisiones/geom. `0x0041B8F0` y `0x004196F0`, con diferencia integral de RAM/regs/PC y A/B/A. **60 FPS pendiente**.
+
+[Ver experimento NaN y cinco corridas](ARM64_X87_NAN_BITS_2026-10-14.md).
+
 ## TECNO ARM64: copy32 y visibilidad -O2 (sin nuevo aumento de FPS)
 
 - [x] Especialización privada de la copia `0x0042B0A0`: **17.000 diferenciales completos en ARM64 y 249.371 bloques** equivalentes a la traducción p-code; A/B/A de FPS **25,45 / 25,10 / 25,30** (referencia/candidato/referencia). Sin ganancia. Flag **OFF por defecto**.

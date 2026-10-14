@@ -108,6 +108,25 @@ if(CODRECOMP_CODSP_COPY32_FASTPATH)
   set_property(SOURCE "${copy_part}" APPEND PROPERTY
     COMPILE_DEFINITIONS CODRECOMP_CODSP_COPY32_FASTPATH)
 endif()
+# Native bit classification for x87 FLOAT_NAN in the original CoDSP 1.5
+# geometry/visibility hot partitions. Works only after private source
+# validation/injection (build_android.py --x87-nan-bits). No guest arithmetic,
+# x87 control word or normal-build behavior is changed.
+option(CODRECOMP_X87_NAN_BITS "Experimental exact binary80 NaN bit classification on p1/p8" OFF)
+if(CODRECOMP_X87_NAN_BITS)
+  foreach(part p1 p8)
+    set(nan_part "${RECOMP_SOURCE_DIR}/codsp_recomp_${part}.c")
+    if(NOT EXISTS "${nan_part}")
+      message(FATAL_ERROR "Missing CoDSP source for binary80 NaN experiment: ${nan_part}")
+    endif()
+    file(STRINGS "${nan_part}" nan_include REGEX "^#include .x87_nan_bits.h.$")
+    if(NOT nan_include)
+      message(FATAL_ERROR "Private CoDSP source lacks validated binary80 NaN patch: ${nan_part}")
+    endif()
+    set_property(SOURCE "${nan_part}" APPEND PROPERTY
+      COMPILE_DEFINITIONS CODRECOMP_X87_NAN_BITS)
+  endforeach()
+endif()
 target_compile_options(main PRIVATE -O1 -Wno-unused-function)
 target_link_libraries(main PRIVATE SDL2 GL log android m dl)
 target_link_libraries(GL m dl)

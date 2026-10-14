@@ -53,6 +53,8 @@ def main():
                         help="experiment: accelerate CoDSP 1.5 32-byte copy loop; default OFF")
     parser.add_argument("--visibility-o2", action="store_true",
                         help="experiment: compile only CoDSP visibility p8 with -O2; default OFF")
+    parser.add_argument("--x87-nan-bits", action="store_true",
+                        help="experiment: binary80 NaN bit checks in CoDSP geometry/visibility p1/p8; default OFF")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
     if not args.sdk or not args.java:
@@ -78,6 +80,10 @@ def main():
             # original CoDSP 1.5 generated labels are missing.
             run(sys.executable, root / 'tools/recomp/patch_codsp_copy32.py',
                 root / 'recomp_out/codsp_recomp_p1.c')
+        if args.x87_nan_bits:
+            run(sys.executable, root / 'tools/recomp/patch_codsp_x87_nan.py',
+                root / 'recomp_out/codsp_recomp_p1.c',
+                root / 'recomp_out/codsp_recomp_p8.c')
         for name, (url, revision) in DEPENDENCIES.items():
             path = deps / name
             if not path.exists():
@@ -100,6 +106,7 @@ def main():
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
             f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",
             f"-DCODRECOMP_VISIBILITY_O2={'ON' if args.visibility_o2 else 'OFF'}",
+            f"-DCODRECOMP_X87_NAN_BITS={'ON' if args.x87_nan_bits else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")
         run("cmake", "--build", native, "--parallel", args.jobs)
     classes, dex = package / "classes", package / "dex"

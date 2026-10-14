@@ -9,6 +9,21 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Perfil fino de comparaciones x87
+
+- [x] Resueltas 5.476 muestras ponderadas originales del perfil ARM64 x87 mediante `llvm-addr2line`, C generado con offsets corregidos y mapas Ghidra v2: puntos importantes `0x004D9511` (37/150 muestras de su función), `0x004D82DB` (28/155), `0x0041B986` (23/247).
+- [x] La instrucción caliente `0x004D9511` traduce a 30 operaciones p-code con dos NaN, comparaciones LESS/EQUAL y manipulación de banderas; esto sugiere estudiar **la comparación completa**, no solo NaN.
+- [ ] Probar una especialización semánticamente equivalente de esta secuencia x87, preservando estado total y todas las ramas antes de nuevas mediciones de FPS. **60 FPS aún pendientes**.
+
+### 2026-10-14 — Optimización NaN binary80: equivalencia ARM64 validada, FPS no concluyentes
+
+- [x] Identificados **1.178 sitios estáticos** de `isnan(f2d(binary80))` en CoDSP `p1` (632; geometría) y `p8` (546; visibilidad). Desarrollado parcheador privado estricto e idempotente y ayudante `codsp_x87_isnan_bits`; `--x87-nan-bits` **OFF por defecto** y recuperación exacta de la expresión anterior cuando está OFF.
+- [x] **955.360 comprobaciones binarias en el TECNO ARM64** frente al runtime p-code existente sin discrepancias, incluidas formas x87 no canónicas; **98 pruebas Python (4 omitidas) y 29/29 CTest**. APK arm64 compilada, firmada y partida visible con HUD panorámico intacto.
+- [x] A/B/A/B/A de **40 ventanas de juego por variante** en la zona inicial: referencia x87 **24,75 / 24,75 / 25,45 FPS**, candidata **25,60 / 25,70 FPS**. Al acercarse A3 al candidato, la ventaja aparente baja a **0,15–0,25 FPS**, menor que la variación de controles. **NO se acredita nueva mejora de FPS**.
+- [x] Restaurada la APK x87 anterior en el teléfono y la configuración Android local de referencia. Los registros, binarios originales, C recompilado y APK de prueba permanecen privados e ignorados.
+- [ ] **60 FPS sostenidos en el spawn: PENDIENTE.** Siguiente fase: perfil por instrucciones de `0x0041B8F0` y `0x004196F0`, optimización de subcálculos comprobada por equivalencia/visual y medición real.
+- Informe: [equivalencia y 5 corridas de NaN binary80](docs/ARM64_X87_NAN_BITS_2026-10-14.md).
+
 ### 2026-10-14 — Rendimiento: dos experimentos ARM64 descartados tras A/B/A
 
 - [x] Restaurada la investigación del perfil físico: CoDSP `0x0042B0A0` (copia; 152 muestras) y visibilidad `0x004D8280`, `0x004D94C0`, `0x004D8420`, `0x004D6BC0` (587 muestras combinadas, no tiempos exactos).

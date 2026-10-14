@@ -206,6 +206,10 @@ a 21,45 FPS (+19,58 %) en la misma vista.
 
 Después de arreglar la brújula y la salud se completaron dos comparaciones A/B/A adicionales, siempre con x87 activado y el mismo guardado en el TECNO. Copia de 32 bytes en `0x0042B0A0`: **25,45 / 25,10 / 25,30 FPS**; visibilidad p8 compilada a `-O2`: **25,30 / 25,50 / 25,45 FPS** (A1/B/A2). Las opciones están **desactivadas por defecto**, no se acepta ninguna como mejora de FPS. Las **96 pruebas Python (4 omisiones)** y **28/28 CTest** pasaron, así como 17.000 diferenciales ARM64 de la copia; consultar la [investigación y próximos pasos](ARM64_PERF_EXPERIMENTS_2026-10-14.md). Se restauró la APK x87 de referencia en el TECNO. Meta final **60 FPS sostenidos en spawn: pendiente**.
 
+## Continuación: NaN binary80 p1/p8 (equivalencia demostrada, FPS inconcluyentes)
+
+La comprobación directa de NaN de x87 `--x87-nan-bits` sustituye **1.178 sitios de conversión/NaN estáticos** en geometría y visibilidad, con compilación **OFF por defecto**. En el TECNO ARM64 se probaron **955.360 patrones** sin diferencias respecto al runtime actual. Tras cargar cinco veces el mismo guardado, las corridas **A/B/A/B/A** de 40 ventanas dieron: referencia x87 **24,75 / 24,75 / 25,45 FPS** y candidato **25,60 / 25,70 FPS**. La última referencia subió por sí sola, reduciendo la diferencia a 0,15–0,25 FPS; **no debe anunciarse como mejora adicional confirmada**. Las **98 pruebas Python (4 omitidas)** y **29/29 CTest** pasaron. APK de referencia restaurada; **60 FPS en spawn pendiente**. [Detalles completos](ARM64_X87_NAN_BITS_2026-10-14.md).
+
 ## Cómo repetir y continuar
 
 La herramienta pública de comparación sin conexión es
