@@ -4,6 +4,12 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## ANGLE: diagnóstico Logcat verificable por PID/época (2026-10-14)
+
+- [x] Logs WSA reales en formato `-v epoch` contrastados: se acotan por hora Android y PID del proceso CallofRecomp; deben mostrar selección de paquete y Vulkan en esa misma ejecución.
+- [x] Pruebas contra falsos positivos de Logcat viejo, PID distinto y texto sin formato. `LauncherActivity` requiere interacción en **Jugar** para crear el contexto GLES del juego, no se reportan FPS de pantalla inicial.
+- [ ] Comprobar con APK ANGLE auténtica cuando termine el workflow; no se ha ejecutado la carga de driver experimental. **0/5**.
+
 ## ANGLE: ensayo reversible por aplicación WSA (2026-10-14)
 
 - [x] `angle_wsa_trial.py`: preflight de solo lectura y protocolo explícito de instalación temporal tras verificar identidad/firma/ABI/SHA, selección de un único paquete, diagnóstico Logcat y rollback en `finally`.

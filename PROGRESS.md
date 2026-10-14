@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Captura Logcat ANGLE ligada a proceso y tiempo real (0/5)
+
+- [x] El ensayo WSA ahora toma la hora **del dispositivo** antes del lanzamiento y analiza `adb logcat -v epoch`; rechaza mensajes anteriores, de otro PID o sin formato reconocible. Solo acepta evidencia ANGLE/Vulkan cuando tanto la selección de paquete como el renderer Vulkan proceden del **mismo proceso de CallofRecomp en esa ejecución**.
+- [x] Verificado el formato Logcat realmente soportado por WSA API 33 y ampliadas pruebas sintéticas contra falsos positivos por registros históricos y ajenos. El launcher Java no crea por sí solo un contexto GLES: se debe pulsar **Jugar** dentro del período de prueba antes de atribuir un renderizador al juego.
+- [ ] Sigue pendiente una compilación completa de ANGLE; **ningún ensayo real del driver**, nueva comparación FPS o cambio de APK. Contador **0/5**.
+
 ### 2026-10-14 — WSA ANGLE: prueba transaccional aislada preparada (0/5)
 
 - [x] Añadido `tools/recomp/diagnostics/angle_wsa_trial.py` con **preflight de solo lectura**, verificación offline de APK antes de instalar, selección exclusivamente para `org.callofrecomp`, salida de Logcat y restauración de settings/paquete en bloque `finally`.

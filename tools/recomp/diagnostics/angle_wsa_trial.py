@@ -118,13 +118,48 @@ def restore(serial: str, before: dict, installed: bool, launched: bool) -> list[
     return errors
 
 
-def logcat_verdict(log: str) -> dict:
-    # Logcat alone is corroborating evidence, not proof of comparable gameplay.
+# Matches the actual `adb logcat -v epoch` lines seen on WSA Android 33.
+LOGCAT_ENTRY = re.compile(
+    r"^\s*(?P<epoch>\d{9,}(?:\.\d+)?)\s+"
+    r"(?P<pid>\d+)\s+(?P<tid>\d+)\s+[VDIWEFAS]\s+"
+    r"(?P<tag>[^:]+):\s*(?P<message>.*)$"
+)
+
+
+def logcat_verdict(log: str, not_before_epoch: int, game_pid: str | None) -> dict:
+    """Accept ANGLE evidence only from this WSA game's process in the current run.
+
+    Reject historical lines, different process IDs and messages without epoch headers.
+    Output is corroboration of driver/backend startup, NEVER gameplay FPS.
+    """
+    evidence: dict[str, set[str]] = {}
+    selected = False
+    renderer = False
+    for line in log.splitlines():
+        match = LOGCAT_ENTRY.match(line)
+        if not match or float(match["epoch"]) < not_before_epoch:
+            continue
+        pid = match["pid"]
+        # A launcher-only test may not initialize EGL at all.
+        if not game_pid or pid != game_pid:
+            continue
+        tag = match["tag"].strip()
+        message = match["message"]
+        if tag == "GraphicsEnvironment" and re.search(
+                r"ANGLE package enabled:\s*org\.chromium\.angle\b", message):
+            selected = True
+            evidence.setdefault(pid, set()).add("package")
+        if tag == "ANGLE" and re.search(
+                r"Renderer\s*\(Vulkan\b", message, re.I):
+            renderer = True
+            evidence.setdefault(pid, set()).add("vulkan")
+    both = bool(game_pid and evidence.get(game_pid) == {"package", "vulkan"})
     return {
-        "android_angle_package_selected": bool(
-            re.search(r"GraphicsEnvironment.*ANGLE package enabled:\s*org\.chromium\.angle", log)),
-        "angle_vulkan_renderer_reported": bool(
-            re.search(r"ANGLE\s*:.*Renderer\s*\(Vulkan\b", log, re.I)),
+        "android_angle_package_selected": selected,
+        "angle_vulkan_renderer_reported": renderer,
+        "angle_vulkan_execution_verified": both,
+        "game_pid_checked": game_pid,
+        "evidence_from_current_process_and_run": both,
         "gameplay_fps_measured": False,
     }
 
@@ -153,18 +188,33 @@ def run_trial(serial: str, apk: Path, sha256: str, aapt: str, apksigner: str,
         adb(serial, "shell", "settings", "put", "global", "angle_debug_package", ANGLE)
         adb(serial, "shell", "settings", "put", "global", "angle_gl_driver_selection_pkgs", GAME)
         adb(serial, "shell", "settings", "put", "global", "angle_gl_driver_selection_values", "angle")
-        t0 = time.time()
+        # Use the device epoch, not the host clock. Logcat historical events from
+        # other apps/processes must not masquerade as ANGLE inside CallofRecomp.
+        device_epoch = adb(serial, "shell", "date", "+%s")
+        if not device_epoch.isdigit():
+            raise TrialError("WSA device epoch unavailable; cannot validate fresh logs")
+        cutoff = int(device_epoch)
         started = True
         adb(serial, "shell", "am", "start", "-n", GAME + "/.LauncherActivity")
         report["trial_started"] = True
         time.sleep(seconds)
-        # The most recent 1000 entries may contain unrelated ANGLE log messages:
-        # report as diagnostic only, not incontrovertible renderer provenance.
-        log = adb(serial, "logcat", "-d", "-t", "1000", timeout=40)
-        report.update(logcat_verdict(log))
-        report["log_tail_ANGLE"] = [line[:500] for line in log.splitlines()
-                                    if "ANGLE" in line or "GraphicsEnvironment" in line][-30:]
-        report["host_start_time_epoch"] = t0
+        game_pid = adb(serial, "shell", "pidof", GAME, allow_missing=True).strip()
+        if not re.fullmatch(r"\d+", game_pid):
+            game_pid = None
+        log = adb(serial, "logcat", "-d", "-v", "epoch", "-t", "5000", timeout=40)
+        report.update(logcat_verdict(log, cutoff, game_pid))
+        report["log_tail_ANGLE"] = [
+            line[:500] for line in log.splitlines()
+            if LOGCAT_ENTRY.match(line)
+            and float(LOGCAT_ENTRY.match(line)["epoch"]) >= cutoff
+            and (not game_pid or LOGCAT_ENTRY.match(line)["pid"] == game_pid)
+            and ("ANGLE" in line or "GraphicsEnvironment" in line)
+        ][-30:]
+        report["device_log_cutoff_epoch"] = cutoff
+        report["launcher_only_caveat"] = (
+            "LauncherActivity does not initialize GLES by itself; user must enter "
+            "GameActivity via Jugar while the trial is active to test ANGLE/Vulkan."
+        )
         report["gameplay_fps_measured"] = False
     except (OSError, TrialError, subprocess.TimeoutExpired, ValueError) as ex:
         trial_error = ex

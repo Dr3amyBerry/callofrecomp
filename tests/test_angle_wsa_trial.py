@@ -47,16 +47,32 @@ class AngleWSATrialTests(unittest.TestCase):
         self.assertIn(("127.0.0.1:58526", "uninstall", trial.ANGLE), commands)
         self.assertIn(("127.0.0.1:58526", "shell", "am", "force-stop", trial.GAME),
                       commands)
-    def test_log_not_confused_with_fps(self):
-        text = ("I GraphicsEnvironment: ANGLE package enabled: org.chromium.angle\n"
-                "I ANGLE   : Version (2.1), Renderer (Vulkan 1.3)\n")
-        x = trial.logcat_verdict(text)
-        self.assertTrue(x["android_angle_package_selected"])
-        self.assertTrue(x["angle_vulkan_renderer_reported"])
+    def test_logcat_requires_fresh_same_pid_and_vulkan(self):
+        fresh = (
+            "         1791993905.100   123   123 I GraphicsEnvironment: ANGLE package enabled: org.chromium.angle\n"
+            "         1791993905.301   123   124 I ANGLE   : Version (2.1), Renderer (Vulkan 1.3)\n"
+        )
+        x = trial.logcat_verdict(fresh, 1791993904, "123")
+        self.assertTrue(x["angle_vulkan_execution_verified"])
         self.assertFalse(x["gameplay_fps_measured"])
-        self.assertFalse(trial.logcat_verdict("GraphicsEnvironment ANGLE missing")[
-            "angle_vulkan_renderer_reported"
-        ])
+        self.assertFalse(trial.logcat_verdict(fresh, 1791993906, "123")[
+            "angle_vulkan_execution_verified"])
+        self.assertFalse(trial.logcat_verdict(fresh, 1791993904, "456")[
+            "angle_vulkan_execution_verified"])
+        self.assertFalse(trial.logcat_verdict(fresh, 1791993904, None)[
+            "angle_vulkan_execution_verified"])
+
+    def test_logcat_rejects_mismatched_pid_and_unstructured_lines(self):
+        log = (
+            "ANGLE: Renderer (Vulkan 1.3)\n"
+            "         1791993905.100   100   100 I GraphicsEnvironment: ANGLE package enabled: org.chromium.angle\n"
+            "         1791993905.301   200   200 I ANGLE   : Version (2.1), Renderer (Vulkan 1.3)\n"
+        )
+        x = trial.logcat_verdict(log, 1791993904, "100")
+        self.assertTrue(x["android_angle_package_selected"])
+        self.assertFalse(x["angle_vulkan_renderer_reported"])
+        self.assertFalse(x["angle_vulkan_execution_verified"])
+
     def test_partial_failure_still_restores(self):
         x = baseline()
         def fake_adb(serial, *args, **kwargs):
@@ -82,8 +98,15 @@ class AngleWSATrialTests(unittest.TestCase):
         def fake_adb(serial, *args, **kwargs):
             if args[:3] == ("shell", "pm", "path"):
                 return "package:/data/app/debug/base.apk"
+            if args[:2] == ("shell", "date"):
+                return "1791993904"
+            if args[:3] == ("shell", "pidof", trial.GAME):
+                return "123"
             if args[:2] == ("logcat", "-d"):
-                return "GraphicsEnvironment: ANGLE package enabled: org.chromium.angle\\nANGLE: Renderer (Vulkan 1.3)\\n"
+                return (
+                    "         1791993905.100   123   123 I GraphicsEnvironment: ANGLE package enabled: org.chromium.angle\n"
+                    "         1791993905.301   123   123 I ANGLE   : Version (2.1), Renderer (Vulkan 1.3)\n"
+                )
             return ""
         with patch.object(trial, "snapshot", return_value=x), patch.object(
             trial, "inspect", return_value={"ready_for_isolated_trial": True,
@@ -95,6 +118,7 @@ class AngleWSATrialTests(unittest.TestCase):
                                       "aapt", "apksigner", 10)
         self.assertTrue(outcome["configuration_restored"])
         self.assertTrue(outcome["angle_vulkan_renderer_reported"])
+        self.assertTrue(outcome["angle_vulkan_execution_verified"])
         self.assertFalse(outcome["gameplay_fps_measured"])
         self.assertTrue(cleanup.called)
 
