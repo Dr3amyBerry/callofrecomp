@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Resultado de investigación Mesa Zink (sin A/B del juego)
+
+Se descargó e inspeccionó Mesa **26.2.4** y se midieron **capacidades Vulkan reales**, no FPS, en el WSA actual. Al menos cuatro requisitos obligatorios del perfil Zink GL2.1 están ausentes: `alphaToOne`, `VK_KHR_maintenance5`, `VK_KHR_swapchain_mutable_format` y `VK_EXT_border_color_swizzle`. Zink necesita un proveedor de OpenGL desktop Mesa/Gallium y un contexto Android apropiado; no se integra copiando un DLL/biblioteca sobre GL4ES. **Decisión: mantener GL4ES y no empaquetar Zink en WSA**. El TECNO Mali queda sin determinar hasta que se pueda consultar directamente. Se conserva estrategia original de perfilado CPU y contador **0/5** porque no existió A/B de gameplay. [Informe Mesa/Zink](MESA_ZINK_FEASIBILITY_2026-10-14.md).
+
 ## Hito posterior: transformaciones y proyección GL → Vulkan (sin A/B del juego)
 
 La capa de observación tipada ahora reconoce las ocho llamadas de traslación, rotación, escala y proyección ortográfica/perspectiva, preservando el orden column-major de OpenGL y los slots dobles x86. El prototipo WSA `--scene matrix` usó el estado tipado para tres dibujos reales sobre Vulkan; validación visual y ejecución completa **75,024 FPS FIFO** (1.276 frames, 17,008 s; **no** FPS del juego ni demostración de aceleración). El renderer estable sigue siendo GL4ES; el próximo bloqueo es geometría real de vertex arrays/VBO, samplers y combiners. [Informe](WSA_GL_MATRIX_BRIDGE_2026-10-14.md). Estrategia original y contador **0/5** intactos.

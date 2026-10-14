@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Mesa Zink 26.2.4 descargado y descartado para WSA por requisitos Vulkan (0/5)
+
+- [x] Fuente oficial de Mesa/Zink **26.2.4 descargada** (68.613.948 bytes), SHA-256 cotejado con el release de Mesa: `bce5f7fbebb934373b86c999a064d52fb5065878dc57f287f95346648ec832e9`. Conservada en `.local/profiles/mesa-zink/` (ignorado, NO se sube a GitHub).
+- [x] Extraído `VP_ZINK_requirements.json` de la versión fijada; su perfil `VP_ZINK_gl21_baseline` exige Vulkan >=1.2, features y extensiones específicas, no únicamente compatibilidad con Vulkan 1.0.
+- [x] Censo Vulkan **ejecutado en WSA x86_64** usando NDK, sin permisos especiales ni alterar drivers: AMD Radeon Graphics Vulkan 1.3, `alphaToOne=0`, sin `VK_KHR_maintenance5`, `VK_KHR_swapchain_mutable_format` ni `VK_EXT_border_color_swizzle`. **4 requisitos obligatorios comprobados ausentes**, con promociones Vulkan core 1.2/1.3 contabilizadas correctamente.
+- [x] Script de comparación `analyze_zink_requirements.py` y 5 pruebas unitarias sintéticas; probe C independiente compilado para WSA y validado sintácticamente para ARM64. No se intentó ejecutar Zink ni atribuir mejoras de FPS.
+- [x] Revisión de integración: CallofRecomp usa SDL2/EGL GLES2 + GL4ES, mientras Zink es Gallium desktop OpenGL → Vulkan, con requisitos Mesa/NIR/frontend/contexto; no existe cambio directo de backend solo por copiar una librería.
+- [ ] **Decisión WSA: no integrar Mesa Zink ahora**; el TECNO físico debe comprobarse antes de descartarlo en Mali. Posible alternativa WSA a evaluar: ANGLE detrás de GL4ES, sin promesas de FPS. [Informe detallado](docs/MESA_ZINK_FEASIBILITY_2026-10-14.md).
+- [x] APK original GL4ES, guardados, datos del juego, referencia FPS y estrategia vigente intactos. Contador de intentos A/B **0/5**.
+
 ### 2026-10-14 — Transformaciones y proyección de matrices OpenGL hacia Vulkan (0/5)
 
 - [x] `gl_vk_state` reconoce `glTranslatef/d`, `glRotated/f`, `glScale[d/f]`, `glOrtho` y `glFrustum`, aplicando `M←M×T` en matrices MODELVIEW/PROJECTION/TEXTURE, con validación de ejes, dimensiones de frustum y valores no finitos.

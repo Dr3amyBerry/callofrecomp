@@ -4,6 +4,14 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Evaluación Mesa Zink 26.2.4 frente a GPU real WSA (2026-10-14)
+
+- [x] Descargada fuente de Mesa 26.2.4 con SHA-256 oficial verificado, inspeccionada su implementación Gallium/Zink y perfil Vulkan `VP_ZINK_gl21_baseline`.
+- [x] Censo Vulkan en WSA: AMD Radeon Vulkan 1.3 **no cumple al menos cuatro requisitos** del perfil GL2.1 (`alphaToOne`, maintenance5, swapchain mutable format y border color swizzle). El parser separa extensiones ausentes de promociones a Vulkan core. [Investigación y reproducción](MESA_ZINK_FEASIBILITY_2026-10-14.md).
+- [ ] No intentar empaquetar Zink en CallofRecomp para el WSA actual; faltan requisitos del driver y frontend OpenGL/EGL de Mesa. Comprobar el perfil en TECNO ARM64 cuando vuelva a estar disponible.
+- [ ] Considerar ANGLE (GLES→Vulkan) como alternativa de integración Android menos invasiva que Mesa Zink, después de examinar requisitos; cualquier cambio requiere A/B/A de gameplay real.
+- [x] Estado de producción intacto, ninguna prueba de FPS del juego, estrategia y contador **0/5** sin cambios.
+
 ## WSA temporal, evaluación Vulkan/DirectX12 y bloqueo de métricas Mali (2026-10-14)
 
 - [x] El TECNO no está disponible: usar solo **WSA x86_64 (`127.0.0.1:58526`)** para las siguientes pruebas locales; no asumir que su rendimiento representa al ARM64.
