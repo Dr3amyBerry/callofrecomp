@@ -4,6 +4,12 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Comprobación independiente del FCOMP x87 y restricciones (2026-10-14)
+
+- [x] Comparados C0/C1/C2/C3 entre instrucciones x86 originales `FLD`+`FCOMP` en Unicorn y `codsp_fcom_pop_float32` experimental compilado solo en DLL host.
+- [x] **1.037/1.037 coincidencias** de bits de condición con 13 casos especiales y 1.024 finitos reproducibles. Prueba negativa C0 falló correctamente, seis tests offline.
+- [ ] Mantener **FCOM rápido OFF** hasta modelar TOP, palabra de estado/control, excepciones, NaN y todas las salidas observables, después comparar ARM64 real en TECNO. **0/5**. [Informe](CPU_PHASE2_FCOM_CONDITION_ORACLE_2026-10-14.md).
+
 ## Equivalencia x87 inicial: cinco instrucciones de coma flotante (2026-10-14)
 
 - [x] Oráculo x87 de salida: Unicorn ejecuta `fld/fsub/fmul/fsub/fstp` del CoDSP original frente al C traducido por el generador real.

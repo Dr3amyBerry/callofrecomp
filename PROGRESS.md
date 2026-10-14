@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 2: condiciones x87 FCOMP contrastadas con x86 real (0/5)
+
+- [x] `verify_fcom_condition_oracle.py`: Unicorn ejecuta `FLD` y `FCOMP` originales sobre `float32`; una DLL host independiente invoca el helper FCOM optativo del proyecto, **sin activar el fast path en Android**.
+- [x] **1.037/1.037 pares** (13 casos especiales + 1.024 pseudoaleatorios finitos) coinciden en **C0/C1/C2/C3**, máscara x87 `0x4700`. Un C0 intencionalmente alterado fue detectado en los **13 casos fijos**. Se agregan seis pruebas sintéticas.
+- [ ] **No** se comparan TOP, exception flags, estado binary80 completo ni pila x87. Es una comprobación parcial, **no certifica FCOM como sustituto general** ni demuestra FPS ARM64. El flag de producción permanece **OFF**, contador **0/5**. [Informe](docs/CPU_PHASE2_FCOM_CONDITION_ORACLE_2026-10-14.md).
+
 ### 2026-10-14 — Fase 2: oráculo x87 de salida `float32` (0/5)
 
 - [x] Implementado **`verify_x87_window_oracle.py`** con x86 Unicorn y el `pcode2c.Gen` real, abarcando cinco instrucciones de la función `0x0041B8F0`: `[0x41B960,0x41B973)`, `fld/fsub/fmul/fsub/fstp`.

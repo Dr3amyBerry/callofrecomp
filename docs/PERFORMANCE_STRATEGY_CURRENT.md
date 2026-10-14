@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## FCOM: cuatro bits de condición x87 validados, pero fast path todavía OFF
+
+En el punto original `0x0041B986` se contrastaron **1.037 pares float32** del `FCOMP` x86 (Unicorn) con el helper experimental `codsp_fcom_pop_float32`: C0/C1/C2/C3 coincidieron en todos; corrupción deliberada del bit C0 detectada. **No** se inspeccionaron todos los bits de FSW ni pila `binary80`, TOP, excepción, control word final o equivalente completo. **No habilitar FCOM en producción** ni contar como optimización A/B. TECNO desconectado, **0/5**. [Informe](CPU_PHASE2_FCOM_CONDITION_ORACLE_2026-10-14.md).
+
 ## Fase 2: contraste limitado de un bloque x87 con Unicorn
 
 Para las cinco instrucciones `[0x0041B960,0x0041B973)` del cuerpo caliente, Unicorn x86 y la versión compilada de `pcode2c.Gen` coincidieron en **1.024/1.024 valores finales float32, memoria observable, GPR y PC** para casos finitos controlados. Un byte de memoria alterado fue detectado. **No se comparó el estado interno binary80, excepciones ni palabras de control/status**; por tanto esta evidencia **no habilita optimizaciones de x87**. Contador TECNO **0/5**. [Informe](CPU_PHASE2_X87_WINDOW_ORACLE_2026-10-14.md).

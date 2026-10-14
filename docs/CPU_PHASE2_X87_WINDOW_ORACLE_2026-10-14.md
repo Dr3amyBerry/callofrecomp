@@ -35,6 +35,10 @@ Ejemplo de reproducción en Windows con compilador LLVM-MinGW y dependencias opc
 python tools/recomp/diagnostics/verify_x87_window_oracle.py --pe ".local/private/Call of Duty Deluxe Edition/CoDSP.exe" --pcode recomp_out/codsp.pcode --compiler "RUTA/clang.exe" --output .local/profiles/x87_oracle_nueva --cases 1024
 ```
 
+## Validación complementaria de FCOMP
+
+Además se contrastaron por separado los bits de condición **C0/C1/C2/C3** en `0x0041B986` utilizando x86 original en Unicorn frente al helper FCOM optativo de una DLL de laboratorio: **1.037/1.037 coincidencias**, con detección de alteración deliberada de C0. El estado FPU completo no se comprobó y **FCOM sigue OFF en la APK**. [Informe FCOMP](CPU_PHASE2_FCOM_CONDITION_ORACLE_2026-10-14.md).
+
 ## Límites importantes
 
 - **No** se comparan los registros internos x87 de 80 bits, palabras de estado/control final, tags, excepciones ni redondeo no predeterminado. Una salida `float32` coincidente no demuestra que se preserve **todo** el estado x87. La palabra de control inicial se fija en el emulador, pero el traductor sigue usando `double` para varias operaciones internas.

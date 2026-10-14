@@ -19,6 +19,7 @@ límite de 60 FPS. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
 · [**ANGLE: descarga verificada y viabilidad GL4ES→Vulkan**](docs/ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md)
+· [**Oráculo FCOMP x87: 1.037 casos de flags comprobados**](docs/CPU_PHASE2_FCOM_CONDITION_ORACLE_2026-10-14.md)
 · [**Oráculo x87: 1.024 salidas float32 verificadas frente al x86 real**](docs/CPU_PHASE2_X87_WINDOW_ORACLE_2026-10-14.md)
 · [**Oráculo x86 independiente: 1.024 casos sobre 20 instrucciones reales**](docs/CPU_PHASE2_X86_PREFIX_ORACLE_2026-10-14.md)
 · [**CPU ARM64: auditoría Fase 2 y prueba x87 sin cambio nativo**](docs/CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md)
