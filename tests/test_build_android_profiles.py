@@ -22,8 +22,23 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--visibility-o2', proc.stdout)
         self.assertIn('--x87-nan-bits', proc.stdout)
         self.assertIn('--x87-normal-f2d', proc.stdout)
+        self.assertIn('--x87-normal-f2d-p4', proc.stdout)
         self.assertIn('--dispatch-last-cache', proc.stdout)
         self.assertIn('--x87-fcom-fastpath', proc.stdout)
+
+    def test_p4_requires_verified_arm64_baseline_flags(self):
+        import subprocess
+        for args,expected in [
+            (['--abi','arm64-v8a','--x87-normal-f2d-p4'],
+             'requires --x87-normal-f2d'),
+            (['--abi','x86_64','--x87-normal-f2d','--x87-normal-f2d-p4'],
+             'only supported for ARM64'),
+        ]:
+            with self.subTest(args=args):
+                cmd=[sys.executable,str(BUILDER),*args]
+                result=subprocess.run(cmd,capture_output=True,text=True)
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn(expected,result.stderr)
 
     def test_wsa_uncap_is_rejected_for_arm64(self):
         proc = subprocess.run(

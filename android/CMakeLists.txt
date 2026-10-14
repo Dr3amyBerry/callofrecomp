@@ -174,6 +174,38 @@ if(CODRECOMP_X87_NORMAL_F2D)
       COMPILE_DEFINITIONS CODRECOMP_X87_NORMAL_F2D)
   endforeach()
 endif()
+# Offline-only extension of the existing bit-exact x87 normal->double helper
+# to p4, which contains CPU-sampled CoDSP traversal/state functions.
+# Do NOT silently broaden the verified p1/p8 production-like experiment.
+# Fail closed for unverified guest p-code and separate source variants.
+option(CODRECOMP_X87_NORMAL_F2D_P4
+  "EXPERIMENT: extend canonical x87 normal->double to CoDSP p4 (ARM64 unvalidated)" OFF)
+if(CODRECOMP_X87_NORMAL_F2D_P4)
+  if(NOT CODRECOMP_X87_NORMAL_F2D)
+    message(FATAL_ERROR "p4 x87 conversion requires CODRECOMP_X87_NORMAL_F2D")
+  endif()
+  set(p4_source "${RECOMP_SOURCE_DIR}/codsp_recomp_p4.c")
+  set(pcode_source "${RECOMP_SOURCE_DIR}/codsp.pcode")
+  if(NOT EXISTS "${p4_source}" OR NOT EXISTS "${pcode_source}")
+    message(FATAL_ERROR "Missing private verified CoDSP 1.5 p4 and p-code")
+  endif()
+  file(SHA256 "${pcode_source}" pcode_sha256)
+  if(NOT pcode_sha256 STREQUAL
+      "36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e")
+    message(FATAL_ERROR "p4 x87 conversion requires verified CoDSP.exe 1.5 p-code")
+  endif()
+  # Check the generated C as well as the source p-code; otherwise a stale
+  # or manually patched p4 could be compiled against an unrelated original.
+  file(SHA256 "${p4_source}" p4_source_sha256)
+  if(NOT p4_source_sha256 STREQUAL
+      "ee9156183cc0410bf0641592f93d3d0efa4febc906cc014969ddb30d95a196d3")
+    message(FATAL_ERROR "p4 x87 conversion requires verified original generated CoDSP p4")
+  endif()
+  # Keep the bit-exact converter INLINE; an out-of-line variant was rejected
+  # after a NaN payload mismatch in a real p4 FLOAT_MULT differential oracle.
+  set_property(SOURCE "${p4_source}" APPEND PROPERTY
+    COMPILE_DEFINITIONS CODRECOMP_X87_NORMAL_F2D)
+endif()
 # CPU sample-guided, full-status and one-pop x87 compare optimization.
 # Only source-verified CoDSP 1.5 p1/p8 p-code shapes; normal APK unchanged.
 option(CODRECOMP_X87_FCOM_FASTPATH "Experimental full x87 FCOM+pop on verified CoDSP p1/p8 blocks" OFF)

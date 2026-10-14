@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 6: extensión exacta x87 a CoDSP p4, OFFLINE (0/5)
+
+- [x] Perfiles físicos **preexistentes**, sin ADB: entre las 40 funciones CoDSP calientes de un perfil histórico, **p1 847 / p8 827 / p4 789** muestras CPU. P1/p8 ya tenían el conversor x87 comprobado; en p4 hay **4.114 expresiones estáticas `f2d(...,10)`**, no llamadas por frame.
+- [x] Extensión **experimental** `--x87-normal-f2d-p4` para ARM64, dependiente de `--x87-normal-f2d`, con `CODRECOMP_X87_NORMAL_F2D_P4=OFF` por defecto. Guardas SHA-256 de p-code y C p4 originales; no cambia el renderer ni la calidad.
+- [x] Oráculo diferencial de **18 instrucciones FLOAT reales de p4 / 36.000 comparaciones completas de R/RAM/PC** (Clang `-O1/-O2`) sin diferencias para la variante inline. NO es oráculo independiente Intel x86 ni comprobación de toda p4.
+- [x] APKs ARM64 A/B offline con firma V2/V3. Activar la vía rápida inline de p4 hace crecer `libmain.so` `.text` **+211.432 bytes** entre compilaciones equivalentes, concentrados en 16 funciones nativas. **FPS/CPU por frame no medidos: no declarar mejora.**
+- [x] Prototipo de helper compartido `noinline` **rechazado por discrepancia de R en FLOAT_MULT con entrada x87 especial**; 36.000 verificaciones finitas sí coincidieron, pero no reemplazan la equivalencia completa. Revertido totalmente del código público; no se instaló.
+- [x] **244 pruebas Python (4 omitidas) y 34/34 CTest**. APK/ELF ARM64 normal reconstruidos y verificados **idénticos a la referencia A**; NDK `CODRECOMP_X87_NORMAL_F2D_P4=OFF` y dispatcher experimental OFF. [Informe](docs/CPU_PHASE6_X87_P4_OFFLINE_2026-10-14.md). TECNO no utilizado; 60 FPS pendientes.
+
 ### 2026-10-14 — Fase 5: despacho por último chunk, investigación OFFLINE (0/5)
 
 - [x] Procesados sin ADB los dos perfiles físicos históricos Simpleperf con un nuevo auditor de Build ID/ELF, símbolo `guest_run` y líneas nativas inlined. De 7.953/6.541 muestras totales, `guest_run` obtuvo 506/432 (6,36 %/6,60 %), incluyendo 90/77 muestras en `dispatch_index_find`. Son muestras de CPU, **no tasa de llamadas ni FPS**.

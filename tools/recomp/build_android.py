@@ -61,6 +61,8 @@ def main():
                         help="experiment: binary80 NaN bit checks in CoDSP geometry/visibility p1/p8; default OFF")
     parser.add_argument("--x87-normal-f2d", action="store_true",
                         help="experiment: exact canonical x87 normal-to-double path in CoDSP p1/p8; default OFF")
+    parser.add_argument("--x87-normal-f2d-p4", action="store_true",
+                        help="ARM64-only experiment: extend exact x87 conversion to hot CoDSP p4, OFF")
     parser.add_argument("--dispatch-last-cache", action="store_true",
                         help="experiment: per-guest-run last-chunk dispatch hint; default OFF")
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
@@ -69,6 +71,10 @@ def main():
     args = parser.parse_args()
     if args.wsa_uncap_bench and args.abi != "x86_64":
         parser.error("--wsa-uncap-bench is for --abi x86_64 WSA only")
+    if args.x87_normal_f2d_p4 and args.abi != "arm64-v8a":
+        parser.error("--x87-normal-f2d-p4 is only supported for ARM64 experiments")
+    if args.x87_normal_f2d_p4 and not args.x87_normal_f2d:
+        parser.error("--x87-normal-f2d-p4 requires --x87-normal-f2d")
     if not args.sdk or not args.java:
         parser.error("Set ANDROID_HOME and JAVA_HOME, or pass --sdk and --java")
     root = Path(__file__).resolve().parents[2]
@@ -126,6 +132,7 @@ def main():
             f"-DCODRECOMP_VISIBILITY_O2={'ON' if args.visibility_o2 else 'OFF'}",
             f"-DCODRECOMP_X87_NAN_BITS={'ON' if args.x87_nan_bits else 'OFF'}",
             f"-DCODRECOMP_X87_NORMAL_F2D={'ON' if args.x87_normal_f2d else 'OFF'}",
+            f"-DCODRECOMP_X87_NORMAL_F2D_P4={'ON' if args.x87_normal_f2d_p4 else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_LAST_CACHE={'ON' if args.dispatch_last_cache else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")
