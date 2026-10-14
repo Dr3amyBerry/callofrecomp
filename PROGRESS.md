@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Translation/rendering optimization audit and Vulkan feasibility
+
+- [x] Compared the real pinned GL4ES revision to upstream master: both at `ec16bedd` (2026-10-04); no unreviewed dependency switch.
+- [x] Tested documented GL4ES batching on the same WSA saved training view: 54.50 normal vs **51.75 FPS** with `LIBGL_BATCH=1`, 17.75 vs 19.125 ms CPU. Experimental APK was discarded and normal mode restored.
+- [x] Inspected 500k AArch64 instructions in the generated CoDSP p10 object; 1,813 private raw p-code operations in chunk 186 are conservative elimination candidates, NOT proven runtime work or compiler-surviving instructions.
+- [x] Compiled p10/p11 separately with AArch64 `-Oz`: text 1,999,712 -> 654,000 B (p10), 855,176 -> 575,236 B (p11). WSA A/B **54.50 -> 49.95 FPS**, CPU 17.75 -> 19.865 ms: no production compiler-flag change; trial-only flags reverted.
+- [x] Benchmarked float32-to-x87 binary80 specialization with equality fixtures and ARM64 assembly inspection; no speed benefit over existing translation, removed experiment.
+- [x] Documented ANGLE and Zink/Vulkan compatibility constraints and native ARM64 Simpleperf/AGI profiling priorities in `docs/RENDER_TRANSLATION_AUDIT_2026-10-14.md`.
+- [ ] Profile the actual crowded scene on the real Mali-G52 ARM64 device; attribute time to original x86 renderer functions, GL4ES, driver, and GPU counters before further invasive changes.
+
 ### 2026-10-14 — WSA A/B closure and targeted renderer compiler tests
 
 - [x] Math hot-path same-scene WSA A/B: 54.55 vs 54.50 FPS, 17.70 vs 17.75 ms thread CPU; no FPS improvement but keep locally verified operation and correctness optimization.
@@ -33,7 +43,7 @@
 - [x] Host verification: 23/23 CTest, 12/12 targeted generator tests; Android NDK AArch64 smoke source compiles (object only, not executed on a phone).
 - [x] Win64 Clang -O1 4-million-iteration microbenchmark per width (seven samples): 32-bit median 26.826 ms before / 12.421 ms after; 64-bit 27.672 ms before / 12.213 ms after, identical checksums.
 - [x] ARM64 Clang -O1 static assembly comparison: signed subtraction overflow n=4: 15 → 3 instructions; signed add/sub overflow n=8: 11 → 3 instructions each. 32-bit signed add remained 3 instructions, not falsely claimed as a speedup.
-- [ ] Full-game WSA same-save A/B completed: 54.55 FPS previous to 54.50 after arithmetic optimization. No FPS gain established, retain native arithmetic improvement and 128-bit correctness fix.
+- [x] Full-game WSA same-save A/B completed: 54.55 FPS previous to 54.50 after arithmetic optimization. No FPS gain established, retain native arithmetic improvement and 128-bit correctness fix.
 - [x] Same-scene WSA 60-window A/B completed; native ARM64 shared library compiled; selective O2 A/B tested and OFF by default. Next: real ARM64 device and crowded soldier scenes.
 
 ### 2026-10-14 — Rescate de optimización del dispatcher con beneficio local verificado
