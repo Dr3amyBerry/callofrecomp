@@ -343,3 +343,28 @@ Four private Ghidra exports gave 7,116 body ranges and 519,757/599,770
 instructions uniquely assigned to static Ghidra bodies. See
 [the full methodology and reproduction commands](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md)
 for identity and accuracy limits.
+
+## TECNO CK6n Android 14 ARM64 — 2026-10-14
+
+Primera medición física en training: 21,55 FPS de mediana / 44,585 ms de CPU por frame en 40 ventanas tardías, calidad Equilibrado. Simpleperf identificó la transformación original CoDSP.exe 0x005061B0 como función candidata principal. La opción selectiva -O2 no mejoró de manera demostrable; -Oz empeoró fuertemente; Ligero tampoco produjo una mejora sostenida. La APK normal y el perfil Equilibrado fueron restaurados. Datos completos: [informe del TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md).
+
+### Continuación: fast path x87 por función, activación opcional
+
+Una optimización nativa especializada para la función original CoDSP.exe
+`0x005061B0` pasó 75.000 comparaciones ARM64 bit a bit de registros/RAM
+frente a la traducción p-code, incluyendo fallback en 5.848 casos.
+En el mismo guardado de training, calidad Equilibrado, medido sin muestreador
+Simpleperf y con 40 ventanas estables por corrida: A1 original 21,55 FPS,
+B experimental 25,65 FPS y A2 original reinstalada 21,45 FPS de mediana.
+B vs A2: **+4,20 FPS (+19,58 %)** y 37,495 frente a 44,745 ms de CPU/frame.
+Los FPS p10 *de ventanas* fueron 24,8 (B) frente a 20,4 (A2);
+no son percentiles de frames individuales.
+
+La opción `python tools/recomp/build_android.py --hot-x87-transform`
+habilita el experimento **solo en ARM64 para el CoDSP 1.5 verificado**;
+la compilación normal permanece desactivada. Se conservaron las APKs
+normales y experimentales por separado y se verificaron 26/26 CTest,
+93 pruebas Python (4 omitidas) y firma Android. No publicar datos del juego.
+No extrapolar estas mejoras a la zona concurrida, toda la campaña u otros
+teléfonos sin nuevos A/B/A y validación visual; más detalles en el
+[informe TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md).

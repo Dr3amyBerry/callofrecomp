@@ -75,6 +75,14 @@ if(CODRECOMP_RENDER_O2)
     endif()
   endforeach()
 endif()
+# Opt-in ARM64 experiment, disabled in normal APKs. Only guest.c changes.
+option(CODRECOMP_HOT_X87_FASTPATH "Use validated CoDSP 1.5 transform fast path" OFF)
+if(CODRECOMP_HOT_X87_FASTPATH)
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND PROPERTY
+    COMPILE_DEFINITIONS CODRECOMP_HOT_X87_FASTPATH)
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND PROPERTY
+    COMPILE_OPTIONS "-ffp-contract=off")
+endif()
 target_compile_options(main PRIVATE -O1 -Wno-unused-function)
 target_link_libraries(main PRIVATE SDL2 GL log android m dl)
 target_link_libraries(GL m dl)

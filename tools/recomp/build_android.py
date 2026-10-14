@@ -47,6 +47,8 @@ def main():
                         help="compile opt-in CPU timing for GL4ES/GLES entry points")
     parser.add_argument("--render-o2", action="store_true",
                         help="experiment: compile CoDSP renderer partitions p10 and p11 with -O2")
+    parser.add_argument("--hot-x87-transform", action="store_true",
+                        help="experiment: native CoDSP 1.5 vector transform; default OFF")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
     if not args.sdk or not args.java:
@@ -86,6 +88,7 @@ def main():
             f"-DCODRECOMP_GL_PROFILING={'ON' if args.gl_profile else 'OFF'}",
             f"-DCODRECOMP_GL_TIMING={'ON' if args.gl_time_profile else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
+            f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")
         run("cmake", "--build", native, "--parallel", args.jobs)
     classes, dex = package / "classes", package / "dex"

@@ -11,6 +11,7 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 - Recompiled graphics path: GL4ES/GLES2; original-menu parse repeats after `Hunk_Clear`. Never label it duplicate per-frame rendering or skip lifecycle work without memory analysis.
 - **New diagnostics:** [function-entry/chunk correlation](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) is verified with private original p-code (6,228 mapped entry points). Native per-function CPU attribution and crowded ARM64 scene measurements remain pending.
 - `-O2`, `-Oz`, GL4ES batching and VBO mode 2/3 experiments were neutral/negative in controlled WSA tests; do not enable indiscriminately.
+- **TECNO ARM64:** an opt-in native x87 transform at original CoDSP.exe `0x005061B0` improved one saved training view from 21.45 to **25.65 median FPS** (A/B/A, +19.58%). Default Android build **OFF**; see [measured phone report](TECNO_CK6N_ARM64_PERF_2026-10-14.md).
 
 
 
@@ -78,10 +79,11 @@ Definition of done:
 - [x] Archive references, rejected experiments, repeatable commands and correctness restrictions in [the 2026-10-14 research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
 - [x] Export noncontiguous original Ghidra B body ranges from the saved project into ignored v2 provenance maps; real modules yielded 519,757 uniquely assigned x86 instructions and 80,013 unassigned.
 - [x] Add native ARM64 ELF-PC → inline stack → generated C line → x86 instruction → Ghidra body resolution, verified with the unstripped real shared library and artificial ELF-address fixtures.
-- [ ] Collect real function-level CPU sampling evidence on the **physical ARM64** device; source-line locations remain statistical rather than exclusive guest function timings.
+- [x] Capturadas muestras reales con Simpleperf en el TECNO ARM64 en la entrada de training; correlación estadística a funciones mediante DWARF y Ghidra (ver [auditoría TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md)). No equivale a tiempo exclusivo por función.
 - [ ] If source-line sampling is insufficient, capture guest function entry/return activity behind opt-in instrumentation and measure overhead before enabling any native fast path.
 - [ ] Capture **native physical ARM64** CPU/GPU traces from the crowded training scene with controlled camera/save/thermal variables.
-- [ ] Choose a measured hot original function; confirm its final AArch64 code and benchmark one isolated translator/native fast-path change.
-- [ ] Before accepting any replacement, pass independent x86-vs-native differential state tests and same-scene FPS/visual/gameplay A/B.
+- [x] Identificada función x86 caliente original CoDSP.exe 0x005061B0 (656 muestras en un perfil físico) y descartados -O2, -Oz y reducción global de detalle como solución.
+- [x] Implementar y medir **optativamente** la ruta matemática 0x005061B0: 75.000 diferenciales bit a bit frente al p-code, A/B/A físico +19,58 % FPS en una vista concreta, 26/26 CTest. Mantener OFF por defecto.
+- [ ] Antes de habilitar por defecto, completar oráculo de ejecución **x86 original** independiente (la evidencia actual compara contra p-code), excepciones/precisión FPU, jugabilidad y calidad visual en otras misiones/escena concurrida y más dispositivos.
 
 **Non-goals until evidence exists:** wholesale renderer replacement, disabling menu reloads after `Hunk_Clear`, changing original game logic or promising a universal FPS gain.

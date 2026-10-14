@@ -406,3 +406,7 @@ fictional CPU cost. See [full directions and verified private aggregate
 counts](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md). Do not publish raw
 function ranges, proprietary P-code, native address traces or personal
 original game resources.
+
+## Informes de FPS de un teléfono Android real (2026-10-14)
+
+La herramienta tools/recomp/analyze_frame_stats.py analiza dos registros privados opt-in de frame stats y compara medianas de ventanas de aproximadamente un segundo, sin confundirlas con percentiles de frames. Las primeras pruebas físicas TECNO CK6n, atribución Simpleperf a Ghidra, comparativas negativas de -O2/-Oz y calidad Ligero, así como las reglas de identidad del binario, están documentadas en [auditoría TECNO ARM64](TECNO_CK6N_ARM64_PERF_2026-10-14.md).

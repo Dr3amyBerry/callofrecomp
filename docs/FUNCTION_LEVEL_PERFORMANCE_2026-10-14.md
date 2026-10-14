@@ -280,7 +280,4 @@ Repeat `--generated` for every relevant generated C translation unit and
 - A B body range is Ghidra's **static** model; multiple functions may
   share code or compiled control flow may jump inside a body. A sample
   count is not exclusive function CPU time.
-- No physical ARM64 phone is connected via ADB (only WSA x86_64), so
-  native ARM64 crowded-scene FPS and representative function rankings
-  remain **unverified**. This work made no renderer/build optimization
-  and did not regenerate game code or publish original-derived sidecars.
+- **Actualización 2026-10-14:** el TECNO ARM64 ya está conectado; se midieron muestras de CPU reales y FPS en la **entrada de training**, documentados en [informe físico TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md). Siguen pendientes la zona concurrida y una ganancia de FPS verificada. Los sidecars y perfiles brutos siguen privados.

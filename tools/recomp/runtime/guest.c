@@ -6,6 +6,9 @@
 #include "dispatch_index.h"
 #include "pe_loader_bounds.h"
 #include "commit_runs.h"
+#if defined(CODRECOMP_HOT_X87_FASTPATH)
+#include "hot_x87_transform.h"
+#endif
 
 #include <errno.h>
 #include <stdarg.h>
@@ -629,6 +632,13 @@ void guest_run(void) {
             PC = ret;
             continue;
         }
+#ifdef CODRECOMP_HOT_X87_FASTPATH
+        // Verified only for the exact CoDSP 1.5 guest function entry.
+        // Any unsafe address or nonfinite value falls back to generated p-code.
+        if (PC == 0x005061b0u && module_loaded_at(0x00400000u) &&
+            codsp_hot_transform_5061b0(R, MEM, &PC))
+            continue;
+#endif
         int found = dispatch_index_find(&code_index, all_chunks, all_chunk_count, PC);
         recomp_miss = 0;
         if (found >= 0) {

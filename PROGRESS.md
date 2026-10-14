@@ -9,6 +9,26 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fast path x87 nativo optativo y FPS A/B/A reales
+
+- [x] Se continuó el trabajo anterior **sin descartar ni sobrescribir** sus cambios no confirmados. Se conservan el informe TECNO, analizador de FPS y perfiles privados.
+- [x] Se implementó una ruta nativa **opt-in (OFF por defecto)** para CoDSP.exe 1.5 `0x005061B0`, con respaldo a p-code ante solapamientos, entradas no finitas o punteros no compatibles. No cambia el generador ni los archivos propietarios.
+- [x] En el TECNO físico: **75.000** comparaciones del estado completo de registros y RAM frente a la función p-code (69.152 fast, 5.848 fallback) fueron idénticas; microbenchmark separado ~315 ms frente a ~26 ms por 250.000 llamadas, sin extrapolarlo a FPS.
+- [x] Repetición A/B/A en el mismo guardado Camp Toccoa/Equilibrado, 40 ventanas estables cada vez: referencia A1 **21,55 FPS**, experimental B **25,65 FPS**, referencia A2 **21,45 FPS**. B frente A2: **+4,20 FPS (+19,58 %)** y **-7,25 ms CPU/frame**. Comprobada visualmente la entrada de training; no se ha validado la zona concurrida ni toda la campaña.
+- [x] 93 tests Python (4 omitidos), **26/26 CTest**, compilación ARM64 firmada para ambas opciones. `build_android.py --hot-x87-transform` activa solo esta prueba. El artefacto opcional queda privado en `.local/profiles/`; `recomp_out/callofrecomp-arm64-debug.apk` fue **reconstruida con flag OFF**.
+- [x] Tras A2 se volvió a instalar la APK experimental en el teléfono preservando los datos; el lanzador confirmó «Instalación lista» en Equilibrado. Recursos propietarios, mapas Ghidra y perfiles brutos siguen fuera de Git.
+- [ ] Pendiente: comparación independiente contra ejecución Intel x86 original, comprobación de excepciones/precisión x87 y jugabilidad/visuales en escenas concurridas y toda la campaña. Mantener el fast path **desactivado por defecto** hasta esas pruebas.
+
+### 2026-10-14 — Primera prueba real en TECNO CK6n ARM64
+
+- [x] Conectado el teléfono TECNO CK6n Android 14, validada la instalación propia de Call of Duty 1.5 (cuatro SHA-256 correctos) y 17 PK3; importación mediante codpack oficial, sin publicar recursos. Menú, partida guardada y mapa training comprobados.
+- [x] Referencia física en entrada de training, calidad Equilibrado: 40 ventanas tardías; **21,55 FPS mediana**, **44,585 ms CPU/frame** y **2,31 ms swap/frame**. Predomina coste de CPU.
+- [x] Simpleperf en teléfono: 5.504 muestras, cero pérdidas, 4.661 de libmain.so. Se localizaron 3.439 muestras en cuerpos únicos de Ghidra. La función original CoDSP.exe **0x005061B0** (transformación vector/matriz x87) acumuló **656 muestras**. 4.586/4.661 muestras de libmain.so ejecutadas en núcleos rápidos 6/7, por lo que fijar afinidad no está justificado.
+- [x] Experimentos físicos: optimización selectiva -O2 (21,65 vs 21,45 FPS en ventanas tardías, diferencia ~0,93 % no demostrable), -Oz (9,8–13,4 FPS en 7 ventanas; empeoró claramente) y preset Ligero (40 ventanas medianas 21,40 FPS, degradando visuales sin ganancia sostenida).
+- [x] Se restauró en el teléfono el APK normal y el perfil Equilibrado, conservando guardado y originales; se reconstruyó el APK normal -O1 en el PC, flags experimentales OFF. El paquete codpack temporal en Descargas se borró después de importarse para liberar espacio.
+- [x] Añadido analizador reproducible sin datos comerciales, tools/recomp/analyze_frame_stats.py, con pruebas sintéticas; **93 pruebas Python correctas (4 omitidas) y 25/25 CTest correctas**. Evidencia y decisiones en [informe TECNO ARM64](docs/TECNO_CK6N_ARM64_PERF_2026-10-14.md).
+- [x] Esta fase identificó el objetivo 0x005061B0; la siguiente fase optativa (arriba) alcanzó una mejora de FPS en una escena de training. La zona concurrida sigue pendiente.
+
 ### 2026-10-14 — Ghidra function bodies and ARM64 inline-aware sample resolution
 
 - [x] Extended Ghidra's private `ExportPcode.java` data with inclusive `B` function-body ranges, preserving disconnected regions; `--function-bodies-only` extracts just metadata from the saved project without re-exporting P-code or compiling the game.
@@ -17,7 +37,7 @@
 - [x] Added `resolve_guest_samples.py`: accepts pre-symbolized source-line TSV or normalized native ELF PC TSV, queries unstripped Android `libmain.so` via `llvm-addr2line -a -f -i`, recovers *inlined* generated-C call sites, then resolves guest instruction label and possible Ghidra function body. Header-only/helper PC samples, unknown lines and ambiguous bodies remain explicitly unowned.
 - [x] Verified a real unstripped ARM64 `libmain.so` resolves to private generated CoDSP C files. An **artificial** 11-sample ELF-address smoke linked 10 to guest instructions and unique body entries, 1 remained unresolved; this validates the symbolization chain, NOT game FPS or a representative CPU profile.
 - [x] Verified Ghidra 12.1.4 `-process ... -noanalysis` body exports for all four original modules; 90 Python tests pass (4 skips), and 25/25 CTest pass. No normal APK was rebuilt, since runtime/guest rendering C is unchanged.
-- [ ] Collect actual native ARM64 Simpleperf/perf DSO samples in the crowded training scene (only WSA x86_64 is currently ADB-connected), and prove build-ID/source hashes match before treating addresses as performance evidence. Continue to avoid tuning renderer options without measured payoff.
+- [x] El TECNO ARM64 ahora está disponible y se recopilaron muestras Simpleperf reales **en la entrada de training**, con mapas de funciones x86; sigue pendiente un perfil de la escena concurrida y la validación automatizada de build-ID/SHA de fuentes.
 
 ### 2026-10-14 — Original x86 function-entry diagnostics (research archived)
 
