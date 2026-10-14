@@ -685,6 +685,10 @@ static void guest_project_compass_marker(uint32_t esp, unsigned arg_start,
 #endif
 
 void guest_run(void) {
+#if defined(CODRECOMP_DISPATCH_LAST_CACHE)
+    /* Local to this invocation: nested guest_run calls never share hints. */
+    dispatch_recent recent = { .generation = 0, .last_chunk = -1 };
+#endif
     while (PC != GUEST_EXIT_PC) {
         if (trace_fault) {
             uint32_t seh = mem32(TIB);
@@ -756,7 +760,12 @@ void guest_run(void) {
                 guest_project_compass_marker(esp, 4, 8u, 0); // objective pulse
         }
 #endif
+#if defined(CODRECOMP_DISPATCH_LAST_CACHE)
+        int found = dispatch_index_find_recent(&code_index, all_chunks,
+                                               all_chunk_count, PC, &recent);
+#else
         int found = dispatch_index_find(&code_index, all_chunks, all_chunk_count, PC);
+#endif
         recomp_miss = 0;
         if (found >= 0) {
             uint64_t sample = profile_begin();

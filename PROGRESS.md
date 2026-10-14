@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 5: despacho por último chunk, investigación OFFLINE (0/5)
+
+- [x] Procesados sin ADB los dos perfiles físicos históricos Simpleperf con un nuevo auditor de Build ID/ELF, símbolo `guest_run` y líneas nativas inlined. De 7.953/6.541 muestras totales, `guest_run` obtuvo 506/432 (6,36 %/6,60 %), incluyendo 90/77 muestras en `dispatch_index_find`. Son muestras de CPU, **no tasa de llamadas ni FPS**.
+- [x] Caché optativa `CODRECOMP_DISPATCH_LAST_CACHE` / `--dispatch-last-cache`, **OFF por defecto**, válida únicamente si el PC coincide con el chunk guardado y la generación no ha cambiado después de cargar/descargar módulos. Smoke de límites, huecos, recargas y llamadas anidadas aprobado.
+- [x] Microbenchmark **PC Windows**, 403 chunks sintéticos: acelera un bloque repetido (~6,62 → ~4,28 ns/consulta) y ráfagas de ocho (~7,91 → ~5,32), pero **regresa** alternando dos (~6,13 → ~9,82) y con aleatorios (~8,63 → ~14,59). No se activa para producción.
+- [x] APKs ARM64 A/B firmadas y compiladas **sin instalar ni usar el TECNO**. `libmain.so` `.text` B−A **+148 bytes**; `guest_run` **+172 bytes**. Retornado `CODRECOMP_DISPATCH_LAST_CACHE:BOOL=OFF` en build local.
+- [x] **243 pruebas Python (4 omitidas), 34/34 CTest** correctas; informe [Fase 5](docs/CPU_PHASE5_OFFLINE_DISPATCH_CACHE_2026-10-14.md). Se mantienen la APK estable, el juego y el objetivo de 60 FPS sin afirmaciones nuevas de mejora.
+- [ ] Antes de habilitar: medir la tasa real de reutilización de chunks y comparar A/B/A en TECNO cuando vuelva a estar disponible, sin cambiar la escena ni la calidad.
+
 ### 2026-10-14 — Fase 4: eliminación de escrituras arquitectónicas, TECNO (0/5)
 
 - [x] Análisis CFG por byte de registro con `tools/recomp/register_liveness.py`; opción `pcode2c.py --prune-hot-register-writes` **OFF por defecto** y protegida por SHA-256 de CoDSP 1.5. Solo p0/cuerpo `0x004196F0`, sin modificar p1/p8 o contenido de la escena.

@@ -45,6 +45,53 @@ int main(void) {
        dispatch_index_find(&index_table,chunks+2,1,0x4000)!=0)return 2;
     dispatch_index_build(&index_table,0,0);
     if(dispatch_index_find(&index_table,0,0,0x4000)!=-1)return 3;
-    puts("Dispatch index: boundaries, shared pages, holes, unload rebuild OK");
+    // Opt-in last-block cache must be fully equivalent to the page index
+    // over all original boundary, gap, and shared-page cases.
+    dispatch_recent recent = { .generation = 0, .last_chunk = -1 };
+    dispatch_index_build(&index_table, chunks, 3);
+    for (unsigned repeat = 0; repeat < 4; ++repeat)
+        for (unsigned i = 0; i < sizeof pcs / sizeof *pcs; i++) {
+            uint32_t pc = pcs[i];
+            int baseline = dispatch_index_find(&index_table, chunks, 3, pc);
+            int hinted = dispatch_index_find_recent(&index_table, chunks, 3,
+                                                    pc, &recent);
+            if (baseline != hinted || hinted != expected[i]) return 6;
+        }
+
+    // Many small chunks inside one 4 KiB page exercise the exact-range
+    // fallback, while repeatedly looking up the same chunk exercises hits.
+    dispatch_index_build(&index_table, dense, 170);
+    for (int repeat = 0; repeat < 3; repeat++) {
+        for (uint32_t pc = 0x60f0u; pc < cursor + 80u; pc++) {
+            int baseline = dispatch_index_find(&index_table, dense, 170, pc);
+            for (int again = 0; again < 4; again++)
+                if (dispatch_index_find_recent(&index_table, dense, 170,
+                                               pc, &recent) != baseline) return 7;
+        }
+    }
+
+    // Module unload/reload can change an index even if the new entry uses
+    // exactly the same chunk index. Never reuse the prior generation.
+    uint64_t previous_generation = index_table.generation;
+    dispatch_index_build(&index_table, high, 3);
+    if (index_table.generation == previous_generation) return 8;
+    for (unsigned i = 0; i < sizeof high_pc / sizeof *high_pc; ++i)
+        if (dispatch_index_find_recent(&index_table, high, 3,
+                                       high_pc[i], &recent) != high_expect[i])
+            return 9;
+    dispatch_index_build(&index_table, 0, 0);
+    if (dispatch_index_find_recent(&index_table, 0, 0,
+                                   0xffffefffu, &recent) != -1)
+        return 10;
+
+    // Reentrant guest_run frames must not share a hint. A fresh stack frame
+    // with its own hint must observe the same range, independently.
+    dispatch_recent nested = { .generation = 0, .last_chunk = -1 };
+    dispatch_index_build(&index_table, chunks, 3);
+    for (uint32_t pc = 0x1000u; pc < 0x1010u; pc++)
+        if (dispatch_index_find_recent(&index_table, chunks, 3, pc, &nested) != 0
+            || dispatch_index_find_recent(&index_table, chunks, 3, pc, &recent) != 0)
+            return 11;
+    puts("Dispatch index: boundaries, shared pages, holes, reload and recent-cache equivalence OK");
     return 0;
 }

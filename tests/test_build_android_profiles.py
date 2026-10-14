@@ -22,6 +22,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--visibility-o2', proc.stdout)
         self.assertIn('--x87-nan-bits', proc.stdout)
         self.assertIn('--x87-normal-f2d', proc.stdout)
+        self.assertIn('--dispatch-last-cache', proc.stdout)
         self.assertIn('--x87-fcom-fastpath', proc.stdout)
 
     def test_wsa_uncap_is_rejected_for_arm64(self):

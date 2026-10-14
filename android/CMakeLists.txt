@@ -38,6 +38,14 @@ endif()
 target_include_directories(main PRIVATE "${ROOT}/tools/recomp" "${ROOT}/tools/recomp/runtime"
   "${SDL2_SOURCE_DIR}/include" "${GL4ES_SOURCE_DIR}/include")
 target_compile_definitions(main PRIVATE SDL_MAIN_HANDLED)
+# Dispatch last-hit cache is deliberately off in normal APKs until a
+# game-level ARM64 A/B confirms it is faster than the existing page index.
+option(CODRECOMP_DISPATCH_LAST_CACHE
+  "Experiment: per-guest-run last-chunk hint with module-layout invalidation" OFF)
+if(CODRECOMP_DISPATCH_LAST_CACHE)
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND
+    PROPERTY COMPILE_DEFINITIONS CODRECOMP_DISPATCH_LAST_CACHE)
+endif()
 option(CODRECOMP_CPU_PROFILING "Compile opt-in sampled CPU diagnostics" OFF)
 if(CODRECOMP_CPU_PROFILING)
   # Only guest.c consumes this flag. Do not recompile all private generated

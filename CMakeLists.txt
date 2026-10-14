@@ -251,6 +251,11 @@ if(CODRECOMP_BUILD_TESTS)
         add_executable(codrecomp_dispatch_index_smoke tests/dispatch_index_smoke.c)
         target_include_directories(codrecomp_dispatch_index_smoke PRIVATE tools/recomp tools/recomp/runtime)
         add_test(NAME dispatch_index_smoke COMMAND codrecomp_dispatch_index_smoke)
+        # Manual only: synthetic lookup CPU benchmark. Never interpret it as
+        # Call of Duty gameplay FPS or an ARM64 speedup.
+        add_executable(codrecomp_dispatch_recent_bench tests/dispatch_recent_bench.c)
+        target_include_directories(codrecomp_dispatch_recent_bench PRIVATE
+            tools/recomp tools/recomp/runtime)
         if(NOT WIN32)
             target_link_libraries(codrecomp_pcode_runtime PUBLIC m)
         endif()

@@ -2,6 +2,12 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 5 offline: caché del último chunk, NO habilitada por regresiones posibles (0/5)
+
+Reprocesados perfiles archivados sin usar ADB: `guest_run` representó 506/7.953 y 432/6.541 muestras CPU (6,36 % y 6,60 %); `dispatch_index_find` recibió 90/77 muestras, con ELF Build ID exacto comprobado. La búsqueda existente ya resuelve páginas con uno/dos chunks, que abarcan todas las páginas ocupadas de los cuatro módulos estáticos auditados (403 chunks, 560 páginas).
+
+Se añadió un fast path opcional `CODRECOMP_DISPATCH_LAST_CACHE` (**OFF**), con validación de rango, generación por reconstrucción de índice y pruebas de carga/descarga, sin modificar reglas del juego. Un benchmark **del PC**, no de gameplay, muestra ahorro en repeticiones, pero penalización importante con alternancias y saltos aleatorios. En binario ARM64 B frente a A, `.text` **+148 bytes**, `guest_run` **+172 bytes**; ambas compilaciones firmadas, ninguna instalada. Completados **243 tests Python (4 omitidos) y 34/34 CTest**. La compilación normal volvió a OFF; **no existe ganancia de FPS demostrada**. [Informe](CPU_PHASE5_OFFLINE_DISPATCH_CACHE_2026-10-14.md).
+
 ## Fase 4: escritura arquitectónica muerta, reducción nativa pero SIN mejora de FPS
 
 Análisis nuevo de liveness CFG inter-instrucción, conservador respecto a ramas, alias, EFLAGS/x87, RAM y salidas. Opt-in `--prune-hot-register-writes` solo CoDSP p0, OFF: elimina **427 COPY** muertas del generado; `libmain.so` `.text` baja **3.868 bytes** frente a la build A idéntica salvo p0. El TECNO ARM64 reprodujo **12.000** casos de equivalencia de seis pares reales, y pasaron 239 pruebas Python (4 omitidas), 34 CTest.
