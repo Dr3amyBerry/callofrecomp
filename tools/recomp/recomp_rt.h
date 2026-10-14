@@ -20,14 +20,53 @@ static inline void wr(uint8_t *p, int n, u128 v) { memcpy(p, &v, n); }
 static inline u128 mask(u128 v, int n) { return n >= 16 ? v : v & (((u128)1 << (8 * n)) - 1); }
 static inline s128 sx(u128 v, int n) {
     if (n >= 16) return (s128)v;
+    if (n > 0 && n <= 8) {
+        // Common x86 sign extension: use a native 64-bit operation instead
+        // of two variable-width 128-bit shifts. Higher guest bits are ignored.
+        const uint64_t sign = UINT64_C(1) << (8 * n - 1);
+        const uint64_t x = (uint64_t)v & (sign | (sign - 1));
+        return (s128)(int64_t)((x ^ sign) - sign);
+    }
     int sh = 128 - 8 * n;
     return ((s128)(v << sh)) >> sh;
 }
 static inline u128 shl(u128 a, u128 b) { return b >= 128 ? 0 : a << (int)b; }
 static inline u128 shr(u128 a, u128 b) { return b >= 128 ? 0 : a >> (int)b; }
 static inline u128 sar(u128 a, u128 b, int n) { s128 s = sx(a, n); return (u128)(b >= 128 ? (s < 0 ? -1 : 0) : s >> (int)b); }
-static inline u128 scarry(u128 a, u128 b, int n) { s128 r = sx(a, n) + sx(b, n); return sx(mask((u128)r, n), n) != r; }
-static inline u128 sborrow(u128 a, u128 b, int n) { s128 r = sx(a, n) - sx(b, n); return sx(mask((u128)r, n), n) != r; }
+// Intel OF after signed addition/subtraction. Use the compiler's checked
+// arithmetic for common x86 operand sizes; on ARM64 this lowers to native
+// flag-setting add/sub instructions instead of 128-bit temporary arithmetic.
+// Other 1..16-byte widths use defined unsigned bitwise overflow tests.
+static inline u128 scarry(u128 a, u128 b, int n) {
+    if (n == 1) { int8_t result; return __builtin_add_overflow((int8_t)(uint8_t)a, (int8_t)(uint8_t)b, &result); }
+    if (n == 2) { int16_t result; return __builtin_add_overflow((int16_t)(uint16_t)a, (int16_t)(uint16_t)b, &result); }
+    if (n == 4) { int32_t result; return __builtin_add_overflow((int32_t)(uint32_t)a, (int32_t)(uint32_t)b, &result); }
+    if (n == 8) { int64_t result; return __builtin_add_overflow((int64_t)(uint64_t)a, (int64_t)(uint64_t)b, &result); }
+    if (n < 1 || n > 16) return 0;
+    if (n <= 8) {
+        const uint64_t sign = UINT64_C(1) << (8 * n - 1);
+        const uint64_t word_mask = sign | (sign - 1);
+        const uint64_t x = (uint64_t)a & word_mask, y = (uint64_t)b & word_mask;
+        return ((~(x ^ y) & (x ^ (x + y)) & sign) != 0);
+    }
+    const u128 sign = (u128)1 << (8 * n - 1);
+    return ((~(a ^ b) & (a ^ (a + b)) & sign) != 0);
+}
+static inline u128 sborrow(u128 a, u128 b, int n) {
+    if (n == 1) { int8_t result; return __builtin_sub_overflow((int8_t)(uint8_t)a, (int8_t)(uint8_t)b, &result); }
+    if (n == 2) { int16_t result; return __builtin_sub_overflow((int16_t)(uint16_t)a, (int16_t)(uint16_t)b, &result); }
+    if (n == 4) { int32_t result; return __builtin_sub_overflow((int32_t)(uint32_t)a, (int32_t)(uint32_t)b, &result); }
+    if (n == 8) { int64_t result; return __builtin_sub_overflow((int64_t)(uint64_t)a, (int64_t)(uint64_t)b, &result); }
+    if (n < 1 || n > 16) return 0;
+    if (n <= 8) {
+        const uint64_t sign = UINT64_C(1) << (8 * n - 1);
+        const uint64_t word_mask = sign | (sign - 1);
+        const uint64_t x = (uint64_t)a & word_mask, y = (uint64_t)b & word_mask;
+        return (((x ^ y) & (x ^ (x - y)) & sign) != 0);
+    }
+    const u128 sign = (u128)1 << (8 * n - 1);
+    return (((a ^ b) & (a ^ (a - b)) & sign) != 0);
+}
 static inline u128 popc(u128 v) { return __builtin_popcountll((uint64_t)v) + __builtin_popcountll((uint64_t)(v >> 64)); }
 
 // Floats: 4 = binary32, 8 = binary64, 10 = Intel binary80 (explicit J bit).

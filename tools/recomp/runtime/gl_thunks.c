@@ -34,6 +34,45 @@ void gl_perf_frame(uint64_t now_ms) {
 #define GL_PERF(kind, amount) ((void)0)
 #endif
 
+#ifdef CODRECOMP_GL_TIMING
+#include "gl_call_timing.h"
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+static gl_time_counters gl_time_window;
+static int gl_time_enabled;
+static uint64_t gl_time_start_ms;
+static uint64_t gl_thread_ns(void) {
+    struct timespec ts;
+    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts)) return 0;
+    return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+}
+#define GL_TIME_START() (gl_time_enabled ? gl_thread_ns() : 0)
+#define GL_TIME_END(kind, start) do { if (gl_time_enabled) {     uint64_t stop = gl_thread_ns();     gl_time_record(&gl_time_window, kind, stop >= (start) ? stop - (start) : 0); } } while (0)
+void gl_time_frame(uint64_t now_ms) {
+    if (!gl_time_enabled) return;
+    gl_time_window.frames++;
+    if (!gl_time_start_ms) { gl_time_start_ms = now_ms; return; }
+    if (now_ms - gl_time_start_ms < 5000) return;
+    const gl_time_counters *s = &gl_time_window;
+    printf("gl cpu: frames=%llu draw_calls=%llu draw_us=%llu tex_bind_calls=%llu tex_bind_us=%llu tex_upload_calls=%llu tex_upload_us=%llu array_calls=%llu array_us=%llu lock_calls=%llu lock_us=%llu state_calls=%llu state_us=%llu buffer_calls=%llu buffer_us=%llu\n",
+      (unsigned long long)s->frames,
+      (unsigned long long)s->events[GL_TIME_DRAW].count, (unsigned long long)(s->events[GL_TIME_DRAW].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_TEXTURE_BIND].count, (unsigned long long)(s->events[GL_TIME_TEXTURE_BIND].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_TEXTURE_UPLOAD].count, (unsigned long long)(s->events[GL_TIME_TEXTURE_UPLOAD].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_ARRAY_POINTER].count, (unsigned long long)(s->events[GL_TIME_ARRAY_POINTER].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_ARRAY_LOCK].count, (unsigned long long)(s->events[GL_TIME_ARRAY_LOCK].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_RENDER_STATE].count, (unsigned long long)(s->events[GL_TIME_RENDER_STATE].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_BUFFER].count, (unsigned long long)(s->events[GL_TIME_BUFFER].cpu_ns / 1000));
+    fflush(stdout);
+    gl_time_reset(&gl_time_window);
+    gl_time_start_ms = now_ms;
+}
+#else
+#define GL_TIME_START() (0ULL)
+#define GL_TIME_END(kind, start) ((void)0)
+#endif
+
 typedef void (GLAPI_CALL *pfn_glAccum)(int, float);
 static pfn_glAccum p_glAccum;
 static uint32_t t_glAccum(uint32_t esp) {
@@ -48,7 +87,9 @@ static pfn_glActiveTexture p_glActiveTexture;
 static uint32_t t_glActiveTexture(uint32_t esp) {
     (void)esp;
     if (!p_glActiveTexture) gl_missing("glActiveTexture");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glActiveTexture((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_TEXTURE_BIND, gl_start_ns);
     GL_PERF(GL_PERF_ACTIVE_TEXTURE, 0);
     return 0;
 }
@@ -58,7 +99,9 @@ static pfn_glActiveTextureARB p_glActiveTextureARB;
 static uint32_t t_glActiveTextureARB(uint32_t esp) {
     (void)esp;
     if (!p_glActiveTextureARB) gl_missing("glActiveTextureARB");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glActiveTextureARB((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_TEXTURE_BIND, gl_start_ns);
     GL_PERF(GL_PERF_ACTIVE_TEXTURE, 0);
     return 0;
 }
@@ -95,7 +138,9 @@ static pfn_glAlphaFunc p_glAlphaFunc;
 static uint32_t t_glAlphaFunc(uint32_t esp) {
     (void)esp;
     if (!p_glAlphaFunc) gl_missing("glAlphaFunc");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glAlphaFunc((int)ARG(esp, 0), F32(ARG(esp, 1)));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -148,7 +193,9 @@ static pfn_glBindBufferARB p_glBindBufferARB;
 static uint32_t t_glBindBufferARB(uint32_t esp) {
     (void)esp;
     if (!p_glBindBufferARB) gl_missing("glBindBufferARB");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glBindBufferARB((int)ARG(esp, 0), (int)ARG(esp, 1));
+    GL_TIME_END(GL_TIME_BUFFER, gl_start_ns);
     GL_PERF(GL_PERF_BIND_BUFFER, 0);
     gl_bridge_bind(&gl_bindings, ARG(esp, 0), ARG(esp, 1));
     return 0;
@@ -177,7 +224,9 @@ static pfn_glBindTexture p_glBindTexture;
 static uint32_t t_glBindTexture(uint32_t esp) {
     (void)esp;
     if (!p_glBindTexture) gl_missing("glBindTexture");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glBindTexture((int)ARG(esp, 0), (int)ARG(esp, 1));
+    GL_TIME_END(GL_TIME_TEXTURE_BIND, gl_start_ns);
     GL_PERF(GL_PERF_BIND_TEXTURE, 0);
     return 0;
 }
@@ -196,7 +245,9 @@ static pfn_glBlendFunc p_glBlendFunc;
 static uint32_t t_glBlendFunc(uint32_t esp) {
     (void)esp;
     if (!p_glBlendFunc) gl_missing("glBlendFunc");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glBlendFunc((int)ARG(esp, 0), (int)ARG(esp, 1));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -205,7 +256,9 @@ static pfn_glBufferDataARB p_glBufferDataARB;
 static uint32_t t_glBufferDataARB(uint32_t esp) {
     (void)esp;
     if (!p_glBufferDataARB) gl_missing("glBufferDataARB");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glBufferDataARB((int)ARG(esp, 0), (intptr_t)(int32_t)ARG(esp, 1), GP(ARG(esp, 2)), (int)ARG(esp, 3));
+    GL_TIME_END(GL_TIME_BUFFER, gl_start_ns);
     GL_PERF(GL_PERF_BUFFER_DATA, ((int32_t)ARG(esp, 1) > 0 ? ARG(esp, 1) : 0));
     return 0;
 }
@@ -215,7 +268,9 @@ static pfn_glBufferSubDataARB p_glBufferSubDataARB;
 static uint32_t t_glBufferSubDataARB(uint32_t esp) {
     (void)esp;
     if (!p_glBufferSubDataARB) gl_missing("glBufferSubDataARB");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glBufferSubDataARB((int)ARG(esp, 0), (intptr_t)(int32_t)ARG(esp, 1), (intptr_t)(int32_t)ARG(esp, 2), GP(ARG(esp, 3)));
+    GL_TIME_END(GL_TIME_BUFFER, gl_start_ns);
     GL_PERF(GL_PERF_BUFFER_SUBDATA, ((int32_t)ARG(esp, 2) > 0 ? ARG(esp, 2) : 0));
     return 0;
 }
@@ -657,7 +712,9 @@ static pfn_glColorPointer p_glColorPointer;
 static uint32_t t_glColorPointer(uint32_t esp) {
     (void)esp;
     if (!p_glColorPointer) gl_missing("glColorPointer");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glColorPointer((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ARRAY_BUFFER, MEM, ARG(esp, 3)));
+    GL_TIME_END(GL_TIME_ARRAY_POINTER, gl_start_ns);
     return 0;
 }
 
@@ -756,7 +813,9 @@ static pfn_glCompressedTexImage2DARB p_glCompressedTexImage2DARB;
 static uint32_t t_glCompressedTexImage2DARB(uint32_t esp) {
     (void)esp;
     if (!p_glCompressedTexImage2DARB) gl_missing("glCompressedTexImage2DARB");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glCompressedTexImage2DARB((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3), (int)ARG(esp, 4), (int)ARG(esp, 5), (int)ARG(esp, 6), GP(ARG(esp, 7)));
+    GL_TIME_END(GL_TIME_TEXTURE_UPLOAD, gl_start_ns);
     return 0;
 }
 
@@ -810,7 +869,9 @@ static pfn_glCompressedTexSubImage2DARB p_glCompressedTexSubImage2DARB;
 static uint32_t t_glCompressedTexSubImage2DARB(uint32_t esp) {
     (void)esp;
     if (!p_glCompressedTexSubImage2DARB) gl_missing("glCompressedTexSubImage2DARB");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glCompressedTexSubImage2DARB((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3), (int)ARG(esp, 4), (int)ARG(esp, 5), (int)ARG(esp, 6), (int)ARG(esp, 7), GP(ARG(esp, 8)));
+    GL_TIME_END(GL_TIME_TEXTURE_UPLOAD, gl_start_ns);
     return 0;
 }
 
@@ -882,7 +943,9 @@ static pfn_glCullFace p_glCullFace;
 static uint32_t t_glCullFace(uint32_t esp) {
     (void)esp;
     if (!p_glCullFace) gl_missing("glCullFace");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glCullFace((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -946,7 +1009,9 @@ static pfn_glDepthFunc p_glDepthFunc;
 static uint32_t t_glDepthFunc(uint32_t esp) {
     (void)esp;
     if (!p_glDepthFunc) gl_missing("glDepthFunc");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glDepthFunc((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -955,7 +1020,9 @@ static pfn_glDepthMask p_glDepthMask;
 static uint32_t t_glDepthMask(uint32_t esp) {
     (void)esp;
     if (!p_glDepthMask) gl_missing("glDepthMask");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glDepthMask((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -973,7 +1040,9 @@ static pfn_glDisable p_glDisable;
 static uint32_t t_glDisable(uint32_t esp) {
     (void)esp;
     if (!p_glDisable) gl_missing("glDisable");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glDisable((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -1000,7 +1069,9 @@ static pfn_glDrawArrays p_glDrawArrays;
 static uint32_t t_glDrawArrays(uint32_t esp) {
     (void)esp;
     if (!p_glDrawArrays) gl_missing("glDrawArrays");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glDrawArrays((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2));
+    GL_TIME_END(GL_TIME_DRAW, gl_start_ns);
     GL_PERF(GL_PERF_DRAW_ARRAYS, ((int32_t)ARG(esp, 2) > 0 ? ARG(esp, 2) : 0));
     return 0;
 }
@@ -1028,7 +1099,9 @@ static pfn_glDrawElements p_glDrawElements;
 static uint32_t t_glDrawElements(uint32_t esp) {
     (void)esp;
     if (!p_glDrawElements) gl_missing("glDrawElements");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glDrawElements((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ELEMENT_ARRAY_BUFFER, MEM, ARG(esp, 3)));
+    GL_TIME_END(GL_TIME_DRAW, gl_start_ns);
     GL_PERF(GL_PERF_DRAW_ELEMENTS, ((int32_t)ARG(esp, 1) > 0 ? ARG(esp, 1) : 0));
     return 0;
 }
@@ -1056,7 +1129,9 @@ static pfn_glDrawRangeElements p_glDrawRangeElements;
 static uint32_t t_glDrawRangeElements(uint32_t esp) {
     (void)esp;
     if (!p_glDrawRangeElements) gl_missing("glDrawRangeElements");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glDrawRangeElements((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3), (int)ARG(esp, 4), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ELEMENT_ARRAY_BUFFER, MEM, ARG(esp, 5)));
+    GL_TIME_END(GL_TIME_DRAW, gl_start_ns);
     GL_PERF(GL_PERF_DRAW_RANGE, ((int32_t)ARG(esp, 3) > 0 ? ARG(esp, 3) : 0));
     return 0;
 }
@@ -1066,7 +1141,9 @@ static pfn_glDrawRangeElementsEXT p_glDrawRangeElementsEXT;
 static uint32_t t_glDrawRangeElementsEXT(uint32_t esp) {
     (void)esp;
     if (!p_glDrawRangeElementsEXT) gl_missing("glDrawRangeElementsEXT");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glDrawRangeElementsEXT((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3), (int)ARG(esp, 4), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ELEMENT_ARRAY_BUFFER, MEM, ARG(esp, 5)));
+    GL_TIME_END(GL_TIME_DRAW, gl_start_ns);
     GL_PERF(GL_PERF_DRAW_RANGE, ((int32_t)ARG(esp, 3) > 0 ? ARG(esp, 3) : 0));
     return 0;
 }
@@ -1112,7 +1189,9 @@ static pfn_glEnable p_glEnable;
 static uint32_t t_glEnable(uint32_t esp) {
     (void)esp;
     if (!p_glEnable) gl_missing("glEnable");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glEnable((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -2095,7 +2174,9 @@ static pfn_glInterleavedArrays p_glInterleavedArrays;
 static uint32_t t_glInterleavedArrays(uint32_t esp) {
     (void)esp;
     if (!p_glInterleavedArrays) gl_missing("glInterleavedArrays");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glInterleavedArrays((int)ARG(esp, 0), (int)ARG(esp, 1), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ARRAY_BUFFER, MEM, ARG(esp, 2)));
+    GL_TIME_END(GL_TIME_ARRAY_POINTER, gl_start_ns);
     return 0;
 }
 
@@ -2259,7 +2340,9 @@ static pfn_glLoadIdentity p_glLoadIdentity;
 static uint32_t t_glLoadIdentity(uint32_t esp) {
     (void)esp;
     if (!p_glLoadIdentity) gl_missing("glLoadIdentity");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glLoadIdentity();
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -2277,7 +2360,9 @@ static pfn_glLoadMatrixf p_glLoadMatrixf;
 static uint32_t t_glLoadMatrixf(uint32_t esp) {
     (void)esp;
     if (!p_glLoadMatrixf) gl_missing("glLoadMatrixf");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glLoadMatrixf(GP(ARG(esp, 0)));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -2295,7 +2380,9 @@ static pfn_glLockArraysEXT p_glLockArraysEXT;
 static uint32_t t_glLockArraysEXT(uint32_t esp) {
     (void)esp;
     if (!p_glLockArraysEXT) gl_missing("glLockArraysEXT");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glLockArraysEXT((int)ARG(esp, 0), (int)ARG(esp, 1));
+    GL_TIME_END(GL_TIME_ARRAY_LOCK, gl_start_ns);
     GL_PERF(GL_PERF_LOCK_ARRAYS, 0);
     return 0;
 }
@@ -2431,7 +2518,9 @@ static pfn_glMatrixMode p_glMatrixMode;
 static uint32_t t_glMatrixMode(uint32_t esp) {
     (void)esp;
     if (!p_glMatrixMode) gl_missing("glMatrixMode");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glMatrixMode((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -2449,7 +2538,9 @@ static pfn_glMultMatrixf p_glMultMatrixf;
 static uint32_t t_glMultMatrixf(uint32_t esp) {
     (void)esp;
     if (!p_glMultMatrixf) gl_missing("glMultMatrixf");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glMultMatrixf(GP(ARG(esp, 0)));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -2565,7 +2656,9 @@ static pfn_glNormalPointer p_glNormalPointer;
 static uint32_t t_glNormalPointer(uint32_t esp) {
     (void)esp;
     if (!p_glNormalPointer) gl_missing("glNormalPointer");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glNormalPointer((int)ARG(esp, 0), (int)ARG(esp, 1), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ARRAY_BUFFER, MEM, ARG(esp, 2)));
+    GL_TIME_END(GL_TIME_ARRAY_POINTER, gl_start_ns);
     return 0;
 }
 
@@ -3248,7 +3341,9 @@ static pfn_glScissor p_glScissor;
 static uint32_t t_glScissor(uint32_t esp) {
     (void)esp;
     if (!p_glScissor) gl_missing("glScissor");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glScissor((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -3284,7 +3379,9 @@ static pfn_glShadeModel p_glShadeModel;
 static uint32_t t_glShadeModel(uint32_t esp) {
     (void)esp;
     if (!p_glShadeModel) gl_missing("glShadeModel");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glShadeModel((int)ARG(esp, 0));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -3616,7 +3713,9 @@ static pfn_glTexCoordPointer p_glTexCoordPointer;
 static uint32_t t_glTexCoordPointer(uint32_t esp) {
     (void)esp;
     if (!p_glTexCoordPointer) gl_missing("glTexCoordPointer");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexCoordPointer((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ARRAY_BUFFER, MEM, ARG(esp, 3)));
+    GL_TIME_END(GL_TIME_ARRAY_POINTER, gl_start_ns);
     return 0;
 }
 
@@ -3625,7 +3724,9 @@ static pfn_glTexEnvf p_glTexEnvf;
 static uint32_t t_glTexEnvf(uint32_t esp) {
     (void)esp;
     if (!p_glTexEnvf) gl_missing("glTexEnvf");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexEnvf((int)ARG(esp, 0), (int)ARG(esp, 1), F32(ARG(esp, 2)));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -3634,7 +3735,9 @@ static pfn_glTexEnvfv p_glTexEnvfv;
 static uint32_t t_glTexEnvfv(uint32_t esp) {
     (void)esp;
     if (!p_glTexEnvfv) gl_missing("glTexEnvfv");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexEnvfv((int)ARG(esp, 0), (int)ARG(esp, 1), GP(ARG(esp, 2)));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -3643,7 +3746,9 @@ static pfn_glTexEnvi p_glTexEnvi;
 static uint32_t t_glTexEnvi(uint32_t esp) {
     (void)esp;
     if (!p_glTexEnvi) gl_missing("glTexEnvi");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexEnvi((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -3724,7 +3829,9 @@ static pfn_glTexImage2D p_glTexImage2D;
 static uint32_t t_glTexImage2D(uint32_t esp) {
     (void)esp;
     if (!p_glTexImage2D) gl_missing("glTexImage2D");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexImage2D((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3), (int)ARG(esp, 4), (int)ARG(esp, 5), (int)ARG(esp, 6), (int)ARG(esp, 7), GP(ARG(esp, 8)));
+    GL_TIME_END(GL_TIME_TEXTURE_UPLOAD, gl_start_ns);
     GL_PERF(GL_PERF_TEX_IMAGE, 0);
     return 0;
 }
@@ -3752,7 +3859,9 @@ static pfn_glTexParameteri p_glTexParameteri;
 static uint32_t t_glTexParameteri(uint32_t esp) {
     (void)esp;
     if (!p_glTexParameteri) gl_missing("glTexParameteri");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexParameteri((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -3779,7 +3888,9 @@ static pfn_glTexSubImage2D p_glTexSubImage2D;
 static uint32_t t_glTexSubImage2D(uint32_t esp) {
     (void)esp;
     if (!p_glTexSubImage2D) gl_missing("glTexSubImage2D");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexSubImage2D((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3), (int)ARG(esp, 4), (int)ARG(esp, 5), (int)ARG(esp, 6), (int)ARG(esp, 7), GP(ARG(esp, 8)));
+    GL_TIME_END(GL_TIME_TEXTURE_UPLOAD, gl_start_ns);
     GL_PERF(GL_PERF_TEX_SUBIMAGE, 0);
     return 0;
 }
@@ -3807,7 +3918,9 @@ static pfn_glUnlockArraysEXT p_glUnlockArraysEXT;
 static uint32_t t_glUnlockArraysEXT(uint32_t esp) {
     (void)esp;
     if (!p_glUnlockArraysEXT) gl_missing("glUnlockArraysEXT");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glUnlockArraysEXT();
+    GL_TIME_END(GL_TIME_ARRAY_LOCK, gl_start_ns);
     GL_PERF(GL_PERF_UNLOCK_ARRAYS, 0);
     return 0;
 }
@@ -4392,7 +4505,9 @@ static pfn_glVertexAttribPointerARB p_glVertexAttribPointerARB;
 static uint32_t t_glVertexAttribPointerARB(uint32_t esp) {
     (void)esp;
     if (!p_glVertexAttribPointerARB) gl_missing("glVertexAttribPointerARB");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glVertexAttribPointerARB((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3), (int)ARG(esp, 4), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ARRAY_BUFFER, MEM, ARG(esp, 5)));
+    GL_TIME_END(GL_TIME_ARRAY_POINTER, gl_start_ns);
     return 0;
 }
 
@@ -4401,7 +4516,9 @@ static pfn_glVertexPointer p_glVertexPointer;
 static uint32_t t_glVertexPointer(uint32_t esp) {
     (void)esp;
     if (!p_glVertexPointer) gl_missing("glVertexPointer");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glVertexPointer((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), gl_bridge_arg(&gl_bindings, GL_BRIDGE_ARRAY_BUFFER, MEM, ARG(esp, 3)));
+    GL_TIME_END(GL_TIME_ARRAY_POINTER, gl_start_ns);
     return 0;
 }
 
@@ -4410,7 +4527,9 @@ static pfn_glViewport p_glViewport;
 static uint32_t t_glViewport(uint32_t esp) {
     (void)esp;
     if (!p_glViewport) gl_missing("glViewport");
+    const uint64_t gl_start_ns = GL_TIME_START();
     p_glViewport((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2), (int)ARG(esp, 3));
+    GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
     return 0;
 }
 
@@ -4906,6 +5025,11 @@ const thunk_def gl_thunks[] = {
 
 void gl_load(void *(*getproc)(const char *)) {
     gl_bridge_reset(&gl_bindings);
+#ifdef CODRECOMP_GL_TIMING
+    gl_time_enabled = getenv("CODRECOMP_GL_TIME") != NULL;
+    gl_time_start_ms = 0;
+    gl_time_reset(&gl_time_window);
+#endif
 #ifdef CODRECOMP_GL_PROFILING
     gl_perf_enabled = getenv("CODRECOMP_GL_STATS") != NULL;
     gl_perf_start_ms = 0;

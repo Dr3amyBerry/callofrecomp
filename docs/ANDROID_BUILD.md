@@ -125,3 +125,24 @@ of every training objective. ADB screencap may return black while WSA's desktop
 window visibly renders; validation also used window captures.
 ELF/ZIP alignment alone does not establish full 16-KiB host-page compatibility;
 the guest memory allocator currently tracks and protects 4-KiB pages.
+
+### Per-call GL4ES/GLES CPU timing (diagnostic APK only)
+
+Build a private diagnostic APK using `python tools/recomp/build_android.py
+--abi x86_64 --gl-time-profile` (or `--abi arm64-v8a`), then create the
+`files/profile/gl_time` marker in the application's private files directory.
+After restarting, the runtime prints one `gl cpu:` line approximately every
+five seconds. It lists inclusive **thread CPU microseconds** and call counts
+spent by the guest OpenGL bridge in draw functions, texture binding/upload,
+array-pointer setup, lock/unlock, state changes and VBO handling.
+
+This measures CPU time inside the host GL4ES/GLES entry points, **not GPU
+execution time or time spent in the recompilated guest renderer itself**.
+CPU microseconds across sampled function calls are normalized against the
+number of native frames in each reporting window. Timer overhead distorts
+instrumented FPS; use a noninstrumented APK for any A/B comparison.
+
+Compile with `CODRECOMP_GL_TIMING=OFF` (default) for production. The marker
+cannot activate any timing hooks in a normal APK, and no per-call clocks
+or counters remain in release object code. This is independent of
+`--gl-profile`, which only counts requested calls.

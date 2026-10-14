@@ -4,10 +4,37 @@
 >
 > **Rule:** this file must be updated whenever a meaningful phase starts, completes, changes direction, discovers a blocker, or requires a new external tool.
 
-**Last updated:** 2026-10-13
+**Last updated:** 2026-10-14
 **Primary branch:** `main`  
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
+
+### 2026-10-14 — WSA A/B closure and targeted renderer compiler tests
+
+- [x] Math hot-path same-scene WSA A/B: 54.55 vs 54.50 FPS, 17.70 vs 17.75 ms thread CPU; no FPS improvement but keep locally verified operation and correctness optimization.
+- [x] Renderer p10/p11 O2 selective APK tested: 54.50 vs 54.25 FPS, 17.75 vs 17.79 ms CPU. Keep feature opt-in OFF by default.
+- [x] GL CPU bridge diagnostic: approx 2.64 ms/frame inside host drawing functions in a stable 272-frame window, vs 18ms total engine CPU. The remainder is NOT established to be renderer-only.
+- [x] Full ARM64 normal libmain.so built and linked, AArch64 ELF and normal settings verified. GL CPU timing, GL call counting, sampled CPU and selective O2 all OFF; no GL diagnostic format strings in normal library. Proprietary assets remain private.
+
+### 2026-10-14 — Renderer GL bridge CPU timing and selective compiler experiment
+
+- [x] Resumed the interrupted WSA x86_64 arithmetic APK packaging (no redo of the 35 already compiled C objects).
+- [x] Added an opt-in, compiled-out-by-default `CODRECOMP_GL_TIMING` profile and private `gl_time` marker. It accounts for CPU inside selected OpenGL GL4ES/GLES entry points, not time spent in the guest renderer or GPU. Generator and generated bridge are synchronized and covered by test.
+- [x] In the same Camp Toccoa entrance, a 272-frame window measured ~2.64 ms/frame CPU in guest-indexed draw calls, ~0.10 ms GL state, ~0.09 ms attribute pointer setup, ~0.044 ms texture binding, ~0.013 ms locks. These are not GPU timings and do not prove the whole remaining frame is renderer time.
+- [x] Added OFF-by-default `CODRECOMP_RENDER_O2` / `--render-o2` to target only the hot CoDSP p10/p11 compiled units, without affecting normal graphics settings. Same-scene A/B completed, no FPS gain.
+- [x] All 24 host CTest cases passed, including new timing aggregation; Python generator and builder CLI unit tests pass; diagnostic WSA build compiled/linked and ran the training mission.
+- [x] Controlled WSA A/B complete: math FPS 54.55 to 54.50; selective p10/p11 O2 FPS 54.50 to 54.25. Neither improves FPS significantly; ARM64 library compiled correctly.
+
+### 2026-10-14 — Native signed-arithmetic hot path (WSA A/B completed)
+
+- [x] Profiled actual CoDSP p-code operations in renderer chunks 186/187 and 0x0051EE2F..0x0052079A. These regions contain repeated INT_SCARRY/INT_SBORROW and signed comparisons; static operation counts are not dynamic call counts.
+- [x] Replaced signed overflow detection with checked native 8/16/32/64-bit arithmetic and defined unsigned bit tests for uncommon 9..16-byte widths. Found and corrected a real signed-128-bit overflow bug: the old width-16 test fails, the new one passes.
+- [x] Added `overflow_flags_smoke`: all 65,536 pairs of 8-bit operands, boundary tests and 30,000 seeded 128-bit pairs per width 1..16, checking carry, borrow and sign extension against independent references.
+- [x] Host verification: 23/23 CTest, 12/12 targeted generator tests; Android NDK AArch64 smoke source compiles (object only, not executed on a phone).
+- [x] Win64 Clang -O1 4-million-iteration microbenchmark per width (seven samples): 32-bit median 26.826 ms before / 12.421 ms after; 64-bit 27.672 ms before / 12.213 ms after, identical checksums.
+- [x] ARM64 Clang -O1 static assembly comparison: signed subtraction overflow n=4: 15 → 3 instructions; signed add/sub overflow n=8: 11 → 3 instructions each. 32-bit signed add remained 3 instructions, not falsely claimed as a speedup.
+- [ ] Full-game WSA same-save A/B completed: 54.55 FPS previous to 54.50 after arithmetic optimization. No FPS gain established, retain native arithmetic improvement and 128-bit correctness fix.
+- [x] Same-scene WSA 60-window A/B completed; native ARM64 shared library compiled; selective O2 A/B tested and OFF by default. Next: real ARM64 device and crowded soldier scenes.
 
 ### 2026-10-14 — Rescate de optimización del dispatcher con beneficio local verificado
 

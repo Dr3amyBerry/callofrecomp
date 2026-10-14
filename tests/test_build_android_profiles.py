@@ -13,6 +13,8 @@ class ProfileBuildFlagsTest(unittest.TestCase):
                               capture_output=True, text=True, check=True)
         self.assertIn('--cpu-profile', proc.stdout)
         self.assertIn('--gl-profile', proc.stdout)
+        self.assertIn('--gl-time-profile', proc.stdout)
+        self.assertIn('--render-o2', proc.stdout)
 
 if __name__ == '__main__':
     unittest.main()

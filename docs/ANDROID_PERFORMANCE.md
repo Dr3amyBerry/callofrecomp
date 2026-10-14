@@ -136,3 +136,129 @@ The function-aligned chunks experiment compiled and loaded correctly, but
 measured 52.1 FPS and 19.135 ms median engine thread time compared with 52.7 FPS
 and 18.865 ms in the baseline. This experimental generator remains private
 and is **not enabled by default**.
+
+## Native signed overflow and sign extension (2026-10-14)
+
+Static p-code counts in the CoDSP renderer regions identify frequent
+`INT_SCARRY`, `INT_SBORROW`, signed comparisons and `POPCOUNT`.
+The signed-overflow helper now uses checked arithmetic
+(`__builtin_add_overflow` / `__builtin_sub_overflow`) for native
+1-, 2-, 4-, and 8-byte x86 widths, and defined unsigned sign-bit formulas
+for other widths up to 16 bytes. This also fixes a demonstrated bug:
+the previous signed-128-bit intermediate overflowed at width 16 and failed
+a newly written correctness test.
+
+The new host smoke test exhaustively checks 65,536 pairs at width one and
+30,000 seeded random operand pairs for each width 1–16, plus edge cases,
+against an independent wide reference. 23/23 CTest tests pass. The
+Android AArch64 NDK compiler accepts the test source (not executed on a phone).
+
+| Operation, Clang `-O1` | Previous ARM64 instructions | Updated |
+| --- | ---: | ---: |
+| 32-bit signed addition overflow | 3 | 3 |
+| 32-bit signed subtraction overflow | 15 | 3 |
+| 64-bit signed addition overflow | 11 | 3 |
+| 64-bit signed subtraction overflow | 11 | 3 |
+
+In a separate synthetic Windows host benchmark running four million combined
+carry/borrow checks per trial, seven trials per width, the median execution
+time was **26.826 → 12.421 ms at 32 bits** and
+**27.672 → 12.213 ms at 64 bits** with identical checksums.
+These are specific local-operation improvements, **not FPS, GPU, or
+measured mobile performance**. The compiler already generated efficient
+x86_64 instructions for normal 32-/64-bit sign-extension comparisons;
+there is no independent sign-extension speed claim.
+
+**Still to verify:** WSA's actual engine FPS / CPU per frame in the same saved
+training scene, with profiling disabled, and the native ARM64 full library
+build. Do not enable speculative GL4ES VBO modes or repartition generated
+chunks on the basis of these microbenchmarks.
+
+## WSA renderer GL bridge CPU timing (2026-10-14)
+
+A separately compiled WSA x86_64 diagnostic APK, with
+`CODRECOMP_GL_TIMING=ON` and the private `gl_time` marker, ran the
+preserved Camp Toccoa training entrance in Balanced quality. Timings use
+`CLOCK_THREAD_CPUTIME_ID` **only inside selected guest GL wrappers**
+around GL4ES/GLES calls. A representative 272-native-frame reporting
+window showed:
+
+| Category | Inclusive CPU microseconds / 272 frames | Approx. CPU ms/frame |
+| --- | ---: | ---: |
+| DrawElements / DrawRangeElements / DrawArrays | 718,126 | **2.64** |
+| GL render state changes | 27,934 | 0.103 |
+| Vertex/color/normal/texture pointer setup | 24,080 | 0.089 |
+| Bind / active texture calls | 11,881 | 0.044 |
+| Lock/unlock arrays | 3,601 | 0.013 |
+| Texture uploads and explicit guest buffers | 0 | 0 |
+
+This sample had approximately 103 indexed draw requests per frame. The
+instrumented engine-thread frame summary window median was around 18 ms.
+Thus host draw calls are significant (~2.6 ms), but they do **not**
+account for the rest of the engine's workload. That remainder contains
+recompiled renderer, simulation, audio, event processing, and profiling
+overhead: it is **incorrect** to assign all remaining time to the
+renderer without additional native samples.
+
+**Not measured:** real GPU execution time, wait on the GPU after submission,
+internal GL4ES replays/draw call count, and actual ARM64 devices. Timer
+overhead is nonzero, so instrumented FPS is not used for A/B evaluation.
+No GL4ES VBO mode was enabled.
+
+### Next targeted experiment: selective higher compiler optimization
+
+The hottest previously sampled renderer guest chunks reside in the CoDSP
+generated `p10` / `p11` translation units. The OFF-by-default Android
+CMake option `CODRECOMP_RENDER_O2` / builder `--render-o2` tries
+`-O2` only for these two sources, without changing source instructions,
+drawing settings, shaders, or graphics buffers. Build both variants with
+timing disabled, then compare the same WSA save and the same static view.
+An older ARM64 `p10` compile produced about **4% more code bytes**
+under `-O2`; this is **not evidence of faster execution**.
+
+### WSA renderer p10/p11 selective -O2 A/B (2026-10-14)
+
+Compiled a signed WSA x86_64 APK where only CoDSP p10/p11 use -O2
+(Ninja compile flags checked); all other generated partitions still -O1.
+Both A/B variants contain the same optimized signed-overflow arithmetic.
+Used the same static saved Camp Toccoa training entrance, Balanced quality,
+60 roughly one-second native engine summary windows for each, no profiling.
+
+| Measure | Optimized arithmetic, normal -O1 | p10/p11 -O2 |
+| --- | ---: | ---: |
+| Median FPS across summary windows | 54.50 | 54.25 |
+| Median engine thread CPU ms across windows | 17.75 | 17.79 |
+| Median frame ms across windows | 18.36 | 18.43 |
+| p95 of window-average frame ms | 19.52 | 19.871 |
+| CL_InitCGame (one load each) | 6.75s | 6.76s |
+
+No FPS benefit established. Keep selective O2 experimental and disabled by
+default. These are NOT individual-frame percentiles or a real ARM64 result.
+
+### WSA arithmetic hot-path A/B (2026-10-14)
+
+Compared original normal APK vs optimized signed-overflow arithmetic:
+60 roughly one-second summary windows, same save and Balanced quality.
+
+| Measure | Previous APK | Optimized math |
+| --- | ---: | ---: |
+| Median FPS across summary windows | 54.55 | 54.50 |
+| Median engine thread CPU ms | 17.70 | 17.75 |
+| Median frame ms across windows | 18.335 | 18.360 |
+
+No observable FPS benefit in this WSA scene, but the signed arithmetic
+change is justified by operation-level microbenchmarks and a correctness
+fix for 128-bit overflow. Tests were independent of visual output.
+
+### ARM64 native normal build verification (2026-10-14)
+
+Rebuilt Android AArch64 libmain.so from the updated C runtime with the
+normal optimization and diagnostic configuration. The native library linked
+successfully; ELF e_machine is EM_AARCH64 (183). Checked CMake cache flags:
+CODRECOMP_GL_TIMING=OFF, CODRECOMP_GL_PROFILING=OFF,
+CODRECOMP_CPU_PROFILING=OFF, and CODRECOMP_RENDER_O2=OFF.
+Neither the GL CPU timing nor the GL guest-call profile format string is
+present in the production native object. 24/24 host CTest cases pass.
+
+A real ARM64 phone GPU and gameplay performance measurement is still
+required. WSA x86_64 timing does not determine Mali/Adreno behavior.

@@ -40,6 +40,9 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     snprintf(frame_stats, sizeof frame_stats, "%s/gl_stats", argv[2]);
     if (access(frame_stats, F_OK) == 0) setenv("CODRECOMP_GL_STATS", "1", 1);
     else unsetenv("CODRECOMP_GL_STATS");
+    snprintf(frame_stats, sizeof frame_stats, "%s/gl_time", argv[2]);
+    if (access(frame_stats, F_OK) == 0) setenv("CODRECOMP_GL_TIME", "1", 1);
+    else unsetenv("CODRECOMP_GL_TIME");
     setenv("LIBGL_ES", "2", 1);
     setenv("LIBGL_GL", "21", 1);
     setenv("LIBGL_NOBANNER", "1", 1);

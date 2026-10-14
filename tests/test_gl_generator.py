@@ -49,6 +49,10 @@ class GLGenerationTest(unittest.TestCase):
             self.assertIn('GP(ARG(esp, 8))',s) # texture pixels stay memory pointers
             self.assertIn('gl_bridge_delete_many(&gl_bindings',s)
             self.assertIn('gl_bridge_reset(&gl_bindings);',s)
+            self.assertIn('GL_TIME_START()',s)
+            self.assertIn('GL_TIME_END(GL_TIME_DRAW',s)
+            self.assertIn('GL_TIME_END(GL_TIME_TEXTURE_UPLOAD',s)
+            self.assertIn('gl_time_enabled = getenv("CODRECOMP_GL_TIME") != NULL;',s)
             self.assertIn('GL_PERF(GL_PERF_DRAW_ELEMENTS',s)
             self.assertIn('GL_PERF(GL_PERF_TEX_IMAGE',s)
             self.assertIn('gl_perf_enabled = getenv("CODRECOMP_GL_STATS") != NULL;',s)

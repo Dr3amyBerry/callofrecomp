@@ -43,6 +43,10 @@ def main():
                         help="compile optional sampled guest CPU diagnostics")
     parser.add_argument("--gl-profile", action="store_true",
                         help="compile optional guest OpenGL call counters")
+    parser.add_argument("--gl-time-profile", action="store_true",
+                        help="compile opt-in CPU timing for GL4ES/GLES entry points")
+    parser.add_argument("--render-o2", action="store_true",
+                        help="experiment: compile CoDSP renderer partitions p10 and p11 with -O2")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
     if not args.sdk or not args.java:
@@ -80,6 +84,8 @@ def main():
             f"-DRECOMP_OPTIMIZATION={args.recomp_opt}",
             f"-DCODRECOMP_CPU_PROFILING={'ON' if args.cpu_profile else 'OFF'}",
             f"-DCODRECOMP_GL_PROFILING={'ON' if args.gl_profile else 'OFF'}",
+            f"-DCODRECOMP_GL_TIMING={'ON' if args.gl_time_profile else 'OFF'}",
+            f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")
         run("cmake", "--build", native, "--parallel", args.jobs)
     classes, dex = package / "classes", package / "dex"

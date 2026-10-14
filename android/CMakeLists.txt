@@ -52,6 +52,29 @@ if(CODRECOMP_GL_PROFILING)
       PROPERTY COMPILE_DEFINITIONS CODRECOMP_GL_PROFILING)
   endforeach()
 endif()
+# Opt-in CPU time attributable to GL4ES/GLES entry points on the guest thread.
+# The normal build never pays the clock_gettime cost.
+option(CODRECOMP_GL_TIMING "Compile opt-in renderer GL call CPU timing" OFF)
+if(CODRECOMP_GL_TIMING)
+  foreach(source gl_thunks.c window.c)
+    set_property(SOURCE "${ROOT}/tools/recomp/runtime/${source}" APPEND
+      PROPERTY COMPILE_DEFINITIONS CODRECOMP_GL_TIMING)
+  endforeach()
+endif()
+# Experimental selectively higher optimization for *only* the two generated
+# CoDSP translation units containing the hottest sampled renderer chunks.
+# Default remains -O1 for the game and other generated modules.
+option(CODRECOMP_RENDER_O2 "Use -O2 for CoDSP renderer partitions p10/p11 only" OFF)
+if(CODRECOMP_RENDER_O2)
+  foreach(part p10 p11)
+    set(renderer_part "${RECOMP_SOURCE_DIR}/codsp_recomp_${part}.c")
+    if(EXISTS "${renderer_part}")
+      set_property(SOURCE "${renderer_part}" APPEND PROPERTY COMPILE_OPTIONS "-O2")
+    else()
+      message(FATAL_ERROR "Required experimental CoDSP source missing: ${renderer_part}")
+    endif()
+  endforeach()
+endif()
 target_compile_options(main PRIVATE -O1 -Wno-unused-function)
 target_link_libraries(main PRIVATE SDL2 GL log android m dl)
 target_link_libraries(GL m dl)

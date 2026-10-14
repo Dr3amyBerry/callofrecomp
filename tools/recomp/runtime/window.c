@@ -541,6 +541,7 @@ K(SwapBuffers) {
     }
     if (win) loading_status_frame(&load_status);
     gl_perf_frame(SDL_GetTicks64());
+    gl_time_frame(SDL_GetTicks64());
     if (pending_menu_click) {
         pending_menu_click = 0;
         mouse_buttons |= 1; post(0x0201, mouse_buttons, pending_menu_position);

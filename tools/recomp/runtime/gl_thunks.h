@@ -26,6 +26,11 @@ void gl_perf_frame(uint64_t now_ms);
 #else
 #define gl_perf_frame(ms) ((void)0)
 #endif
+#if defined(CODRECOMP_GL_TIMING)
+void gl_time_frame(uint64_t now_ms);
+#else
+#define gl_time_frame(ms) ((void)0)
+#endif
 extern const thunk_def gl_thunks[];
 // UI-thread input: 0 absolute menu pointer, 1 scancode, 2 mouse button,
 // 3 relative look, 4 menu activation after a frame (control 1 cancels).

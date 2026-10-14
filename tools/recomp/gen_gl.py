@@ -46,6 +46,73 @@ PERF_EVENTS = {
 }
 
 
+# These are CPU-time measurements of guest GL calls into GL4ES + GLES; they
+# do not measure GPU execution or time spent within guest renderer chunks.
+TIME_EVENTS = {
+    **{name: "GL_TIME_DRAW" for name in (
+        "glDrawElements", "glDrawRangeElements", "glDrawRangeElementsEXT", "glDrawArrays")},
+    **{name: "GL_TIME_TEXTURE_BIND" for name in (
+        "glBindTexture", "glActiveTexture", "glActiveTextureARB")},
+    **{name: "GL_TIME_TEXTURE_UPLOAD" for name in (
+        "glTexImage2D", "glTexSubImage2D", "glCompressedTexImage2DARB", "glCompressedTexSubImage2DARB")},
+    **{name: "GL_TIME_ARRAY_POINTER" for name in (
+        "glVertexPointer", "glNormalPointer", "glColorPointer", "glTexCoordPointer",
+        "glInterleavedArrays", "glVertexAttribPointerARB")},
+    **{name: "GL_TIME_ARRAY_LOCK" for name in ("glLockArraysEXT", "glUnlockArraysEXT")},
+    **{name: "GL_TIME_RENDER_STATE" for name in (
+        "glEnable", "glDisable", "glBlendFunc", "glDepthMask", "glDepthFunc",
+        "glAlphaFunc", "glTexEnvi", "glTexEnvf", "glTexEnvfv", "glTexParameteri",
+        "glMatrixMode", "glLoadIdentity", "glLoadMatrixf", "glMultMatrixf",
+        "glCullFace", "glShadeModel", "glScissor", "glViewport")},
+    **{name: "GL_TIME_BUFFER" for name in (
+        "glBindBufferARB", "glBufferDataARB", "glBufferSubDataARB")},
+}
+
+# A separate, OFF-by-default instrumentation build measures inclusive thread
+# CPU time inside GL4ES/driver entry points. Timing is never enabled by only
+# adding a marker to the normal APK.
+TIME_IMPL = r'''
+#ifdef CODRECOMP_GL_TIMING
+#include "gl_call_timing.h"
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+static gl_time_counters gl_time_window;
+static int gl_time_enabled;
+static uint64_t gl_time_start_ms;
+static uint64_t gl_thread_ns(void) {
+    struct timespec ts;
+    if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts)) return 0;
+    return (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
+}
+#define GL_TIME_START() (gl_time_enabled ? gl_thread_ns() : 0)
+#define GL_TIME_END(kind, start) do { if (gl_time_enabled) {     uint64_t stop = gl_thread_ns();     gl_time_record(&gl_time_window, kind, stop >= (start) ? stop - (start) : 0); } } while (0)
+void gl_time_frame(uint64_t now_ms) {
+    if (!gl_time_enabled) return;
+    gl_time_window.frames++;
+    if (!gl_time_start_ms) { gl_time_start_ms = now_ms; return; }
+    if (now_ms - gl_time_start_ms < 5000) return;
+    const gl_time_counters *s = &gl_time_window;
+    printf("gl cpu: frames=%llu draw_calls=%llu draw_us=%llu tex_bind_calls=%llu tex_bind_us=%llu tex_upload_calls=%llu tex_upload_us=%llu array_calls=%llu array_us=%llu lock_calls=%llu lock_us=%llu state_calls=%llu state_us=%llu buffer_calls=%llu buffer_us=%llu\n",
+      (unsigned long long)s->frames,
+      (unsigned long long)s->events[GL_TIME_DRAW].count, (unsigned long long)(s->events[GL_TIME_DRAW].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_TEXTURE_BIND].count, (unsigned long long)(s->events[GL_TIME_TEXTURE_BIND].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_TEXTURE_UPLOAD].count, (unsigned long long)(s->events[GL_TIME_TEXTURE_UPLOAD].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_ARRAY_POINTER].count, (unsigned long long)(s->events[GL_TIME_ARRAY_POINTER].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_ARRAY_LOCK].count, (unsigned long long)(s->events[GL_TIME_ARRAY_LOCK].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_RENDER_STATE].count, (unsigned long long)(s->events[GL_TIME_RENDER_STATE].cpu_ns / 1000),
+      (unsigned long long)s->events[GL_TIME_BUFFER].count, (unsigned long long)(s->events[GL_TIME_BUFFER].cpu_ns / 1000));
+    fflush(stdout);
+    gl_time_reset(&gl_time_window);
+    gl_time_start_ms = now_ms;
+}
+#else
+#define GL_TIME_START() (0ULL)
+#define GL_TIME_END(kind, start) ((void)0)
+#endif
+'''
+
+
 def classify(param) -> tuple[str, str]:
     """Return argument kind and its native C type."""
     text = ''.join(param.itertext())
@@ -107,6 +174,8 @@ def main() -> int:
            '#else',
            '#define GL_PERF(kind, amount) ((void)0)',
            '#endif', '']
+    out.extend(TIME_IMPL.strip().splitlines())
+    out.append('')
     table = []
     for n in names:
         c = cmds[n]
@@ -149,7 +218,11 @@ def main() -> int:
         if n == 'glGetString':
             body += f'    return gl_guest_string((unsigned int)ARG(esp, 0), {invoke});'
         elif ret_kind == 'void':
+            if n in TIME_EVENTS:
+                body += '    const uint64_t gl_start_ns = GL_TIME_START();\n'
             body += f'    {invoke};\n'
+            if n in TIME_EVENTS:
+                body += f'    GL_TIME_END({TIME_EVENTS[n]}, gl_start_ns);\n'
             if n in PERF_EVENTS:
                 event, idx = PERF_EVENTS[n]
                 size = (f'((int32_t)ARG(esp, {idx}) > 0 ? ARG(esp, {idx}) : 0)'
@@ -181,6 +254,11 @@ def main() -> int:
                 '    gl_perf_enabled = getenv("CODRECOMP_GL_STATS") != NULL;',
                 '    gl_perf_start_ms = 0;',
                 '    gl_perf_reset(&gl_perf_window);',
+                '#endif'])
+    out.extend(['#ifdef CODRECOMP_GL_TIMING',
+                '    gl_time_enabled = getenv("CODRECOMP_GL_TIME") != NULL;',
+                '    gl_time_start_ms = 0;',
+                '    gl_time_reset(&gl_time_window);',
                 '#endif'])
     out.extend(f'    p_{n} = (pfn_{n})getproc("{n}");' for n, _ in table)
     out.append('}')
