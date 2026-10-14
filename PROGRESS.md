@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 3: caché acotada de registros x86 en geometría, medida en TECNO (0/5)
+
+- [x] Prototipo `pcode2c.py --cache-hot-registers` **OFF por defecto**, restringido al bloque lineal de `0x004196F0` en CoDSP `p0`. No altera soldados, geometría visible, HUD ni calidad; preserva aliasing de registros, flags, x87 y saltos fuera de su ámbito.
+- [x] Fuente privada `p1` con parches FCOM/NaN preservada; `p0` reproducible y respaldado. Oráculo diferencial en **TECNO ARM64: 24 instrucciones reales / 49.152 casos** iguales contra traductor actual; 235 Python (4 omitidas) y 34/34 CTest.
+- [x] Gameplay real Camp Toccoa, 40 ventanas A/B/A: **A1 25,70 / B1 cache 25,15 / A2 restaurada 25,20 FPS**; CPU/frame **37,495 / 38,200 / 38,130 ms**. Como A2 cae hasta B1, **NO hay ganancia demostrada ni regresión causal confirmada**. No habilitar la caché.
+- [x] APK B x87 anterior exacta reinstalada y verificada SHA-256; autosave intacto. C generado experimental revertido **byte a byte** y objeto C recompilado realmente para evitar caché obsoleta de Ninja. [Informe](docs/CPU_PHASE3_P0_REGISTER_CACHE_TECNO_2026-10-14.md).
+- [ ] Próximo trabajo: liveness/SSA entre instrucciones y medición del ARM64 real; no anunciar 60 FPS (pendiente).
+
 ### 2026-10-14 — TECNO ARM64: x87 normal-f2d mejora FPS reales, A/B/A/B (0/5)
 
 - [x] A/B/A/B en Camp Toccoa, TECNO CK6n fisico, Equilibrado y 40 ventanas estables/corrida: **A1 24,90 / B1 25,70 / A2 25,00 / B2 25,85 FPS**; medias A **24,95** vs B **25,775**, mejora **+0,825 FPS (+3,31 %)**.

@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 3 exploratoria: caché de registros CoDSP p0, sin incremento de FPS
+
+Caché optativa por instrucción p-code `--cache-hot-registers`, sobre geometría `0x004196F0`, probada en TECNO ARM64 con toda la calidad intacta. A/B/A real (40 ventanas por corrida) **25,70 / 25,15 / 25,20 FPS** y **37,495 / 38,200 / 38,130 ms CPU/frame** (A/B/A). B no mejora; A2 se parece mucho a B1 por variabilidad/temperatura. 24 instrucciones auténticas y 49.152 diferenciales ejecutados en ARM64 frente al traductor existente, **no** Intel x86 original. Opt-in queda OFF, APK previa reinstalada con hash verificado, código generado original restaurado y recompilado. 235 tests Python (4 omisiones), 34 CTest. **60 FPS pendiente.** [Reporte](CPU_PHASE3_P0_REGISTER_CACHE_TECNO_2026-10-14.md).
+
 ## Resultado nuevo en TECNO fisico ARM64: x87 normal-f2d mejoro el gameplay (exito, 0/5)
 
 **Datos controlados A/B/A/B**, Camp Toccoa, 40 ventanas de ~1 s por corrida: **A1 24,90 / B1 25,70 / A2 25,00 / B2 25,85 FPS mediana**. B tiene `--hot-x87-transform --x87-normal-f2d` y mantiene GL4ES y Equilibrado. Promedio B vs A: **+0,825 FPS (+3,31%)** y **1,300 ms CPU/frame menos** (38,570 → 37,270). Mejora fisica reproducida y mayor que variacion A, temperatura B incluso mayor; no alcanza 60 FPS. Ensayo `-O2` en geometria p1 no mejoro y tuvo p10 inferior (19,90), **descartado**. La APK B instalada se valido byte a byte contra respaldo; save intacto. **Contador de fallos validos: 0/5**, no modificar estrategia principal. [Informe TECNO A/B/A/B](TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md).

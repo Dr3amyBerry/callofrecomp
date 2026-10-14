@@ -12,6 +12,7 @@ The generated C is derived from proprietary code: write it under recomp_out/.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import sys
 from pathlib import Path
 
@@ -103,13 +104,81 @@ def temporary_layout(ops):
     return {byte: i for i, byte in enumerate(sorted(universe))}
 
 
+# Only this profiled CoDSP 1.5 geometry body is eligible.
+# Other modules, instructions, control-flow and overlapping register views
+# retain the original store/load sequence exactly.
+HOT_CODSP_REGISTER_CACHE_RANGES = (
+    # This body is in original CoDSP p0, which has no unrelated private
+    # source-level hot patches. Do not rewrite p1's FCOM/NaN experiments.
+    (0x004196F0, 0x00419ED6),
+)
+# Only instructions whose side effects are completely modelled by Gen.op.
+# Unknown CALLOTHER/unsupported operations can inspect R or abort.
+CACHE_SAFE_OPS = frozenset({
+    'COPY', 'LOAD', 'STORE',
+    'INT_ADD', 'INT_SUB', 'INT_MULT', 'INT_AND', 'INT_OR', 'INT_XOR',
+    'INT_LEFT',
+    'INT_RIGHT', 'INT_SRIGHT', 'INT_EQUAL', 'INT_NOTEQUAL',
+    'INT_LESS', 'INT_LESSEQUAL', 'INT_SLESS', 'INT_SLESSEQUAL',
+    'INT_CARRY', 'INT_SCARRY', 'INT_SBORROW', 'INT_ZEXT',
+    'INT_SEXT', 'INT_NEGATE', 'INT_2COMP', 'BOOL_NEGATE',
+    'BOOL_AND', 'BOOL_OR', 'BOOL_XOR', 'PIECE', 'SUBPIECE',
+    'POPCOUNT', 'FLOAT_ADD', 'FLOAT_SUB', 'FLOAT_MULT',
+    'FLOAT_DIV', 'FLOAT_EQUAL', 'FLOAT_NOTEQUAL', 'FLOAT_LESS',
+    'FLOAT_LESSEQUAL', 'FLOAT_NAN', 'FLOAT_NEG', 'FLOAT_ABS',
+    'FLOAT_SQRT', 'FLOAT_CEIL', 'FLOAT_FLOOR', 'ROUND',
+    'FLOAT2FLOAT', 'INT2FLOAT', 'TRUNC'
+})
+
+
+def instruction_register_cache(ops, removed=frozenset()):
+    """Select whole, disjoint register varnodes in one linear p-code instruction.
+
+    Avoid all internal control flow and CALLOTHER (may observe the live R
+    array). Overlapping architectural views are never cached. The cache is
+    flushed at *each instruction boundary*, including chunk exit/fallthrough.
+    Return: selected varnodes -> (needs_input_load, needs_final_store).
+    """
+    if not ops or any(mn not in CACHE_SAFE_OPS
+                      for mn, _, _ in ops):
+        return {}
+    used = {}
+    for i, (_, out, inputs) in enumerate(ops):
+        if i in removed:
+            continue
+        # Inputs are consumed before the corresponding p-code output.
+        for v in inputs:
+            if v is not None and v[0] == 'r':
+                rec = used.setdefault(v, [0, False, False])
+                rec[0] += 1
+                if not rec[2]:
+                    rec[1] = True
+        if out is not None and out[0] == 'r':
+            rec = used.setdefault(out, [0, False, False])
+            rec[0] += 1
+            rec[2] = True
+    chosen = {}
+    for reg, (occurrences, needs_load, wrote) in used.items():
+        if not (1 <= reg[2] <= 16 and occurrences >= 2):
+            continue
+        if any(reg != other and
+               reg[1] < other[1] + other[2] and
+               other[1] < reg[1] + reg[2] for other in used):
+            continue
+        chosen[reg] = (needs_load, wrote)
+    return chosen
+
+
 class Gen:
     def __init__(self, userops):
         self.userops = userops
         self.unsupported = {}
         self.temp_offsets = None
+        self.reg_cache = {}
 
     def rd(self, v):
+        if v[0] == 'r' and v in self.reg_cache:
+            return self.reg_cache[v]
         sp, off, sz = v
         if sp == 'c':
             return f'(u128)0x{off & ((1 << (8 * min(sz, 8))) - 1):x}ULL'
@@ -118,6 +187,8 @@ class Gen:
         return f'rd({base},{sz})'
 
     def wr(self, v, expr):
+        if v[0] == 'r' and v in self.reg_cache:
+            return f'{self.reg_cache[v]}=mask({expr},{v[2]});'
         sp, off, sz = v
         unique = f'T+{self.temp_offsets[off]}' if sp == 'u' and self.temp_offsets is not None else f'U+0x{off:x}'
         base = {'r': f'R+0x{off:x}', 'u': unique, 'm': f'G(0x{off:x}u)'}[sp]
@@ -238,7 +309,8 @@ class Gen:
 def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
              local_temporaries: bool = True, separate_spaces: bool = True,
              eliminate_dead_flags: bool = True, eliminate_dead_temporaries: bool = False,
-             dead_temp_parts: frozenset[int] | None = None):
+             dead_temp_parts: frozenset[int] | None = None,
+             cache_hot_registers: bool = False):
     """Return ([part sources], main source, unsupported ops)."""
     g = Gen(userops)
     # Silent per-module fallback could mix local writers with another module's
@@ -287,21 +359,42 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
                 return f'goto L_{t:x};' if t in addrs else f'PC=0x{t:x}u; return;'
             out.append(f'L_{addr:x}:')
             g.temp_offsets = temporary_layout(ops) if local_temporaries else None
-            if g.temp_offsets is not None:
+            removed = {i for i in range(len(ops))
+                       if (idx, i) in dead_flags or (idx, i) in dead_temps}
+            cache = instruction_register_cache(ops, removed) if (
+                cache_hot_registers and separate_spaces and ident == 'codsp'
+                and any(lo <= addr <= hi for lo, hi in HOT_CODSP_REGISTER_CACHE_RANGES)
+            ) else {}
+            g.reg_cache = {reg: f'regcache_{reg[1]:x}_{reg[2]}' for reg in cache}
+            scoped = g.temp_offsets is not None or bool(cache)
+            if cache:
+                out.append(' {')
+                if g.temp_offsets is not None:
+                    out.append(f' uint8_t T[{max(1, len(g.temp_offsets))}];')
+            elif g.temp_offsets is not None:
+                # Preserve byte-for-byte output for unaffected instructions.
                 out.append(f' {{ uint8_t T[{max(1, len(g.temp_offsets))}];')
+            for reg, (load, _) in cache.items():
+                name = g.reg_cache[reg]
+                initializer = f'=rd(R+0x{reg[1]:x},{reg[2]})' if load else ''
+                out.append(f' u128 {name}{initializer};')
             for i, (mn, o, ins) in enumerate(ops):
                 jump.__defaults__[0][0] = i
                 if i in rel_targets:
                     out.append(f' L_{addr:x}_{i}:;')
                 # Keep every p-code index/label: relative branches use indices.
-                out.append(' ;' if (idx, i) in dead_flags or (idx, i) in dead_temps else
+                out.append(' ;' if i in removed else
                            ' ' + g.op(mn, o, ins, jump, None))
+            for reg, (_, wrote) in cache.items():
+                if wrote:
+                    out.append(f' wr(R+0x{reg[1]:x},{reg[2]},{g.reg_cache[reg]});')
+            g.reg_cache = {}
             if len(ops) in rel_targets:
                 out.append(f' L_{addr:x}_{len(ops)}:;')
             following = chunk[idx + 1][0] if idx + 1 < len(chunk) else None
             if following != nxt:
                 out.append(f' PC=0x{nxt:x}u; return;')
-            if g.temp_offsets is not None:
+            if scoped:
                 out.append(' }')
         out.append('dyn:')
         out.append(' switch (PC) {')
@@ -364,6 +457,9 @@ def main() -> int:
                     help='EXPERIMENT: eliminate proven-dead integer unique calculations, OFF by default')
     ap.add_argument('--dead-temp-parts', type=str,
                     help='optional comma-separated output part numbers to constrain DCE, e.g. 1,8')
+    ap.add_argument('--cache-hot-registers', action='store_true',
+                    help='EXPERIMENT: cache nonoverlapping architectural registers inside '
+                         'straight-line CoDSP geometry instructions only, OFF by default')
     ap.add_argument('--function-map-out', type=Path,
                     help='optional JSON: original Ghidra function entries to generated chunks; '
                          'store under ignored recomp_out/')
@@ -385,6 +481,13 @@ def main() -> int:
                          for k in range(args.parts))
         if args.function_map_out.resolve() in protected:
             ap.error('--function-map-out must not overwrite input or generated C files')
+    if args.cache_hot_registers:
+        # This opt-in only has an audited equivalence scope for CoDSP.exe 1.5.
+        # Unknown recompilation inputs must never silently receive it.
+        expected_pcode = '36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e'
+        if (args.pe.name.casefold() != 'codsp.exe' or
+                hashlib.sha256(args.pcode.read_bytes()).hexdigest() != expected_pcode):
+            ap.error('--cache-hot-registers requires verified CoDSP.exe 1.5 p-code')
     insns, userops, funcs = parse(args.pcode)
     limits = {'r': 0x2000, 'u': 0x400000}  # must match R[] / U[] in runtime/guest.c
     for _, _, ops in insns:
@@ -397,7 +500,7 @@ def main() -> int:
     bodies, main_src, unsupported = generate(insns, userops, pe, args.pe.name, ident, args.parts,
                                              not args.global_temporaries, not args.shared_spaces,
                                              not args.keep_dead_flags, args.prune_dead_temporaries,
-                                             dead_temp_parts)
+                                             dead_temp_parts, args.cache_hot_registers)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]
