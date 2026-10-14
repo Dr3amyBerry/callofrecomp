@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Build Linux ANGLE preparado para ejecución manual, APK aún ausente (0/5)
+
+- [x] Añadidos script Linux fijado al commit oficial ANGLE `43140711d13063716fd32a15de829885d0bce469`, `gclient sync` con dependencias Android, build `x64` con Vulkan, SHA-256 y manifiesto de procedencia.
+- [x] Nuevo workflow GitHub Actions **solo manual** (`workflow_dispatch`), con permisos `contents:read`, sin activación al publicar commits; los runners gratuitos pueden carecer de recursos. Se añadió comprobador offline `verify_angle_apk.py` que exige identidad de paquete, firma Android, archivos ELF x86_64 y digest cuando se facilita.
+- [ ] **No se ejecutó todavía la compilación Linux**: no hay `AngleLibraries.apk` real, no se instalaron APK/driver, no hubo ensayo ANGLE→Vulkan ni comparación FPS. [Procedimiento reproducible](docs/ANGLE_BUILD_PIPELINE_2026-10-14.md). Prioridad oficial TECNO CPU/GPU intacta, **0/5**.
+
 ### 2026-10-14 — ANGLE oficial descargado; GLES2→Vulkan investigado sin modificar WSA (0/5)
 
 - [x] Clonado **ANGLE oficial** desde Chromium Git: commit fijo **43140711d13063716fd32a15de829885d0bce469**, árbol Git **06315a7275a6cc870b55e2e32c6eab165604357d**. Los dos remotos (Chromium y espejo Google/ANGLE GitHub) coinciden; `git fsck --full --no-reflogs` PASS, checkout limpio. Ruta `.local/profiles/angle-research/angle-src` privada/ignorada.

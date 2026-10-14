@@ -65,6 +65,8 @@ Herramienta reproducible: tools/recomp/diagnostics/angle_readiness.py. No modifi
 
 La guía oficial fija Android 10+ para el paquete ANGLE de prueba, exige apps debuggable o root, y pide iniciar la aplicación mediante una Activity Java; esos requisitos del proyecto se cumplen. Pero **los binarios ANGLE faltan**.
 
+**Actualización posterior:** se preparó un script reproducible de compilación Linux, un workflow manual y un verificador offline de APK/ABI/firma. Son herramientas preparatorias, no un APK compilado ni un cambio de rendimiento. Ver [proceso y bloqueos](ANGLE_BUILD_PIPELINE_2026-10-14.md).
+
 ## 4. Bloqueo para compilar y plan de validación
 
 La versión de doc/DevSetupAndroid.md incluida en el commit fijado indica expresamente que **compilar ANGLE para Android requiere Linux**. El nodo disponible es Windows y wsl.exe NO tiene una distribución Linux instalada. La guía también requiere depot_tools, gclient, GN, Ninja y descargar dependencias de Chromium. No se instaló una distro/IDE sin autorización, ni se simuló que ANGLE se hubiera compilado correctamente.

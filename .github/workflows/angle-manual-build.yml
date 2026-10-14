@@ -1,0 +1,44 @@
+# Explicit, manual experiment only. NOT triggered by push/PR.
+# Builds upstream ANGLE, not CallofRecomp. No privileged system/phone access.
+name: ANGLE Android x86_64 manual experiment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: angle-android-manual
+  cancel-in-progress: false
+
+jobs:
+  build-angle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - name: Checkout experiment tools
+        uses: actions/checkout@v4
+      - name: Check runner resources
+        shell: bash
+        run: |
+          df -h
+          free -h
+          echo "ANGLE is a large Chromium-source build; standard runner disk may be insufficient."
+      - name: Build official pinned ANGLE sources for Android x86_64
+        shell: bash
+        env:
+          ANGLE_INSTALL_BUILD_DEPS: "1"
+        run: |
+          bash tools/recomp/diagnostics/build_angle_android_linux.sh "${RUNNER_TEMP}/angle-android-work"
+      - name: Archive APK with independent source identity manifest
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: angle-x86_64-43140711-experimental
+          path: |
+            ${{ runner.temp }}/angle-android-work/angle/out/Android/apks/AngleLibraries.apk
+            ${{ runner.temp }}/angle-android-work/angle/out/Android/apks/AngleLibraries.apk.sha256
+            ${{ runner.temp }}/angle-android-work/angle/out/Android/apks/ANGLE_PROVENANCE.txt
+          retention-days: 7
+          if-no-files-found: error
