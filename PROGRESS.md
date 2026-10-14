@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — WSA: entrada optativa a GameActivity para prueba ANGLE (0/5)
+
+- [x] `angle_wsa_launcher.py`: localizador puro del botón Android `Jugar` (paquete, clase, estado clicable/habilitado y límites) y comprobación estricta de `GameActivity` reanudada. Sin coordenadas fijas ni clics sobre paquetes ajenos.
+- [x] `angle_wsa_trial.py --enter-game` incorpora el paso **explícitamente optativo** de accesibilidad `uiautomator`, eliminación del XML temporal y verificación de Activity; conserva el rollback y la prohibición de medir FPS sin escena real. Pruebas sintéticas de errores y aceptación incorporadas.
+- [ ] Sin ejecución real con ANGLE instalado: el [build manual #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796) seguía activo en la última consulta. Contador físico TECNO **0/5**.
+
 ### 2026-10-14 — Captura Logcat ANGLE ligada a proceso y tiempo real (0/5)
 
 - [x] El ensayo WSA ahora toma la hora **del dispositivo** antes del lanzamiento y analiza `adb logcat -v epoch`; rechaza mensajes anteriores, de otro PID o sin formato reconocible. Solo acepta evidencia ANGLE/Vulkan cuando tanto la selección de paquete como el renderer Vulkan proceden del **mismo proceso de CallofRecomp en esa ejecución**.

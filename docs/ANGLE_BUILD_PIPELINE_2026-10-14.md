@@ -43,6 +43,18 @@ python tools/recomp/diagnostics/angle_wsa_trial.py --execute --apk RUTA/AngleLib
 
 El ensayo rechaza otros dispositivos, ANGLE previamente instalado, juego activo, apps no depurables y configuraciones preexistentes. Solo selecciona `org.callofrecomp`, intenta abrir su LauncherActivity, obtiene un extracto diagnóstico de Logcat y, **también ante errores**, intenta detener el proceso, restaurar las cuatro preferencias y desinstalar el paquete temporal. Verifica el rollback y produce un error si falla. No modifica binarios, datos comerciales ni guardados de CallofRecomp. Un arranque del launcher y mensajes ANGLE no prueban visuales correctos ni FPS del gameplay: la comparación A/B/A permanece pendiente. Los procesos abruptamente terminados o pérdida del enlace ADB podrían interrumpir la restauración: auditar settings y paquete antes de repetir.
 
+## Entrada al juego real sin coordenadas fijas (opcional)
+
+La variante `--enter-game` del ensayo WSA automatiza **únicamente** el clic en el botón original *Jugar*, sin tocar archivos del usuario. Obtiene una jerarquía de accesibilidad Android, exige exactamente un botón `android.widget.Button` de `org.callofrecomp` con texto `Jugar`, estado habilitado, clicable y límites válidos; si falta, está deshabilitado o hay ambigüedad, **no toca ninguna coordenada**. Tras pulsarlo comprueba que `GameActivity` sea la actividad reanudada. El XML temporal se borra en el mismo ensayo, también cuando falla.
+
+La opción es **OFF por defecto** y requiere todos los controles habituales de APK/firma/ABI/checksum, WSA exclusivo y `--execute`. Ejemplo una vez que se disponga de una APK verificada:
+
+```text
+python tools/recomp/diagnostics/angle_wsa_trial.py --execute --enter-game --apk RUTA/AngleLibraries.apk --aapt RUTA/aapt --apksigner RUTA/apksigner --expected-sha256 SHA256_DEL_ARTIFACTO --seconds 60 --json-out .local/profiles/angle-research/angle-game-trial.json
+```
+
+**Estado:** implementado y probado con XML sintético; NO se ha usado con una APK ANGLE en WSA. La entrada automatizada solo confirma una Activity, no garantiza llegar al entrenamiento ni medir FPS. Para rendimiento sigue siendo necesario entrar en la misma escena reproducible de Camp Toccoa y medir A/B/A del juego. Las pruebas de regresión rechazan botones duplicados, de terceros o no clicables, coordenadas incorrectas y Activity no reanudada.
+
 ## Condiciones obligatorias antes de tocar WSA
 
 1. Verificar el resultado completo del workflow, commit upstream pinneado y la identidad de la APK; inspeccionar el manifiesto para `org.chromium.angle`, las bibliotecas `lib/x86_64/` EGL+GLESv2 y la firma Android. **Un SHA local únicamente demuestra integridad de archivo, no que Google haya firmado el paquete**.

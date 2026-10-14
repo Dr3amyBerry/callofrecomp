@@ -17,10 +17,12 @@ import time
 from pathlib import Path
 
 from verify_angle_apk import inspect
+from angle_wsa_launcher import UILocatorError, game_activity_resumed, play_button_center
 
 GAME = "org.callofrecomp"
 ANGLE = "org.chromium.angle"
 SERIAL = "127.0.0.1:58526"
+UI_DUMP = "/sdcard/Download/callofrecomp-angle-wsa-ui.xml"
 SETTINGS = (
     "angle_debug_package",
     "angle_gl_driver_selection_pkgs",
@@ -164,8 +166,24 @@ def logcat_verdict(log: str, not_before_epoch: int, game_pid: str | None) -> dic
     }
 
 
+def launch_game_via_accessibility(serial: str) -> dict:
+    """Opt-in: only click the exact, enabled CallofRecomp 'Jugar' button."""
+    # A local UI dump is temporary and always cleaned up; never type into UI.
+    try:
+        adb(serial, "shell", "uiautomator", "dump", UI_DUMP, timeout=35)
+        hierarchy = adb(serial, "shell", "cat", UI_DUMP, timeout=20)
+        x, y = play_button_center(hierarchy)
+    finally:
+        adb(serial, "shell", "rm", "-f", UI_DUMP, timeout=20)
+    adb(serial, "shell", "input", "tap", str(x), str(y), timeout=20)
+    time.sleep(4)
+    current = adb(serial, "shell", "dumpsys", "activity", "activities", timeout=25)
+    resumed = game_activity_resumed(current)
+    return {"play_tapped": True, "game_activity_resumed": resumed}
+
+
 def run_trial(serial: str, apk: Path, sha256: str, aapt: str, apksigner: str,
-              seconds: int) -> dict:
+              seconds: int, enter_game: bool = False) -> dict:
     before = snapshot(serial)
     blockers = safe_for_trial(before)
     if blockers:
@@ -197,6 +215,11 @@ def run_trial(serial: str, apk: Path, sha256: str, aapt: str, apksigner: str,
         started = True
         adb(serial, "shell", "am", "start", "-n", GAME + "/.LauncherActivity")
         report["trial_started"] = True
+        if enter_game:
+            time.sleep(3)
+            report["game_launch"] = launch_game_via_accessibility(serial)
+            if not report["game_launch"]["game_activity_resumed"]:
+                raise TrialError("Jugar was clicked but GameActivity was not the foreground activity")
         time.sleep(seconds)
         game_pid = adb(serial, "shell", "pidof", GAME, allow_missing=True).strip()
         if not re.fullmatch(r"\d+", game_pid):
@@ -243,6 +266,8 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--serial", default=SERIAL)
     p.add_argument("--execute", action="store_true", help="Install and temporarily opt into ANGLE")
+    p.add_argument("--enter-game", action="store_true",
+                   help="Opt-in: find the exact enabled Jugar button via uiautomator, tap it and check GameActivity")
     p.add_argument("--apk", type=Path)
     p.add_argument("--expected-sha256")
     p.add_argument("--aapt", default=shutil.which("aapt"))
@@ -252,6 +277,8 @@ def main() -> int:
     args = p.parse_args()
     if args.seconds < 10 or args.seconds > 180:
         p.error("--seconds must be between 10 and 180")
+    if args.enter_game and not args.execute:
+        p.error("--enter-game requires --execute")
     if args.serial != SERIAL:
         p.error(f"Only the audited WSA target {SERIAL} is supported")
     if args.execute and (not args.apk or not args.aapt or not args.apksigner or
@@ -261,7 +288,7 @@ def main() -> int:
     try:
         if args.execute:
             result = run_trial(args.serial, args.apk, args.expected_sha256,
-                               args.aapt, args.apksigner, args.seconds)
+                               args.aapt, args.apksigner, args.seconds, args.enter_game)
             exit_code = 0 if result["configuration_restored"] else 3
         else:
             before = snapshot(args.serial)

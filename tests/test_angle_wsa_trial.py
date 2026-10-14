@@ -122,6 +122,38 @@ class AngleWSATrialTests(unittest.TestCase):
         self.assertFalse(outcome["gameplay_fps_measured"])
         self.assertTrue(cleanup.called)
 
+    def test_exact_play_button_clicked_then_gameactivity_checked(self):
+        xml = ('<hierarchy><node text="Jugar" package="org.callofrecomp" '
+               'class="android.widget.Button" enabled="true" clickable="true" '
+               'bounds="[25,100][125,160]"/></hierarchy>')
+        def fake_adb(serial, *args, **kwargs):
+            if args[:3] == ("shell", "cat", trial.UI_DUMP):
+                return xml
+            if args[:3] == ("shell", "dumpsys", "activity"):
+                return "topResumedActivity=ActivityRecord{p org.callofrecomp/.GameActivity t3}"
+            return ""
+        with patch.object(trial, "adb", side_effect=fake_adb) as cmd, patch.object(trial.time, "sleep"):
+            outcome = trial.launch_game_via_accessibility(trial.SERIAL)
+        self.assertTrue(outcome["game_activity_resumed"])
+        commands = [c.args for c in cmd.call_args_list]
+        self.assertIn((trial.SERIAL, "shell", "input", "tap", "75", "130"), commands)
+        self.assertIn((trial.SERIAL, "shell", "rm", "-f", trial.UI_DUMP), commands)
+
+    def test_bad_or_disabled_ui_never_taps(self):
+        xml = ('<hierarchy><node text="Jugar" package="org.callofrecomp" '
+               'class="android.widget.Button" enabled="false" clickable="true" '
+               'bounds="[25,100][125,160]"/></hierarchy>')
+        def fake_adb(serial, *args, **kwargs):
+            if args[:3] == ("shell", "cat", trial.UI_DUMP):
+                return xml
+            return ""
+        with patch.object(trial, "adb", side_effect=fake_adb) as cmd:
+            with self.assertRaises(trial.UILocatorError):
+                trial.launch_game_via_accessibility(trial.SERIAL)
+        commands = [c.args for c in cmd.call_args_list]
+        self.assertFalse(any(c[:3] == (trial.SERIAL, "shell", "input") for c in commands))
+        self.assertIn((trial.SERIAL, "shell", "rm", "-f", trial.UI_DUMP), commands)
+
     def test_blocks_before_install_if_running(self):
         x = baseline()
         x["game_running"] = True
