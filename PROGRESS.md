@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Indicadores verdes dentro de la brújula panorámica
+
+- [x] Hallado el problema real: el cgamex86.dll original calcula los puntos verdes, tanques y objetivos con un radio propio de **43,75 unidades**; la corrección anterior solo había estrechado el dibujo del círculo.
+- [x] Verificados con P-code y decompilación privada los puntos de llamada para aliados, tanques, objetivos principales y pulso de objetivos, sin publicar código o datos comerciales.
+- [x] Añadida una corrección de geometría exclusiva para esos llamadores: ancho horizontal proporcional a la resolución real y límite radial teniendo en cuenta el tamaño del icono. Mantiene ángulo, zoom, distancia de los puntos interiores, cámara 3D y FOV real.
+- [x] Protegida para activarse únicamente en Android panorámico cuando está presente el HUD corregido privado; en 4:3, ante módulos ausentes o parámetros no válidos, conserva los dibujos originales.
+- [x] Prueba real en TECNO CK6n 1280x576: el motor confirmó que corrigió los indicadores de aliados y el pulso del objetivo; las capturas del entrenamiento muestran los puntos verdes dentro del círculo, sin afectar la visión 3D. Las rutas de tanques y estrella principal están implementadas y probadas matemáticamente, pero falta verlas en su misión.
+- [x] Regresión: **94 Python (4 omitidas), 27/27 CTest**, APK ARM64 firmada con la mejora anterior de x87 todavía experimental. En 30 ventanas de juego, mediana **25,75 FPS / 37,525 ms CPU/frame**, compatible con el resultado previo ~25,65 FPS sin demostrar un incremento adicional.
+- [ ] **60 FPS sostenidos en la aparición de training sigue PENDIENTE**; no confundir esta reparación visual con una mejora de rendimiento.
+
 ### 2026-10-14 — Panorámico real conservado y HUD 2D corregido
 
 - [x] Verificado mediante el registro del TECNO que el motor continúa usando proporción **2,22:1** y FOV horizontal **108,87°**: no se estira artificialmente una imagen 4:3.

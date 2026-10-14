@@ -64,6 +64,21 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
         int swap = display_width; display_width = display_height; display_height = swap;
     }
     widescreen_config display = widescreen_for_display(display_width, display_height);
+    // GameActivity has already prepared the HUD overlay. Match the same
+    // viewport; when the HUD was unrecognized or the aspect is 4:3, do
+    // NOT modify any guest-drawn friend/tank/objective marker geometry.
+    char hud_overlay[4096];
+    int hud_path_length = snprintf(hud_overlay, sizeof hud_overlay,
+        "%s/main/zzzz_codrecomp_hud_fix.pk3", argv[2]);
+    int hud_overlay_ready = hud_path_length > 0 &&
+        (size_t)hud_path_length < sizeof hud_overlay &&
+        access(hud_overlay, R_OK) == 0;
+    extern void guest_configure_compass_markers(int width, int height, int overlay_ready);
+    guest_configure_compass_markers(display.width, display.height, hud_overlay_ready);
+    printf("codrecomp: compass marker transform %s (%dx%d, overlay=%d)\n",
+        hud_overlay_ready && display.aspect > (4.0 / 3.0) + 0.0001
+            ? "enabled" : "inactive",
+        display.width, display.height, hud_overlay_ready);
     char width[16], height[16], aspect[32], fov[32];
     snprintf(width, sizeof width, "%d", display.width);
     snprintf(height, sizeof height, "%d", display.height);

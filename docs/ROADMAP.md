@@ -15,6 +15,21 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## Widescreen dynamic compass pointers (corrected in training)
+
+- [x] Isolated the original cgame dynamic friend, tank and objective marker
+  callbacks rather than changing the 3D projection or other HUD elements.
+- [x] Applied aspect-correct marker sizes and radial bounds so complete
+  icons remain inside the circular compass without changing direction.
+- [x] TECNO training screenshot plus runtime logs verified green friend
+  and objective-pulse correction; 94 Python tests and 27/27 CTest passed.
+- [ ] Visual coverage for tank and main objective-star markers remains
+  pending in their corresponding missions.
+- [ ] Target of **60 sustained FPS at training spawn** still pending;
+  current visual-fix benchmark ~25.75 FPS is not a new proven speedup.
+
+See the HUD widescreen report for geometry and verification evidence.
+
 ## Visual aspect fix before further performance experiments (completed)
 
 - [x] Retain real 3D widescreen camera: 1280×576 EGL aspect 2.22222 and expanded ~108.87° horizontal FOV, **not** a stretched 4:3 projection.

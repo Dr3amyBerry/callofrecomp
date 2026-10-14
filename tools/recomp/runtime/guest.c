@@ -6,6 +6,9 @@
 #include "dispatch_index.h"
 #include "pe_loader_bounds.h"
 #include "commit_runs.h"
+#ifdef __ANDROID__
+#include "compass_markers.h"
+#endif
 #if defined(CODRECOMP_HOT_X87_FASTPATH)
 #include "hot_x87_transform.h"
 #endif
@@ -614,6 +617,52 @@ int module_load(const recomp_module *m, const char *path) {
 
 // ---------------------------------------------------------------- execution
 
+#ifdef __ANDROID__
+// Enabled only when Android has generated its *matching* private HUD overlay.
+// With a 4:3 or unrecognized HUD, keep the original marker positions.
+static float compass_marker_horizontal;
+static unsigned compass_marker_log_flags;
+
+void guest_configure_compass_markers(int width, int height, int overlay_ready) {
+    compass_marker_horizontal = compass_marker_factor(width, height, overlay_ready);
+    compass_marker_log_flags = 0;
+}
+
+static void guest_project_compass_marker(uint32_t esp, unsigned arg_start,
+                                         unsigned log_bit) {
+    // One stack frame: return address, optionally syscall opcode, then
+    // float x,y,w,h. Called only from original CoD 1.5 pointer functions.
+    if (esp > UINT32_MAX - arg_start - 12) return;
+    const uint32_t xa = esp + arg_start, wa = xa + 8;
+    if (!guest_committed(xa) || !guest_committed(wa) ||
+        !guest_committed(0x3012a948u)) return;
+    compass_marker_rect mark;
+    uint32_t old_x = mem32(xa), old_y = mem32(xa + 4);
+    uint32_t old_w = mem32(wa), old_h = mem32(wa + 4);
+    uint32_t scale_bits = mem32(0x3012a948u);
+    float zoom;
+    memcpy(&mark.x, &old_x, sizeof old_x);
+    memcpy(&mark.y, &old_y, sizeof old_y);
+    memcpy(&mark.width, &old_w, sizeof old_w);
+    memcpy(&mark.height, &old_h, sizeof old_h);
+    memcpy(&zoom, &scale_bits, sizeof zoom);
+    if (!compass_marker_project(&mark, compass_marker_horizontal, zoom))
+        return;
+    uint32_t new_x, new_y, new_w;
+    memcpy(&new_x, &mark.x, sizeof new_x);
+    memcpy(&new_y, &mark.y, sizeof new_y);
+    memcpy(&new_w, &mark.width, sizeof new_w);
+    wr(G(xa), 4, new_x);
+    wr(G(xa + 4), 4, new_y);
+    wr(G(wa), 4, new_w);
+    if (!(compass_marker_log_flags & log_bit)) {
+        compass_marker_log_flags |= log_bit;
+        fprintf(stdout, "codrecomp: compass marker projected call=0x%08x factor=%.5f zoom=%.3f\n",
+                mem32(esp), compass_marker_horizontal, zoom);
+    }
+}
+#endif
+
 void guest_run(void) {
     while (PC != GUEST_EXIT_PC) {
         if (trace_fault) {
@@ -625,6 +674,15 @@ void guest_run(void) {
         if (PC >= THUNK_BASE && PC < THUNK_BASE + 16 * THUNK_MAX) {
             thunk_slot *t = &thunks[(PC - THUNK_BASE) / 16];
             uint32_t esp = reg32(REG_ESP), ret = mem32(esp);
+#ifdef __ANDROID__
+            // Objective-star sprite uses R_DRAWSTRETCHPIC syscall #0x4b
+            // directly. Identify the *exact* CoDSP 1.5 cgame caller
+            // before touching its ephemeral stack floats.
+            if (compass_marker_horizontal > 0.0f &&
+                ret == 0x3001cedau && mem32(esp + 4) == 0x4bu &&
+                module_loaded_at(0x30000000u))
+                guest_project_compass_marker(esp, 8, 4u);
+#endif
             uint64_t sample = profile_begin();
             set_reg32(REG_EAX, t->fn(esp));
             profile_end(4096 + (unsigned)(t - thunks), sample);
@@ -638,6 +696,23 @@ void guest_run(void) {
         if (PC == 0x005061b0u && module_loaded_at(0x00400000u) &&
             codsp_hot_transform_5061b0(R, MEM, &PC))
             continue;
+#endif
+#ifdef __ANDROID__
+        // CoD 1.5 cgame draws green allies and tank indicators by calling
+        // the original rotated-sprite helper at 0x30012260, and a secondary
+        // objective pulse via 0x30012200. The saved call-return addresses
+        // below are exact original instructions, not function-wide guesses.
+        if (compass_marker_horizontal > 0.0f &&
+            (PC == 0x30012260u || PC == 0x30012200u) &&
+            module_loaded_at(0x30000000u)) {
+            uint32_t esp = reg32(REG_ESP), caller = mem32(esp);
+            if (PC == 0x30012260u && caller == 0x3000d971u)
+                guest_project_compass_marker(esp, 4, 1u); // allies
+            else if (PC == 0x30012260u && caller == 0x3000df4fu)
+                guest_project_compass_marker(esp, 4, 2u); // tanks
+            else if (PC == 0x30012200u && caller == 0x3001d0b7u)
+                guest_project_compass_marker(esp, 4, 8u); // objective pulse
+        }
 #endif
         int found = dispatch_index_find(&code_index, all_chunks, all_chunk_count, PC);
         recomp_miss = 0;

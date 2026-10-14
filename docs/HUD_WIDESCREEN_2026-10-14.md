@@ -103,3 +103,58 @@ custom-aspect camera remain unchanged.
 **Outstanding separate performance goal:** 60 sustained FPS at the
 initial spawn on the TECNO CK6n; the previously measured fast-path
 improvement (21.45 → 25.65 FPS, +19.58%) is retained.
+
+## Follow-up: dynamic friend, tank and objective markers (2026-10-14)
+
+The prior aspect correction restored the circular compass artwork, but
+green ally indicators could still extend beyond its edge. The original
+cgamex86.dll version 1.5 computes pointer positions in native guest code
+using a separate **43.75 virtual-unit radius**, not just ui/hud.menu.
+
+Private P-code and Ghidra analysis identified the specific original callers
+for friend pointers, tank markers, objective markers and objective pulses.
+No proprietary guest modules, source dumps, original PK3 assets, P-code
+records or address sidecars are committed.
+
+**New implementation:** tools/recomp/runtime/compass_markers.h provides
+pure layout math and strict argument validation. The Android-only path in
+tools/recomp/runtime/guest.c adjusts temporary render-call arguments only
+for the verified original cgame pointer calls. android/native_host.c enables
+this projection only when the matching generated HUD overlay exists and
+the EGL surface is wider than 4:3.
+
+The original virtual compass is 160x160. At 1280x576, its effective
+horizontal factor is (4/3) / (1280/576) = **0.60**. Marker width and X
+distance to the circle center are scaled consistently, retaining the
+heading. A pointer placed exactly at the old 43.75-radius rim would have
+part of its icon outside the circle. For markers that would extend
+beyond the edge, the maximum center radius is bounded to
+43.75 * HUD_zoom - marker_height/2 - 1.5. Inner markers keep their
+original distance from the center and all retain their angular direction.
+
+Only the compass's selected 2D sprite geometry is modified: the real
+3D widescreen FOV, NPC and objective world coordinates, rotation, game
+simulation, menus, health bars and original game assets remain intact.
+In 4:3 or without the private overlay, the native hook does nothing.
+Malformed/nonfinite marker geometry is rejected.
+
+**Evidence, not assumptions:**
+
+- TECNO CK6n physical Android ARM64 device: 1280x576 panorama with about
+  108.87 degrees of horizontal FOV preserved.
+- Native log shows marker correction actually activated for green friends
+  and objective pulse in the saved training scene. Screenshots confirmed
+  green markers remained inside the circular rim after radial limiting.
+- Dynamic tank and main objective-star callsite support was added using
+  source-verified addresses and synthetic geometry tests, but those
+  specific mission contexts have **not** been visually exercised.
+- **94 Python tests passed (4 skipped), 27/27 host CTest passed**, including
+  the new compass_markers_smoke. Signed ARM64 APK installed successfully;
+  earlier experimental x87 performance optimization was kept.
+- 30 stable gameplay summary windows on the corrected build: median
+  **25.75 FPS**, median **37.525 ms CPU/frame**. Earlier A/B/A x87 build
+  yielded ~25.65 FPS. This does not establish a new FPS improvement;
+  the **60 FPS sustained training-spawn target remains open**.
+
+The previously installed APK was backed up privately before the tests.
+No commercial resources or save games were published or replaced.
