@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Perfil residual tras fast path x87 en TECNO
+
+- [x] Medido con Simpleperf el spawn de training **después** de habilitar la APK optimizada: 6.358 muestras en 17,95 s, cero perdidas, 5.476 muestras en libmain.so; 3.784 resueltas a cuerpos de funciones Ghidra únicos.
+- [x] Nuevos costes localizados: CoDSP.exe 0x0041B8F0 (247 muestras; geometría/colisiones), 0x0047BD40 (181), 0x004196F0 (158), 0x004D8280 (155), 0x0042B0A0 (152; copia de memoria), 0x004D94C0 (150), 0x004D8420 (143), 0x004D6BC0 (139). No son tiempos exclusivos ni una ganancia nueva de FPS.
+- [ ] Siguiente trabajo: estudiar **familia geométrica y de visibilidad** y validar rutas alternativas bit a bit antes de entrar al juego; FPS A/B real y meta de 60 FPS aún pendientes. Perfiles y código comercial permanecen privados.
+
 ### 2026-10-14 — Objetivo de rendimiento: 60 FPS sostenidos en zona inicial (PENDIENTE)
 
 - **Criterio de cierre del usuario:** NO dar el proyecto de rendimiento por terminado hasta alcanzar **60 FPS sostenidos donde aparece el jugador al iniciar training** en el TECNO CK6n ARM64, calidad Equilibrado y misma partida/vista. Esto se refiere a la zona de aparición, no al menú ni a una zona diferente.

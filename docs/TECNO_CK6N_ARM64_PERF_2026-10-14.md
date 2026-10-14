@@ -158,6 +158,50 @@ Equilibrado y las partidas sin modificar. No publicar binarios del juego.
 **Verificaciones:** 93 pruebas Python correctas (4 omitidas), 26/26 CTest,
 compilación NDK ARM64 y firma APK V2/V3 correctas.
 
+## Nuevo perfil CPU tras aplicar la optimización (TECNO, aún por resolver)
+
+Se volvió a medir el **mismo punto de aparición** con la APK x87 ya
+optimizada. Simpleperf, captura CPU en el teléfono de 17,95 segundos,
+registró **6.358 muestras, cero pérdidas**, de las que 5.476
+correspondían a libmain.so. No se utilizó este registro instrumentado
+para comparar FPS A/B.
+
+Se guardaron fuera de Git los archivos binarios de perfil, PCs ELF,
+mapas Ghidra v2 y la biblioteca ARM64 **sin strip exacta de la APK
+experimental**. El resolutor offline asoció 4.349 muestras a
+etiquetas x86 y 3.784 a un cuerpo Ghidra único; 1.127 no tenían
+fuente C resoluble. Son atribuciones estadísticas, no tiempos
+exclusivos ni validación independiente de la semántica.
+
+| Función original CoDSP 1.5 | Muestras | Hipótesis de trabajo según decompilación privada |
+| --- | ---: | --- |
+| 0x0041B8F0 | 247 | Geometría y colisiones |
+| 0x0047BD40 | 181 | Recorridos de estructuras y cálculos de estado |
+| 0x004196F0 | 158 | Operaciones geométricas |
+| 0x004D8280 | 155 | Pruebas de visibilidad |
+| 0x0042B0A0 | 152 | Copia de memoria; preservar flags, aliasing y direcciones |
+| 0x004D94C0 | 150 | Pruebas de visibilidad |
+| 0x004D8420 | 143 | Pruebas de visibilidad |
+| 0x004D6BC0 | 139 | Pruebas de visibilidad |
+
+**Conclusión técnica:** el primer fast path ya redujo el mayor coste
+original, pero ahora los costes están repartidos. La familia de
+visibilidad 0x004Dxxxx concentra varios candidatos y puede aportar
+más que seguir afinando un cálculo matemático ya optimizado.
+No reemplazar funciones arbitrariamente: comparar primero estado
+de registros, RAM, flags, casos límite y aliasing contra p-code,
+y después juegos y FPS en el TECNO. Tampoco activar por defecto
+la opción actual antes de verificar la semántica x86 original.
+
+Archivo privado para analizar esta sesión:
+.local/profiles/tecno_optimized_training_cpu.perf.data,
+y reporte privado .local/profiles/tecno_optimized_guest_hot_functions.json.
+No publicar datos privados ni originales comerciales.
+
+**La meta de 60 FPS en el punto de aparición permanece abierta**:
+el resultado comparativo demostrado sigue siendo 25,65 FPS frente
+a 21,45 FPS (+19,58 %) en la misma vista.
+
 ## Cómo repetir y continuar
 
 La herramienta pública de comparación sin conexión es
