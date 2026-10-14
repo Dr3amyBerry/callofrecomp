@@ -4,17 +4,24 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## ANGLE Vulkan en juego real WSA, cierre de compatibilidad inicial (2026-10-14)
+
+- [x] GitHub Actions Linux compiló el APK experimental x86_64 desde fuente oficial pinneada; SHA, ABI, EGL/GLES, paquete y firma Android verificados. Compilación real en **34m50s**.
+- [x] En WSA, `GameActivity` de CallofRecomp cargó `org.chromium.angle` y reportó `Renderer (Vulkan 1.3.0 AMD Radeon)` en el **mismo PID**, durante la ventana registrada; el menú de Call of Duty se renderizó visiblemente y se cotejó con GL4ES nativo.
+- [x] Tres ensayos aislados con rollback final sin errores. Fallos del detector (`JUGAR` allCaps y `ANGLE debug package enabled`) corregidos, nuevas pruebas de regresión incorporadas. Referencia A1 y settings restaurados.
+- [ ] Siguiente: equivalencia **3D en Camp Toccoa**, captura reproducible y FPS A/B/A de CallofRecomp, no de menús ni prototipos. Solo luego contemplar soporte ARM64/Mali, sin cambiar GL4ES estable. **0/5**. [Informe real](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md).
+
 ## ANGLE: entrada optativa y verificable al juego (2026-10-14)
 
 - [x] `angle_wsa_launcher.py` inspecciona accesibilidad y reconoce exactamente el botón habilitado `Jugar` de la APK de CallofRecomp; rechaza múltiples coincidencias, coordenadas inválidas y apps ajenas.
 - [x] `--enter-game` solo se permite junto a `--execute`, tras la autenticación offline de la APK ANGLE; se confirma `GameActivity` reanudada o se considera error y se inicia rollback.
-- [ ] ANGLE en GameActivity **todavía no ejecutado**, sin APK verificada; validar WSA de verdad y después escena de entrenamiento A/B/A, sin extrapolar a TECNO. **0/5**.
+- [x] ANGLE sí fue ejecutado y verificado en GameActivity **en WSA**; pendientes gráficos 3D/FPS A/B/A. [Informe](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md). **0/5**.
 
 ## ANGLE: diagnóstico Logcat verificable por PID/época (2026-10-14)
 
 - [x] Logs WSA reales en formato `-v epoch` contrastados: se acotan por hora Android y PID del proceso CallofRecomp; deben mostrar selección de paquete y Vulkan en esa misma ejecución.
 - [x] Pruebas contra falsos positivos de Logcat viejo, PID distinto y texto sin formato. `LauncherActivity` requiere interacción en **Jugar** para crear el contexto GLES del juego, no se reportan FPS de pantalla inicial.
-- [ ] Comprobar con APK ANGLE auténtica cuando termine el workflow; no se ha ejecutado la carga de driver experimental. **0/5**.
+- [x] Verificado con APK ANGLE compilada desde upstream, selección real por paquete, Logcat Vulkan por PID/tiempo y rollback exitoso. [Informe](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md). **0/5**.
 
 ## ANGLE: ensayo reversible por aplicación WSA (2026-10-14)
 

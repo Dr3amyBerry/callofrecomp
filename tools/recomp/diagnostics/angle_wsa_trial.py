@@ -148,7 +148,7 @@ def logcat_verdict(log: str, not_before_epoch: int, game_pid: str | None) -> dic
         tag = match["tag"].strip()
         message = match["message"]
         if tag == "GraphicsEnvironment" and re.search(
-                r"ANGLE package enabled:\s*org\.chromium\.angle\b", message):
+                r"^ANGLE (?:debug )?package enabled:\s*org\.chromium\.angle\b", message, re.I):
             selected = True
             evidence.setdefault(pid, set()).add("package")
         if tag == "ANGLE" and re.search(
@@ -234,10 +234,16 @@ def run_trial(serial: str, apk: Path, sha256: str, aapt: str, apksigner: str,
             and ("ANGLE" in line or "GraphicsEnvironment" in line)
         ][-30:]
         report["device_log_cutoff_epoch"] = cutoff
-        report["launcher_only_caveat"] = (
-            "LauncherActivity does not initialize GLES by itself; user must enter "
-            "GameActivity via Jugar while the trial is active to test ANGLE/Vulkan."
+        report["test_scope"] = "GameActivity" if enter_game else "LauncherActivity"
+        report["driver_evidence_status"] = (
+            "verified" if report["angle_vulkan_execution_verified"] else "inconclusive"
         )
+        report["launcher_only_caveat"] = (
+            None if enter_game else
+            "LauncherActivity does not create a GLES context by itself; "
+            "use --enter-game to enter GameActivity and verify ANGLE."
+        )
+        report["gameplay_visual_equivalence_verified"] = False
         report["gameplay_fps_measured"] = False
     except (OSError, TrialError, subprocess.TimeoutExpired, ValueError) as ex:
         trial_error = ex

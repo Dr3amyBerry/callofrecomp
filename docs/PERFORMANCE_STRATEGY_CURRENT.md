@@ -2,9 +2,9 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
-## Investigación ANGLE: candidato de driver GLES2→Vulkan (sin A/B de juego)
+## ANGLE: compatibilidad Vulkan confirmada en WSA, todavía sin A/B de gameplay
 
-El código oficial de **ANGLE** se descargó y verificó contra Chromium Git y su espejo (commit fijo **43140711d13063716fd32a15de829885d0bce469**). A diferencia de Zink, ANGLE traduce GLES2 (ya producido por GL4ES) a Vulkan; el port SDL2 usa un proceso iniciado mediante Java y la APK de prueba es depurable. La auditoría de WSA confirmó **ANGLE no instalado**, configuración global no modificada, y que falta **Linux + depot_tools/gclient/GN** para crear `AngleLibraries.apk` Android. **No se ha ejecutado ANGLE ni probado el backend Vulkan del juego**, por lo que no hay nuevos FPS ni cambio de estrategia. Continúa **0/5**. [Informe ANGLE](ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md).
+La fuente oficial ANGLE pinneada (`43140711d13063716fd32a15de829885d0bce469`) fue compilada en GitHub Actions Linux y el APK x86_64 pasó verificaciones de ABI, EGL/GLES, identidad, firma Android y SHA-256. La aplicación real **CallofRecomp** abrió `GameActivity` con el paquete ANGLE experimental y su propio PID reportó **Renderer Vulkan 1.3 AMD Radeon**; el menú original se mostró y no presentó diferencias visuales evidentes frente al menú nativo GL4ES. La APK experimental fue desinstalada y los ajustes revertidos. **No** se comprobó equivalencia 3D, FPS Camp Toccoa ni rendimiento ARM64/Mali. La fase CPU actual conserva prioridad: **no cambiar de renderer ni de estrategia sobre esta sola prueba**, contador **0/5**. [Informe de ejecución real](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md).
 
 ## Resultado de investigación Mesa Zink (sin A/B del juego)
 

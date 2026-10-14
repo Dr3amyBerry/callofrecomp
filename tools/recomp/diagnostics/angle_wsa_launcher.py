@@ -26,7 +26,7 @@ def play_button_center(hierarchy_xml: str) -> tuple[int, int]:
         raise UILocatorError("Unexpected UI hierarchy root")
     candidates = [
         node for node in root.iter("node")
-        if node.get("text") == "Jugar" and node.get("package") == PACKAGE
+        if (node.get("text") or "").strip().casefold() == "jugar" and node.get("package") == PACKAGE
         and node.get("class") == "android.widget.Button"
     ]
     if len(candidates) != 1:

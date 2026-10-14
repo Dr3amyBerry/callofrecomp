@@ -9,11 +9,18 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — ANGLE x86_64 compilado y ejecutado sobre Vulkan en CallofRecomp WSA (0/5)
+
+- [x] Build Linux upstream real **exitosa**, [GitHub Actions #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796) (**34m50s**): `AngleLibraries.apk` x86_64 **8.162.364 bytes** y SHA-256 **`40a48ae3cb3ee6051768c6b7f9d23fea3e3eeea7e1876e4d833c950ab275baa3`**, commit/árbol oficial pinneado concordante, APK de `org.chromium.angle` con firma válida **CN=Unknown** (NO Google).
+- [x] **Ensayo real WSA:** `org.callofrecomp/.GameActivity` reanudada, Logcat del **mismo PID y hora** confirma `ANGLE debug package enabled: org.chromium.angle` y `Renderer (Vulkan 1.3.0 (AMD Radeon Graphics))`. En el tercer ensayo el verificador registró `angle_vulkan_execution_verified=true`. Se corrigieron dos falsos negativos de la herramienta: `JUGAR` en UIAutomator y variante `ANGLE debug package enabled` en Android.
+- [x] Capturas reales del **menú** con ANGLE/Vulkan y GL4ES nativo: elementos visibles sin diferencias evidentes en inspección visual, no comparación píxel a píxel. Los cuatro errores GLSL iniciales concuerdan con **sondas de capacidades** de GL4ES (`testTextureCubeLod` y 3× `testGLSL`); no ocultar avisos ni concluir que el mundo 3D sea correcto.
+- [x] Rollback WSA sin errores, paquete ANGLE ausente, preferencias `null`, `libmain.so` estable A1 con SHA-256 intacto. No se registraron FPS, no se validó gameplay 3D completo, ni se probó TECNO: **0/5**. [Informe del hito y pendientes](docs/ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md).
+
 ### 2026-10-14 — WSA: entrada optativa a GameActivity para prueba ANGLE (0/5)
 
 - [x] `angle_wsa_launcher.py`: localizador puro del botón Android `Jugar` (paquete, clase, estado clicable/habilitado y límites) y comprobación estricta de `GameActivity` reanudada. Sin coordenadas fijas ni clics sobre paquetes ajenos.
 - [x] `angle_wsa_trial.py --enter-game` incorpora el paso **explícitamente optativo** de accesibilidad `uiautomator`, eliminación del XML temporal y verificación de Activity; conserva el rollback y la prohibición de medir FPS sin escena real. Pruebas sintéticas de errores y aceptación incorporadas.
-- [ ] Sin ejecución real con ANGLE instalado: el [build manual #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796) seguía activo en la última consulta. Contador físico TECNO **0/5**.
+- [x] **Avance posterior:** [build manual #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796) terminada con éxito y ANGLE/Vulkan verificado en WSA; ver [resultado posterior](docs/ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md). El contador TECNO sigue **0/5**.
 
 ### 2026-10-14 — Captura Logcat ANGLE ligada a proceso y tiempo real (0/5)
 

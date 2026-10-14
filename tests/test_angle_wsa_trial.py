@@ -62,6 +62,21 @@ class AngleWSATrialTests(unittest.TestCase):
         self.assertFalse(trial.logcat_verdict(fresh, 1791993904, None)[
             "angle_vulkan_execution_verified"])
 
+    def test_real_wsa_angle_debug_package_log_verifies_vulkan(self):
+        # Exact message variant seen with the official ANGLE x86_64 APK.
+        log = (
+            "         1791994760.343  9325  9325 I GraphicsEnvironment: ANGLE debug package enabled: org.chromium.angle\n"
+            "         1791994760.505  9325  9343 I ANGLE   : Version (2.1.29111 git hash: 43140711d130), Renderer (Vulkan 1.3.0 (AMD Radeon(TM) Graphics (0x00001638)))\n"
+        )
+        result = trial.logcat_verdict(log, 1791994760, "9325")
+        self.assertTrue(result["android_angle_package_selected"])
+        self.assertTrue(result["angle_vulkan_renderer_reported"])
+        self.assertTrue(result["angle_vulkan_execution_verified"])
+        self.assertFalse(trial.logcat_verdict(log, 1791994761, "9325")[
+            "angle_vulkan_execution_verified"])
+        self.assertFalse(trial.logcat_verdict(log, 1791994760, "1234")[
+            "angle_vulkan_execution_verified"])
+
     def test_logcat_rejects_mismatched_pid_and_unstructured_lines(self):
         log = (
             "ANGLE: Renderer (Vulkan 1.3)\n"

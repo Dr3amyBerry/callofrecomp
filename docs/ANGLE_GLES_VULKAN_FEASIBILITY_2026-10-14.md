@@ -1,5 +1,8 @@
 # ANGLE: viabilidad GLES a Vulkan en CallofRecomp (14 de octubre de 2026)
 
+**Actualización 2026-10-14:** ANGLE x86_64 ya fue compilado desde upstream y ejecutado con `GameActivity` en WSA. Logcat verificó ANGLE sobre Vulkan 1.3 en el proceso del juego, con rollback total. Sin A/B de FPS ni prueba 3D concluida: [resultado comprobado](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md).
+
+
 **Estado:** fuente oficial descargada, identidad Git verificada y entorno Android/WSA auditado. **NO se ha compilado ni ejecutado ANGLE, ni se ha reemplazado GL4ES.** No se han repetido benchmarks del juego. Estrategia de rendimiento intacta: **0/5 intentos fallidos**.
 
 ## 1. Fuente descargada e integridad

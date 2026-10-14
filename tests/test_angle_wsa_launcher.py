@@ -13,6 +13,10 @@ NODE = ('<node text="Jugar" package="org.callofrecomp" '
 class AngleWSALauncherTests(unittest.TestCase):
     def test_finds_unique_enabled_button(self):
         self.assertEqual(play_button_center(f"<hierarchy>{NODE}</hierarchy>"), (60,60))
+    def test_real_android_allcaps_button_is_supported(self):
+        # Android Button textAllCaps exposes JUGAR through UIAutomator on WSA.
+        actual = NODE.replace('text="Jugar"', 'text="JUGAR"')
+        self.assertEqual(play_button_center(f"<hierarchy>{actual}</hierarchy>"), (60,60))
     def test_rejects_no_or_duplicate_buttons(self):
         with self.assertRaises(UILocatorError):
             play_button_center("<hierarchy/>")
