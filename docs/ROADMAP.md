@@ -15,6 +15,13 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## Nuevo experimento: x87 normal-f2d (FPS sin validar)
+
+- [x] Se probó un fast path opcional para valores binary80 normales representables exactamente como binary64 (CoDSP p1/p8), **OFF por defecto**.
+- [x] En TECNO ARM64 coincidieron **1.205.360 patrones** frente a `f2d` existente; microbenchmark aislado ~17 % menos tiempo de conversión.
+- [x] APK ARM64 compilada, firmada e instalada; arranca al menú. Se conservó copia y se restauró en TECNO la referencia anterior.
+- [ ] A/B/A en spawn de training y controles de HUD/partidas; no adoptar hasta medir FPS de juego y no extrapolar el microbenchmark. **60 FPS todavía pendientes.** [Detalles](ARM64_X87_NORMAL_F2D_2026-10-14.md).
+
 ## Próximo cuello de botella por instrucción: comparaciones x87
 
 - [x] Atribución aproximada del perfil ARM64 de 5.476 muestras al C anterior y Ghidra v2, corrigiendo primero el desplazamiento de líneas del C generado `p1`. La visibilidad `0x004D94C0` concentra **37 de sus 150 muestras** en `0x004D9511`; geometría `0x0041B8F0` concentra 23/247 en `0x0041B986`.

@@ -215,3 +215,33 @@ uint64_t host_counter(void); // monotonic nanoseconds, frequency 1 GHz
 void guest_run(void);
 uint32_t guest_call(uint32_t fn, int n, const uint32_t *args);
 void guest_fatal(const char *fmt, ...);
+
+
+// Opt-in ARM64 CoDSP experiment: the common canonical binary80 numbers
+// emitted by d2f(double,10) are exactly representable in binary64.
+// A direct integer bit mapping avoids repeated rounding/branching.
+// All unsupported, subnormal, non-canonical and inexact values follow
+// the unmodified f2d() conversion. Never enable across modules by default.
+#if defined(CODRECOMP_X87_NORMAL_F2D)
+static inline double codsp_x87_normal_f2d(u128 v, int n) {
+    if (n == 10) {
+        const uint64_t sig = (uint64_t)v;
+        const unsigned se = (unsigned)(v >> 64) & 0xffffu;
+        const unsigned exponent = se & 0x7fffu;
+        if ((unsigned)(exponent - 15361u) <= 2045u &&
+            (sig & UINT64_C(0x80000000000007ff)) ==
+                 UINT64_C(0x8000000000000000)) {
+            const uint64_t b =
+                ((uint64_t)(se & 0x8000u) << 48) |
+                ((uint64_t)(exponent - 15360u) << 52) |
+                ((sig >> 11) & UINT64_C(0x000fffffffffffff));
+            double d;
+            memcpy(&d, &b, sizeof d);
+            return d;
+        }
+    }
+    return f2d(v, n);
+}
+// The original f2d remains callable as (f2d)(bits, n) for differential tests.
+#define f2d(v,n) codsp_x87_normal_f2d((v),(n))
+#endif

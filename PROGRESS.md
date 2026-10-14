@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Nuevo experimento x87 normal-f2d (OFF por defecto)
+
+- [x] Auditoría de la sesión anterior: Git `bd84510` limpio y sincronizado; 98 tests Python, 29/29 CTest, registros A3/B2 comparados de nuevo (**25,45 vs 25,70 FPS**; mejora NaN no acreditada).
+- [x] Añadida conversión directa binary80→binary64 normal exacta en CoDSP `p1/p8`, optativa `--x87-normal-f2d` OFF por defecto, sin modificar C generado ni partidas. **1.205.360 casos** bit a bit en TECNO ARM64 sin discrepancias; 98 Python (4 omitidas), 30/30 CTest.
+- [x] Microbench ARM64 original ~45,5 ms frente a candidato ~37,7 ms por 6,29 millones de conversiones (**~17 % menor coste aislado; no extrapolable a FPS de juego**).
+- [x] APK ARM64 candidata compilada y firmada V2/V3, instalada en TECNO: arranca hasta menú (~53 FPS, **no** gameplay); respaldo separado preservado y APK x87 anterior reinstalada al terminar.
+- [ ] **A/B/A en spawn**, validar HUD/partidas y cuantificar FPS en training (no comprobado en este ensayo). Meta **60 FPS sostenidos: ABIERTA**. [Informe](docs/ARM64_X87_NORMAL_F2D_2026-10-14.md).
+
 ### 2026-10-14 — Perfil fino de comparaciones x87
 
 - [x] Resueltas 5.476 muestras ponderadas originales del perfil ARM64 x87 mediante `llvm-addr2line`, C generado con offsets corregidos y mapas Ghidra v2: puntos importantes `0x004D9511` (37/150 muestras de su función), `0x004D82DB` (28/155), `0x0041B986` (23/247).

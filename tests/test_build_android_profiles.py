@@ -19,6 +19,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--fast-copy32', proc.stdout)
         self.assertIn('--visibility-o2', proc.stdout)
         self.assertIn('--x87-nan-bits', proc.stdout)
+        self.assertIn('--x87-normal-f2d', proc.stdout)
 
 if __name__ == '__main__':
     unittest.main()

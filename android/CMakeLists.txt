@@ -127,6 +127,20 @@ if(CODRECOMP_X87_NAN_BITS)
       COMPILE_DEFINITIONS CODRECOMP_X87_NAN_BITS)
   endforeach()
 endif()
+# Selectively accelerate exactly representable x87 normal->double on
+# CoDSP geometry/visibility p1 and p8; no generated source rewriting.
+# The original bit-equivalent f2d is preserved for all other encodings.
+option(CODRECOMP_X87_NORMAL_F2D "Experimental canonical binary80-to-double fast path for CoDSP p1/p8" OFF)
+if(CODRECOMP_X87_NORMAL_F2D)
+  foreach(part p1 p8)
+    set(float_part "${RECOMP_SOURCE_DIR}/codsp_recomp_${part}.c")
+    if(NOT EXISTS "${float_part}")
+      message(FATAL_ERROR "Missing private CoDSP p1/p8 for x87 f2d experiment")
+    endif()
+    set_property(SOURCE "${float_part}" APPEND PROPERTY
+      COMPILE_DEFINITIONS CODRECOMP_X87_NORMAL_F2D)
+  endforeach()
+endif()
 target_compile_options(main PRIVATE -O1 -Wno-unused-function)
 target_link_libraries(main PRIVATE SDL2 GL log android m dl)
 target_link_libraries(GL m dl)
