@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## WSA: conversion normal x87 f2d medida en el juego — descartada en x86_64
+
+A/B/A del **gameplay 3D de Camp Toccoa** con GL4ES, WSA x86_64, mismo guardado y camara: **A1 55,10 / B1 54,55 / A2 55,35 FPS medianos**, CPU/frame **17,310 / 17,765 / 17,290 ms** (20 ventanas por corrida). B es ~1,22 % mas lenta en FPS y suma ~0,465 ms CPU frente a la media A. **No hay ganancia demostrada**; `CODRECOMP_X87_NORMAL_F2D` queda OFF por defecto. APK original instalada nuevamente y binario `libmain.so` comprobado byte a byte. Es WSA, **no un intento valido en TECNO ARM64**; contador oficial **0/5**, fases vigentes intactas. [Informe](WSA_X87_NORMAL_F2D_ABA_2026-10-14.md).
+
 ## FCOM: cuatro bits de condición x87 validados, pero fast path todavía OFF
 
 En el punto original `0x0041B986` se contrastaron **1.037 pares float32** del `FCOMP` x86 (Unicorn) con el helper experimental `codsp_fcom_pop_float32`: C0/C1/C2/C3 coincidieron en todos; corrupción deliberada del bit C0 detectada. **No** se inspeccionaron todos los bits de FSW ni pila `binary80`, TOP, excepción, control word final o equivalente completo. **No habilitar FCOM en producción** ni contar como optimización A/B. TECNO desconectado, **0/5**. [Informe](CPU_PHASE2_FCOM_CONDITION_ORACLE_2026-10-14.md).

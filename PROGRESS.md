@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — WSA: conversion x87 f2d, A/B/A sin mejora (0/5)
+
+- [x] Recuperada y auditada la build x86_64 `--x87-normal-f2d`, compilada y firmada; `CODRECOMP_X87_NORMAL_F2D=ON` solo en CoDSP p1/p8. APK A y dos saves verificados intactos antes del ensayo.
+- [x] Camp Toccoa real y GL4ES, misma vista y perfil Equilibrado: **A1 55,10 FPS / 17,31 ms CPU**, **B1 x87 54,55 / 17,765**, **A2 restaurada 55,35 / 17,29**; 20 ventanas de ~1 s en cada captura y cap 60 FPS. Los percentiles bajos de FPS son de ventanas, no de frames individuales.
+- [x] B no acelera WSA: aproximadamente **-1,22 % FPS** y **+2,69 % CPU/frame** respecto a la media A. Se reinstalo A con `libmain.so` identica a la referencia SHA-256; candidate B y evidencia permanecen privadas. El flag sigue **OFF** por defecto, 60 FPS TECNO **pendiente**, contador ARM64 **0/5**. [Informe](docs/WSA_X87_NORMAL_F2D_ABA_2026-10-14.md).
+- [ ] Hacer A/B/A fisico en TECNO ARM64 (sin extrapolar WSA); completar el perfil dinamico de los costes CPU antes de otro fast path.
+
 ### 2026-10-14 — Fase 2: condiciones x87 FCOMP contrastadas con x86 real (0/5)
 
 - [x] `verify_fcom_condition_oracle.py`: Unicorn ejecuta `FLD` y `FCOMP` originales sobre `float32`; una DLL host independiente invoca el helper FCOM optativo del proyecto, **sin activar el fast path en Android**.
