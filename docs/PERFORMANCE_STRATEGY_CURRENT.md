@@ -2,6 +2,12 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 4: escritura arquitectónica muerta, reducción nativa pero SIN mejora de FPS
+
+Análisis nuevo de liveness CFG inter-instrucción, conservador respecto a ramas, alias, EFLAGS/x87, RAM y salidas. Opt-in `--prune-hot-register-writes` solo CoDSP p0, OFF: elimina **427 COPY** muertas del generado; `libmain.so` `.text` baja **3.868 bytes** frente a la build A idéntica salvo p0. El TECNO ARM64 reprodujo **12.000** casos de equivalencia de seis pares reales, y pasaron 239 pruebas Python (4 omitidas), 34 CTest.
+
+A/B/A Camp Toccoa (45 °C batería): A1/B1/A2 **25,75 / 25,70 / 21,90 FPS**; CPU/frame **37,380 / 37,475 / 43,470 ms**. B1 no mejora a A1; A2 cayó mucho con la referencia, por causas ambientales/no identificadas, y no debe utilizarse para proclamar victoria de B. Se revirtió p0 y se verificó el rebuild nativo original, APK x87 estable preservada. **60 FPS pendientes**, sin cambios a la escena. [Informe](CPU_PHASE4_ARCH_REGISTER_DCE_TECNO_2026-10-14.md).
+
 ## Fase 3 exploratoria: caché de registros CoDSP p0, sin incremento de FPS
 
 Caché optativa por instrucción p-code `--cache-hot-registers`, sobre geometría `0x004196F0`, probada en TECNO ARM64 con toda la calidad intacta. A/B/A real (40 ventanas por corrida) **25,70 / 25,15 / 25,20 FPS** y **37,495 / 38,200 / 38,130 ms CPU/frame** (A/B/A). B no mejora; A2 se parece mucho a B1 por variabilidad/temperatura. 24 instrucciones auténticas y 49.152 diferenciales ejecutados en ARM64 frente al traductor existente, **no** Intel x86 original. Opt-in queda OFF, APK previa reinstalada con hash verificado, código generado original restaurado y recompilado. 235 tests Python (4 omisiones), 34 CTest. **60 FPS pendiente.** [Reporte](CPU_PHASE3_P0_REGISTER_CACHE_TECNO_2026-10-14.md).

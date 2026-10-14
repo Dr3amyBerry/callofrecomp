@@ -20,9 +20,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pe_inspect import PEFile  # noqa: E402
 from flag_liveness import dead_flag_writes
 from temp_liveness import dead_unique_writes
+from register_liveness import dead_arch_register_writes
 from function_map import build_function_map, write_function_map, scan_pcode_provenance
 
 CHUNK = 1500
+
+# Two disjoint original-body intervals within CoDSP p0. The adjacent p1
+# hot body has private x87/FCOM patches, so it is intentionally excluded.
+HOT_CODSP_DEAD_REGISTER_RANGES = (
+    (0x004196F0, 0x00419779),
+    (0x00419780, 0x00419ED6),
+)
+HOT_CODSP_PCODE_SHA256 = (
+    '36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e'
+)
 
 
 def rel(off: int) -> int:
@@ -310,7 +321,8 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
              local_temporaries: bool = True, separate_spaces: bool = True,
              eliminate_dead_flags: bool = True, eliminate_dead_temporaries: bool = False,
              dead_temp_parts: frozenset[int] | None = None,
-             cache_hot_registers: bool = False):
+             cache_hot_registers: bool = False,
+             prune_hot_register_writes: bool = False):
     """Return ([part sources], main source, unsupported ops)."""
     g = Gen(userops)
     # Silent per-module fallback could mix local writers with another module's
@@ -327,6 +339,12 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
     bodies = [list(header) for _ in range(parts)]
     for ci, chunk in enumerate(chunks):
         dead_flags = dead_flag_writes(chunk) if eliminate_dead_flags else set()
+        dead_registers = (dead_arch_register_writes(
+            chunk, removed_flags=dead_flags,
+            eligible_ranges=HOT_CODSP_DEAD_REGISTER_RANGES)
+            if prune_hot_register_writes and separate_spaces and ident == 'codsp'
+            and any(any(lo <= addr < hi for lo, hi in HOT_CODSP_DEAD_REGISTER_RANGES)
+                    for addr, _, _ in chunk) else set())
         output_part = ci * parts // len(chunks)
         dead_temps = set()
         if eliminate_dead_temporaries and local_temporaries and (
@@ -360,7 +378,8 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
             out.append(f'L_{addr:x}:')
             g.temp_offsets = temporary_layout(ops) if local_temporaries else None
             removed = {i for i in range(len(ops))
-                       if (idx, i) in dead_flags or (idx, i) in dead_temps}
+                       if (idx, i) in dead_flags or (idx, i) in dead_registers
+                       or (idx, i) in dead_temps}
             cache = instruction_register_cache(ops, removed) if (
                 cache_hot_registers and separate_spaces and ident == 'codsp'
                 and any(lo <= addr <= hi for lo, hi in HOT_CODSP_REGISTER_CACHE_RANGES)
@@ -460,6 +479,9 @@ def main() -> int:
     ap.add_argument('--cache-hot-registers', action='store_true',
                     help='EXPERIMENT: cache nonoverlapping architectural registers inside '
                          'straight-line CoDSP geometry instructions only, OFF by default')
+    ap.add_argument('--prune-hot-register-writes', action='store_true',
+                    help='EXPERIMENT: omit provably dead architectural register writes '
+                         'in the audited CoDSP p0 geometry body, OFF by default')
     ap.add_argument('--function-map-out', type=Path,
                     help='optional JSON: original Ghidra function entries to generated chunks; '
                          'store under ignored recomp_out/')
@@ -481,13 +503,16 @@ def main() -> int:
                          for k in range(args.parts))
         if args.function_map_out.resolve() in protected:
             ap.error('--function-map-out must not overwrite input or generated C files')
-    if args.cache_hot_registers:
-        # This opt-in only has an audited equivalence scope for CoDSP.exe 1.5.
-        # Unknown recompilation inputs must never silently receive it.
-        expected_pcode = '36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e'
+    if args.cache_hot_registers or args.prune_hot_register_writes:
+        # Neither pass is safe to generalize to unknown game executables.
+        # In particular, the full-register DCE needs disjoint R and guest RAM.
         if (args.pe.name.casefold() != 'codsp.exe' or
-                hashlib.sha256(args.pcode.read_bytes()).hexdigest() != expected_pcode):
-            ap.error('--cache-hot-registers requires verified CoDSP.exe 1.5 p-code')
+                hashlib.sha256(args.pcode.read_bytes()).hexdigest() != HOT_CODSP_PCODE_SHA256):
+            ap.error('experimental register optimizations require verified '
+                     'CoDSP.exe 1.5 p-code')
+    if args.prune_hot_register_writes and (args.shared_spaces or args.global_temporaries):
+        ap.error('--prune-hot-register-writes requires the disjoint register/RAM '
+                 'and local temporary layout')
     insns, userops, funcs = parse(args.pcode)
     limits = {'r': 0x2000, 'u': 0x400000}  # must match R[] / U[] in runtime/guest.c
     for _, _, ops in insns:
@@ -500,7 +525,8 @@ def main() -> int:
     bodies, main_src, unsupported = generate(insns, userops, pe, args.pe.name, ident, args.parts,
                                              not args.global_temporaries, not args.shared_spaces,
                                              not args.keep_dead_flags, args.prune_dead_temporaries,
-                                             dead_temp_parts, args.cache_hot_registers)
+                                             dead_temp_parts, args.cache_hot_registers,
+                                             args.prune_hot_register_writes)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]

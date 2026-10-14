@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 4: eliminación de escrituras arquitectónicas, TECNO (0/5)
+
+- [x] Análisis CFG por byte de registro con `tools/recomp/register_liveness.py`; opción `pcode2c.py --prune-hot-register-writes` **OFF por defecto** y protegida por SHA-256 de CoDSP 1.5. Solo p0/cuerpo `0x004196F0`, sin modificar p1/p8 o contenido de la escena.
+- [x] **427 escrituras COPY muertas** eliminadas del generado, `−17.253` bytes C y `−3.868` bytes `.text` ARM64. Oráculo de **12.000 comparaciones ARM64** en 6 pares reales y 239 tests Python (4 omitidas), 34/34 CTest; sin diferencias de estado para los casos probados.
+- [x] A/B/A físico en Camp Toccoa: FPS mediana **25,75 / 25,70 / 21,90** y CPU/frame **37,380 / 37,475 / 43,470 ms** (A1/B1/A2, 40 ventanas cada una, 45 °C batería). B1 no mejoró A1; la caída de A2 revela una variación ambiental importante, sin causa confirmada. **No hay mejora de FPS demostrada.**
+- [x] Generado p0 y `libmain.so` originales restaurados y hashes verificados; save intacto. Se conserva el pass experimental desactivado. [Informe](docs/CPU_PHASE4_ARCH_REGISTER_DCE_TECNO_2026-10-14.md).
+- [ ] Próxima prioridad: muestreo de CPU e instrucciones ARM64 realmente ejecutadas bajo la misma escena, para evitar optimizaciones de código frío. 60 FPS sostenidos pendientes.
+
 ### 2026-10-14 — Fase 3: caché acotada de registros x86 en geometría, medida en TECNO (0/5)
 
 - [x] Prototipo `pcode2c.py --cache-hot-registers` **OFF por defecto**, restringido al bloque lineal de `0x004196F0` en CoDSP `p0`. No altera soldados, geometría visible, HUD ni calidad; preserva aliasing de registros, flags, x87 y saltos fuera de su ámbito.
