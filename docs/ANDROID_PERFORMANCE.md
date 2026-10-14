@@ -262,3 +262,33 @@ present in the production native object. 24/24 host CTest cases pass.
 
 A real ARM64 phone GPU and gameplay performance measurement is still
 required. WSA x86_64 timing does not determine Mali/Adreno behavior.
+
+## Original UI menu reload audit (2026-10-14)
+
+The original engine's training transition performs a second renderer initialization
+after `RE_Shutdown(0)` and `Hunk_Clear`, and then parses the UI menu files
+again. This is **loading work**, not evidence that each menu is drawn twice
+per gameplay frame. Two private WSA training logs independently show two
+`R_Init` cycles and the **same 25 unique menu files parsed in both cycles**.
+The reported menu-load groups sum to 951 + 1,040 ms in one capture and
+1,496 + 1,516 ms in another. These are separate runs under different trial
+conditions, so their totals must not be treated as controlled A/B speed gains.
+
+Reproduce the noninvasive analysis on any existing local log:
+
+```powershell
+python tools/recomp/analyze_menu_reloads.py path/to/codrecomp.log --json
+```
+
+The tool groups `Parsing menu file` events per `R_Init`, totals only
+`UI menu load time` markers associated with an actual parse group, and
+counts repeated file paths between adjacent cycles. It never includes
+private filenames or log content in its aggregate output. Synthetic Python
+unit tests cover repeated reloads, orphan timing markers, and partial logs.
+
+**Not fixed yet:** Skipping the second parse without proving allocator and
+GL resource lifetime safety can create invalid pointers after `Hunk_Clear`.
+Instrument/trace the original menu parser ownership and renderer resource
+handles before attempting this; validate actual startup, level transition,
+graphics restarts, menu interaction, and save reloads in isolated builds.
+No renderer settings or stable APK behavior were changed by this audit.

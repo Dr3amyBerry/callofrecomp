@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Verified repeat menu parsing and added safe log analyzer
+
+- [x] Reconfirmed two R_Init cycles around the training transition (second follows RE_Shutdown(0) and Hunk_Clear) in two WSA logs. The same 25 original UI menu paths are parsed in both cycles; this is initialization work, not proof of duplicated per-frame draws.
+- [x] Added tools/recomp/analyze_menu_reloads.py with synthetic unit tests and aggregate-only output. WSA capture A: 951/1,040 ms of menu parsing; capture B: 1,496/1,516 ms. These runs are not an A/B of a code optimization.
+- [ ] Prove UI allocation ownership and GL resource validity before caching parsed menus across Hunk_Clear; no unsafe bypass implemented, no FPS claim.
+
 ### 2026-10-14 — Translation/rendering optimization audit and Vulkan feasibility
 
 - [x] Compared the real pinned GL4ES revision to upstream master: both at `ec16bedd` (2026-10-04); no unreviewed dependency switch.
