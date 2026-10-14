@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — ANGLE oficial descargado; GLES2→Vulkan investigado sin modificar WSA (0/5)
+
+- [x] Clonado **ANGLE oficial** desde Chromium Git: commit fijo **43140711d13063716fd32a15de829885d0bce469**, árbol Git **06315a7275a6cc870b55e2e32c6eab165604357d**. Los dos remotos (Chromium y espejo Google/ANGLE GitHub) coinciden; `git fsck --full --no-reflogs` PASS, checkout limpio. Ruta `.local/profiles/angle-research/angle-src` privada/ignorada.
+- [x] Comprobado el código real ANGLE/EGL/Vulkan y su guía Android: **GL4ES → GLES2 ANGLE → Vulkan** encaja sin reescribir wrappers clásicos; la selección de driver por APK requiere app debuggable/Java-launch o root.
+- [x] Auditoría **WSA real, solo lectura**: Android **API33 x86_64**, CallofRecomp instalada **DEBUGGABLE**, actividad **GameActivity extends SDLActivity**. `org.chromium.angle` y `org.chromium.angle.agi` **NO** están instalados; todos los ajustes de ANGLE permanecen **null**.
+- [x] Restricción de build: doc oficial ANGLE Android **requiere Linux**, pero **WSL no tiene distro**; `gn/gclient/autoninja` ausentes y dependencias ANGLE todavía sin `gclient sync`. **Solo se descargó el código fuente, NO se compiló ni ejecutó AngleLibraries.apk.**
+- [x] Auditor de entorno `tools/recomp/diagnostics/angle_readiness.py`, pruebas sin modificaciones del sistema, informe JSON privado y tests sintéticos que nunca confunden selección de driver con ANGLE/Vulkan realmente ejecutado. `libmain.so` de referencia A1 de CallofRecomp en WSA permanece idéntica.
+- [ ] Próximo bloqueo: entorno Linux/depot_tools + build ANGLE **x86_64** de procedencia verificada, carga por paquete solo para CallofRecomp, Logcat identificando **Vulkan**, equivalencia visual y comparación de FPS A/B/A real. [Informe](docs/ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md). Contador **0/5** sin cambios.
+
 ### 2026-10-14 — Mesa Zink 26.2.4 descargado y descartado para WSA por requisitos Vulkan (0/5)
 
 - [x] Fuente oficial de Mesa/Zink **26.2.4 descargada** (68.613.948 bytes), SHA-256 cotejado con el release de Mesa: `bce5f7fbebb934373b86c999a064d52fb5065878dc57f287f95346648ec832e9`. Conservada en `.local/profiles/mesa-zink/` (ignorado, NO se sube a GitHub).

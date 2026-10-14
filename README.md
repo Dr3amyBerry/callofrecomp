@@ -16,6 +16,7 @@ Usa los menús y recursos de tu instalación de PC, con controles táctiles
 límite de 60 FPS. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
+· [**ANGLE: descarga verificada y viabilidad GL4ES→Vulkan**](docs/ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md)
 · [**Investigación Mesa Zink y requisitos Android/WSA**](docs/MESA_ZINK_FEASIBILITY_2026-10-14.md)
 · [**Vulkan: matrices y proyecciones OpenGL**](docs/WSA_GL_MATRIX_BRIDGE_2026-10-14.md)
 · [**Vulkan: TexEnv y descarte alfa**](docs/WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md)

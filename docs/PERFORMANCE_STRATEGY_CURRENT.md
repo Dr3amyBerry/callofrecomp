@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Investigación ANGLE: candidato de driver GLES2→Vulkan (sin A/B de juego)
+
+El código oficial de **ANGLE** se descargó y verificó contra Chromium Git y su espejo (commit fijo **43140711d13063716fd32a15de829885d0bce469**). A diferencia de Zink, ANGLE traduce GLES2 (ya producido por GL4ES) a Vulkan; el port SDL2 usa un proceso iniciado mediante Java y la APK de prueba es depurable. La auditoría de WSA confirmó **ANGLE no instalado**, configuración global no modificada, y que falta **Linux + depot_tools/gclient/GN** para crear `AngleLibraries.apk` Android. **No se ha ejecutado ANGLE ni probado el backend Vulkan del juego**, por lo que no hay nuevos FPS ni cambio de estrategia. Continúa **0/5**. [Informe ANGLE](ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md).
+
 ## Resultado de investigación Mesa Zink (sin A/B del juego)
 
 Se descargó e inspeccionó Mesa **26.2.4** y se midieron **capacidades Vulkan reales**, no FPS, en el WSA actual. Al menos cuatro requisitos obligatorios del perfil Zink GL2.1 están ausentes: `alphaToOne`, `VK_KHR_maintenance5`, `VK_KHR_swapchain_mutable_format` y `VK_EXT_border_color_swizzle`. Zink necesita un proveedor de OpenGL desktop Mesa/Gallium y un contexto Android apropiado; no se integra copiando un DLL/biblioteca sobre GL4ES. **Decisión: mantener GL4ES y no empaquetar Zink en WSA**. El TECNO Mali queda sin determinar hasta que se pueda consultar directamente. Se conserva estrategia original de perfilado CPU y contador **0/5** porque no existió A/B de gameplay. [Informe Mesa/Zink](MESA_ZINK_FEASIBILITY_2026-10-14.md).

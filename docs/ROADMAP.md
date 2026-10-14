@@ -4,6 +4,14 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Evaluación ANGLE GLES2→Vulkan y preparación de prueba por aplicación (2026-10-14)
+
+- [x] Descargado el snapshot oficial ANGLE: commit **43140711d13063716fd32a15de829885d0bce469**, árbol `06315a7275a6cc870b55e2e32c6eab165604357d`; integridad Git y concordancia con espejo verificados.
+- [x] **GL4ES → ANGLE GLES2 → Vulkan** es un candidato que conserva GL4ES y el contexto SDL2; código upstream y documentación Android inspeccionados.
+- [x] WSA x86_64 API33: app depurable iniciada por Java (SDLActivity) pero **paquete ANGLE ausente**. Las preferencias ANGLE no se modificaron. [Diagnóstico completo](ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md).
+- [ ] Compilar ANGLE para Android desde Linux con depot_tools, gclient, GN y Ninja; **no hay distro WSL ni herramientas GN disponibles en este PC**. Verificar la firma/origen y ABI de AngleLibraries.apk antes de probar.
+- [ ] Probar ANGLE únicamente para `org.callofrecomp`, verificar backend Vulkan en Logcat, restaurar preferencias luego, y solo después realizar A/B/A en una escena real de gameplay. Sin FPS ni intento fallido contabilizado por la auditoría.
+
 ## Evaluación Mesa Zink 26.2.4 frente a GPU real WSA (2026-10-14)
 
 - [x] Descargada fuente de Mesa 26.2.4 con SHA-256 oficial verificado, inspeccionada su implementación Gallium/Zink y perfil Vulkan `VP_ZINK_gl21_baseline`.
