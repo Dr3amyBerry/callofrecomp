@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Ejecución de estrategia: perfil CPU real, objetivo estructural seleccionado (0/5)
+
+- [x] Fase 1: dos sesiones Simpleperf durante gameplay en el TECNO con Build ID instalado coincidente con ELF sin strip. A1 7.953 muestras/21,94 s sin pérdidas; A2 6.541 muestras. Mayor CPU muestreado en `libmain.so`: 83,93 % de A1.
+- [x] Referencia spawn: 40 ventanas, **24,70 FPS mediana**, **23,30 FPS p10**, **38,895 ms CPU/frame**, **2,07 ms swap**; déficit de CPU ~22,23 ms frente al presupuesto 60 FPS.
+- [x] Monitoreo de frecuencias/temperatura; sin estado térmico alarmado. GPU: lectura directa de Mali bloqueada y sin `gpu.counters` Perfetto, traza `gfx` básica privada. No se afirma tiempo real de GPU.
+- [x] Fase 2: función elegida **`0x0041B8F0`**. 270 muestras con ARM64 muestreado (98 bits/movimientos; 81 cargas/store; 46 entero). Pista `restrict` para espacios disjuntos ya existente: **no duplicar**. El experimento estructural de registros queda **pendiente de prueba de alias/CFG**, sin modificación de gameplay.
+- [x] Herramientas de captura con verificación Build ID, análisis original de Ghidra y estimaciones CPU bien etiquetadas; **117 Python (4 omitidas), 31/31 CTest**.
+- [ ] Fase 2: una implementación demostrablemente equivalente y A/B/A en TECNO; fase 3 fast paths nuevos aún no iniciada. Meta **60 FPS pendiente; contador 0/5** porque no hubo ensayo A/B de una optimización nueva. [Informe](docs/PERFORMANCE_STRATEGY_RUN_2026-10-14.md).
+
 ### 2026-10-14 — Estrategia oficial de rendimiento adoptada (0/5)
 
 - [x] Documento autoritativo: [Estrategia vigente de rendimiento](docs/PERFORMANCE_STRATEGY_CURRENT.md) con tres fases: perfilado CPU/GPU en TECNO → optimización estructural de una función → fast paths nativos completos basados en muestras reales.

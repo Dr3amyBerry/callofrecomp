@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Ejecución más reciente — diagnóstico sin consumo de intentos
+
+[Informe de ejecución del perfil TECNO y selección de función](PERFORMANCE_STRATEGY_RUN_2026-10-14.md) — dos capturas reales de Simpleperf, ELF instalado verificado, top de geometría/visibilidad y diagnóstico ARM64 de `0x0041B8F0`. GPU hardware sigue sin contador accesible mediante ADB. La primera función para fase 2 está seleccionada, pero **no se ha habilitado optimización estructural nueva**. Fase 3 permanece pendiente. **Contador: 0/5**; el diagnóstico no constituye un experimento A/B válido.
+
 ## Meta y referencia
 
 **Meta no negociable:** al menos **60 FPS sostenidos** en el punto de aparición del entrenamiento de Camp Toccoa, en el **TECNO CK6n ARM64**, perfil **Equilibrado**, sin reducir calidad, alterar el HUD panorámico, colisiones, controles ni partidas. No confundir FPS del menú, WSA o microbenchmarks con FPS del juego.

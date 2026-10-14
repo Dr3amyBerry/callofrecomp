@@ -4,6 +4,14 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Ejecución real de la estrategia vigente (2026-10-14)
+
+- [x] **Fase 1 CPU:** dos perfiles ARM64 del spawn, muestras totales 7.953 y 6.541; Build ID de ELF comprobado contra el APK instalado; última referencia 24,70 FPS / 38,895 ms CPU/frame / p10 23,30; [informe con evidencia y método](PERFORMANCE_STRATEGY_RUN_2026-10-14.md).
+- [ ] **Fase 1 GPU:** traza gráfica Perfetto básica guardada de forma privada; `gpu.counters` ausente y sysfs Mali bloqueado por permisos. Tiempo real de GPU pendiente, no asumir GPU libre.
+- [x] **Fase 2 selección:** `0x0041B8F0`, 270 muestras A1 y 196 A2, con cargas/movimientos dominantes; `restrict` ya existe en el generador, así que no duplicar la optimización.
+- [ ] **Fase 2 parche estructural:** pendiente de prueba de CFG, estado y comparación del ARM64 compilado; **fase 3:** pendiente de evidencias.
+- [x] Herramientas reproducibles para perfilar, simbolizar y reportar costes. **0/5 intentos válidos fallidos** (son diagnósticos, no hay candidato A/B).
+
 ## Estrategia vigente de rendimiento (decisión formal)
 
 **Fuente autoritativa:** [Estrategia actual y registro de experimentos](PERFORMANCE_STRATEGY_CURRENT.md).
