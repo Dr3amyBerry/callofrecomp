@@ -2,6 +2,7 @@
 // current program, as input for tools/recomp/pcode2c.py.
 // Usage: analyzeHeadless ... -postScript ExportPcode.java <out_file>
 //   [--discover-data-code-pointers] [--code-entry 0xADDRESS ...]
+//   [--function-bodies-only]              emit only F/B records, no I/P/U
 // Explicit entries require prior verification against the original instructions.
 // Output is derived from proprietary code: keep it under recomp_out/ (ignored).
 //
@@ -9,6 +10,7 @@
 //   I <addr> <len>                        instruction header
 //   P <opcode> <out|-> <in>...            p-code op; varnode = space:offset:size
 //   F <addr>                              function entry
+//   B <entry> <min> <max>                 inclusive Ghidra function body range
 //   U <index> <name>                      user-defined (CALLOTHER) op name
 //@category codrecomp
 
@@ -17,6 +19,8 @@ import ghidra.app.util.PseudoDisassembler;
 import ghidra.app.util.PseudoInstruction;
 import ghidra.program.model.address.AddressSpace;
 import ghidra.program.model.address.Address;
+import ghidra.program.model.address.AddressRange;
+import ghidra.program.model.address.AddressRangeIterator;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Instruction;
@@ -44,8 +48,10 @@ public class ExportPcode extends GhidraScript {
     @Override
     protected void run() throws Exception {
         String[] args = getScriptArgs();
+        boolean bodiesOnly = java.util.Arrays.asList(args).contains("--function-bodies-only");
         for (int i = 1; i < args.length; i++) {
-            if (args[i].equals("--discover-data-code-pointers")) continue;
+            if (args[i].equals("--discover-data-code-pointers")
+                    || args[i].equals("--function-bodies-only")) continue;
             if (!args[i].equals("--code-entry") || i + 1 >= args.length)
                 throw new IllegalArgumentException("unknown or incomplete option: " + args[i]);
             Address entry = toAddr(Long.decode(args[++i]));
@@ -108,24 +114,39 @@ public class ExportPcode extends GhidraScript {
         out.getParentFile().mkdirs();
         int count = 0;
         try (PrintWriter w = new PrintWriter(out, "UTF-8")) {
-            int n = currentProgram.getLanguage().getNumberOfUserDefinedOpNames();
-            for (int i = 0; i < n; i++) {
-                w.println("U " + i + " " + currentProgram.getLanguage().getUserDefinedOpName(i));
+            if (!bodiesOnly) {
+                int n = currentProgram.getLanguage().getNumberOfUserDefinedOpNames();
+                for (int i = 0; i < n; i++) {
+                    w.println("U " + i + " " + currentProgram.getLanguage().getUserDefinedOpName(i));
+                }
             }
             for (Function f : currentProgram.getFunctionManager().getFunctions(true)) {
-                if (!f.isExternal()) w.println("F " + f.getEntryPoint().getOffset());
-            }
-            InstructionIterator it = currentProgram.getListing().getInstructions(true);
-            while (it.hasNext() && !monitor.isCancelled()) {
-                Instruction ins = it.next();
-                w.println("I " + ins.getAddress().getOffset() + " " + ins.getLength());
-                for (PcodeOp op : ins.getPcode()) {
-                    StringBuilder sb = new StringBuilder("P ").append(op.getMnemonic()).append(' ')
-                            .append(vn(op.getOutput()));
-                    for (Varnode in : op.getInputs()) sb.append(' ').append(vn(in));
-                    w.println(sb);
+                if (f.isExternal()) continue;
+                long entry = f.getEntryPoint().getOffset();
+                w.println("F " + entry);
+                // Ghidra function bodies may be non-contiguous. Preserve all
+                // address ranges rather than guessing an end from the next F.
+                AddressRangeIterator ranges = f.getBody().getAddressRanges();
+                while (ranges.hasNext()) {
+                    AddressRange range = ranges.next();
+                    w.println("B " + entry + " "
+                            + range.getMinAddress().getOffset() + " "
+                            + range.getMaxAddress().getOffset());
                 }
-                count++;
+            }
+            if (!bodiesOnly) {
+                InstructionIterator it = currentProgram.getListing().getInstructions(true);
+                while (it.hasNext() && !monitor.isCancelled()) {
+                    Instruction ins = it.next();
+                    w.println("I " + ins.getAddress().getOffset() + " " + ins.getLength());
+                    for (PcodeOp op : ins.getPcode()) {
+                        StringBuilder sb = new StringBuilder("P ").append(op.getMnemonic()).append(' ')
+                                .append(vn(op.getOutput()));
+                        for (Varnode in : op.getInputs()) sb.append(' ').append(vn(in));
+                        w.println(sb);
+                    }
+                    count++;
+                }
             }
         }
         println("codrecomp: pcode instructions=" + count);

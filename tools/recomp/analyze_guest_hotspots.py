@@ -24,8 +24,9 @@ def annotate(text: str, mappings: list[dict], top: int = 20) -> dict:
         raise ValueError("top must be positive")
     index: dict[tuple[str, str], list[tuple[str, dict]]] = {}
     for doc in mappings:
-        if doc.get("schema_version") != 1:
-            raise ValueError("unsupported function map schema")
+        if (not isinstance(doc, dict) or doc.get("schema_version") not in (1, 2)
+                or not isinstance(doc.get("chunks"), list)):
+            raise ValueError("unsupported or incomplete function map schema")
         for chunk in doc["chunks"]:
             key = (chunk["start_va"].lower(), chunk["end_va_exclusive"].lower())
             index.setdefault(key, []).append((doc["module"], chunk))
@@ -55,6 +56,9 @@ def annotate(text: str, mappings: list[dict], top: int = 20) -> dict:
             "generated_part": chunk["generated_part"],
             "function_entries_in_chunk": chunk["function_entries_in_chunk"],
             "preceding_entry_context": chunk["preceding_entry_context"],
+            "body_function_instruction_counts": chunk.get("body_function_instruction_counts"),
+            "body_ambiguous_instructions": chunk.get("body_ambiguous_instructions"),
+            "body_unmapped_instructions": chunk.get("body_unmapped_instructions"),
         } for module, chunk in found]
         row["exact_chunk_match"] = len(found) == 1
         row["function_cpu_attribution"] = "NOT_AVAILABLE"

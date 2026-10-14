@@ -76,7 +76,10 @@ Definition of done:
 - [x] Restore Ghidra original function-entry metadata to an optional, ignored mapping sidecar without changing default compiled behavior.
 - [x] Associate existing guest CPU chunk samples with the exact private maps, without fabricating per-function CPU percentages.
 - [x] Archive references, rejected experiments, repeatable commands and correctness restrictions in [the 2026-10-14 research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
-- [ ] Capture guest function-entry and return activity safely behind opt-in instrumentation and prove a sufficiently low profiler overhead.
+- [x] Export noncontiguous original Ghidra B body ranges from the saved project into ignored v2 provenance maps; real modules yielded 519,757 uniquely assigned x86 instructions and 80,013 unassigned.
+- [x] Add native ARM64 ELF-PC → inline stack → generated C line → x86 instruction → Ghidra body resolution, verified with the unstripped real shared library and artificial ELF-address fixtures.
+- [ ] Collect real function-level CPU sampling evidence on the **physical ARM64** device; source-line locations remain statistical rather than exclusive guest function timings.
+- [ ] If source-line sampling is insufficient, capture guest function entry/return activity behind opt-in instrumentation and measure overhead before enabling any native fast path.
 - [ ] Capture **native physical ARM64** CPU/GPU traces from the crowded training scene with controlled camera/save/thermal variables.
 - [ ] Choose a measured hot original function; confirm its final AArch64 code and benchmark one isolated translator/native fast-path change.
 - [ ] Before accepting any replacement, pass independent x86-vs-native differential state tests and same-scene FPS/visual/gameplay A/B.

@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pe_inspect import PEFile  # noqa: E402
 from flag_liveness import dead_flag_writes
-from function_map import build_function_map, write_function_map
+from function_map import build_function_map, write_function_map, scan_pcode_provenance
 
 CHUNK = 1500
 
@@ -378,8 +378,10 @@ def main() -> int:
         args.out.write_text(main_src)
         files.append(args.out)
     if args.function_map_out:
+        _, _, bodies = scan_pcode_provenance(args.pcode)
         mapping = build_function_map([(addr, length) for addr, length, _ in insns],
-                                     funcs, args.pe.name, parts=args.parts, chunk_size=CHUNK)
+                                     funcs, args.pe.name, parts=args.parts, chunk_size=CHUNK,
+                                     function_bodies=bodies)
         write_function_map(args.function_map_out, mapping)
     print(f'{len(insns)} instructions -> ' + ' '.join(str(f) for f in files))
     if unsupported:

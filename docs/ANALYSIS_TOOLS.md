@@ -386,3 +386,23 @@ with these maps by `tools/recomp/analyze_guest_hotspots.py`. This does
 **not** recover function ownership or measure per-function CPU times.
 Reproduction commands, verified aggregate results, external references and
 remaining research: [2026-10-14 function-level performance report](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
+
+## Original Ghidra body ownership and ARM64 symbolization (opt-in, 2026-10-14)
+
+For a saved analyzed original project, `ExportPcode.java` can emit
+only `F/B` metadata via `--function-bodies-only`. Unlike inferring a
+function end from its next entry, each `B` contains a real inclusive
+Ghidra function body interval and preserves discontiguous code.
+`tools/recomp/function_map.py --body-records <ignored-private-file>`
+joins this metadata with an earlier raw `*.pcode` export to produce
+schema-v2 private maps, without changing the generated C or gameplay.
+
+`tools/recomp/resolve_guest_samples.py` accepts a normalized ARM64
+ELF-PC TSV or a symbolized C source-line TSV. Its inline-aware
+`llvm-addr2line -a -f -i` resolution maps native locations to generated
+x86 labels, then to Ghidra B bodies where uniquely known. It reports
+unresolved, ambiguous and unmapped buckets rather than assigning
+fictional CPU cost. See [full directions and verified private aggregate
+counts](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md). Do not publish raw
+function ranges, proprietary P-code, native address traces or personal
+original game resources.

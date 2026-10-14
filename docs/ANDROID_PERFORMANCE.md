@@ -328,3 +328,18 @@ not FPS or ARM64 real-device results.
 
 Commands, external references, attribution rules and follow-up experiments:
 [Function-level performance research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
+
+## Function-body CPU symbolization phase (2026-10-14)
+
+Native Android generated-C objects already carry `-gline-tables-only`.
+The new offline `resolve_guest_samples.py` follows inline call chains
+through helper code (not just top `llvm-addr2line` source lines) and uses
+Ghidra's noncontiguous function-body ranges to classify candidate original
+functions. The real unstripped ARM64 library was tested with **artificial**
+ELF-PC weights only: 10/11 linked, 1 left unknown. No runtime overhead
+is added to normal gameplay and **no FPS gain was measured**.
+
+Four private Ghidra exports gave 7,116 body ranges and 519,757/599,770
+instructions uniquely assigned to static Ghidra bodies. See
+[the full methodology and reproduction commands](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md)
+for identity and accuracy limits.

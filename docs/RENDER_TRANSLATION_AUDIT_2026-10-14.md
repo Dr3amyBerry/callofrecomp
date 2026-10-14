@@ -122,6 +122,18 @@ attribution to chunk 186/187 or another range must not be presented as
 single-function cost. See [function-level performance research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) for exact reproducible mapping,
 safe sample correlation and reference recompilers.
 
+## Function-body and inlined native source attribution — follow-up
+
+A saved Ghidra project was used to export inclusive, noncontiguous function
+body ranges for all four original modules. 519,757 / 599,770 translated
+x86 instruction addresses map uniquely to a static Ghidra body. An
+**offline** ARM64 native ELF-PC resolver now follows Clang's *inlined*
+generated-C callsite rather than misattributing helpers from
+`recomp_rt.h` and NDK headers. The real unstripped shared library
+proved address-to-line resolution, and artificial PC fixtures verified
+the end-to-end mapping, NOT actual performance or frames per second.
+See [body mapping and native sample procedure](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
+
 ## Technical references
 
 - GL4ES environment and batching/VBO modes:

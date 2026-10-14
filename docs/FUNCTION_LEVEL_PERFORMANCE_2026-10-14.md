@@ -151,3 +151,136 @@ file, faster synthetic benchmark or successful WSA boot must not be
 called an ARM64 in-game FPS improvement without a matching device
 measurement. Preserve rejected experiments in the audit to avoid
 repeating unsuccessful approaches.
+
+
+## 6. New: noncontiguous Ghidra function bodies and native-PC attribution
+
+**Implemented and validated on 2026-10-14.** Previously exported `F`
+records only named the start of each recovered function. Ghidra's actual
+function-body model consists of one or more *noncontiguous inclusive*
+address intervals. The updated `ExportPcode.java` emits `B <entry> <min> <max>`
+for every such interval. A new `--function-bodies-only` flag runs on an
+already-saved project, exporting only function metadata without dumping
+commercial p-code operations or forcing a fresh decompilation.
+
+The new `function_map.py --body-records ...` option combines an existing
+private `*.pcode` with that separate F/B export. It rejects a mismatch
+between function entry sets and refuses missing B records. `pcode2c.py`
+continues to ignore the new B records while regenerating the same native C;
+its optional `--function-map-out` now supports B metadata embedded in a
+future full export. Old v1 sidecars are still accepted, but must **not**
+claim instruction ownership.
+
+**Actual private baseline** from the saved project and the verified original
+four CoD 1.5 single-player modules:
+
+| Module | Ghidra B ranges | Translated instructions uniquely assigned to Ghidra body | Unassigned or non-unique |
+| --- | ---: | ---: | ---: |
+| CoDSP.exe | 3,780 | 286,884 | 46,324 |
+| cgamex86.dll | 1,077 | 76,640 | 5,301 |
+| gamex86.dll | 1,625 | 120,830 | 23,284 |
+| uix86.dll | 634 | 35,403 | 5,104 |
+| **Total** | **7,116** | **519,757** | **80,013** |
+
+Of 599,770 translated instruction starts, approximately 86.7% fall
+unambiguously inside a Ghidra-owned body interval. The four private maps
+showed no overlapping function-body owners on these instruction addresses.
+Ghidra still cannot guarantee that its static body definitions represent
+the game's actual call stack, or that every source instruction is discovered.
+
+### Offline native ARM64 symbolization — without new per-frame hooks
+
+Android CMake **already** compiles the generated C with
+`-gline-tables-only`. The unstripped, local
+`build-android-native/lib/libmain.so` retains enough DWARF line data to
+convert native AArch64 ELF-PCs to generated C source locations with
+`llvm-addr2line`. Merely reading the first location loses many hot
+instructions: Clang inlines code from `recomp_rt.h` and the NDK,
+particularly `rd`, `memcpy`, `mask` and `scarry`. The new resolver
+therefore invokes `llvm-addr2line -a -f -i` and extracts the outermost
+**generated-C** callsite from the inline stack. It rejects a missing
+positive source line rather than assigning a guessed instruction.
+
+Its pipeline is:
+
+```text
+Actual Simpleperf/native samples of libmain.so
+  -> verified ELF-relative code addresses (not Android process ASLR PCs)
+  -> llvm-addr2line with inline call-chain expansion
+  -> matching private *_recomp_pN.c:line
+  -> preceding actual L_<x86_addr>: label within the same generated chunk
+  -> matching verified Ghidra B body ranges
+  -> weighted sample counts for candidate functions, with unknown buckets
+```
+
+**Regressions verified:** 90 Python tests passed (4 environment-dependent skips);
+25/25 host CTest targets passed. All four saved Ghidra projects were
+reopened with `-noanalysis` and the new body-only Java exporter executed
+successfully. The private body sidecars and profiler fixtures are ignored by
+Git; no public release or normal gameplay build was changed.
+
+**Verified mechanics, not performance:** a private deterministic fixture
+of 11 artificial ELF-PC sample weights, selected from the already-built
+ARM64 `codsp_chunk_207_spaces`, resolved 10 sample weights to generated
+x86 instruction addresses and to three distinct Ghidra function bodies.
+One address was intentionally left unattributed because its debug inline
+callsite lacked a positive line number. These were hand-picked machine
+addresses; **they were not sampled on a phone and do not identify a
+runtime bottleneck**.
+
+### Reproduce with your own private CoD 1.5 data
+
+1. In the existing Ghidra project with these exact analyzed binaries,
+   run `ExportPcode.java` using `-postScript ExportPcode.java
+   <ignored-path>/codsp_bodies.txt --function-bodies-only`, with
+   `-process CoDSP.exe -noanalysis` and the repository's
+   `tools/ghidra` script path. Repeat for the three DLL names.
+   A new project may first need a full normal Ghidra import and analysis.
+2. Join those F/B-only files to already-exported raw headers, e.g.:
+
+```powershell
+python tools/recomp/function_map.py recomp_out/codsp.pcode --module CoDSP.exe --parts 12 --body-records recomp_out/codsp_bodies.txt --out recomp_out/codsp_function_map_v2.json
+```
+
+3. Obtain genuine samples from the ARM64 device with Simpleperf or a
+   comparable profiler, keeping the corresponding **unstripped**
+   `libmain.so`. Filter to that exact ELF build and resolve the
+   DSO mapping/load bias correctly. The analyzer does NOT silently
+   subtract Android process ASLR bases for you.
+4. Prepare an ignored, tab-separated `recomp_out/native_elf_pcs.tsv`
+   using this exact schema (the address shown is illustrative, NOT a
+   measured PC):
+
+```text
+elf_pc	samples
+0x1000	12
+```
+
+5. Run the native ELF→source→guest resolver:
+
+```powershell
+python tools/recomp/resolve_guest_samples.py --native-pcs recomp_out/native_elf_pcs.tsv --elf build-android-native/lib/libmain.so --addr2line <NDK>/toolchains/llvm/prebuilt/<host>/bin/llvm-addr2line --generated recomp_out/codsp_recomp_p11.c --map recomp_out/codsp_function_map_v2.json --json
+```
+
+Repeat `--generated` for every relevant generated C translation unit and
+`--map` for each module. A pre-symbolized TSV with
+`source_file<TAB>source_line<TAB>samples` can instead be used with
+`--samples`. Leave raw body maps, addresses, traces and reports private.
+
+**Safety / validity gates:**
+
+- Match the native ELF build ID, exact generated C source generation and
+  profiler target APK. If sources changed since building `libmain.so`,
+  a line number could point to the wrong original instruction. This
+  version documents that critical precondition; it does not yet verify
+  per-source SHA-256 identities automatically.
+- Native inline line-table attribution is **approximate**; it is not a
+  perfect guest PC trace. Generated C can be reordered/optimized, and
+  some helper frames have no valid caller line. These remain unowned.
+- A B body range is Ghidra's **static** model; multiple functions may
+  share code or compiled control flow may jump inside a body. A sample
+  count is not exclusive function CPU time.
+- No physical ARM64 phone is connected via ADB (only WSA x86_64), so
+  native ARM64 crowded-scene FPS and representative function rankings
+  remain **unverified**. This work made no renderer/build optimization
+  and did not regenerate game code or publish original-derived sidecars.

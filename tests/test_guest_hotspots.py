@@ -45,6 +45,21 @@ class HotspotTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             annotate(log, [{"schema_version": 2}], top=1)
 
+
+    def test_v2_body_ownership_is_context_not_sampled_cpu(self):
+        mapping = build_function_map(
+            [(0x1000, 1), (0x1001, 1), (0x1002, 1)],
+            [0x1000, 0x1002], "test.exe", chunk_size=3,
+            function_bodies=[(0x1000, 0x1000, 0x1001),
+                             (0x1002, 0x1002, 0x1002)])
+        outcome = annotate("cpu sample: chunk 00001000-00001003 time_us=90 calls=1",
+                           [mapping])
+        row = outcome["hot_chunks"][0]
+        owners = row["matches"][0]["body_function_instruction_counts"]
+        self.assertEqual([r["instruction_count"] for r in owners], [2, 1])
+        self.assertEqual(row["sampled_time_us"], 90)
+        self.assertEqual(row["function_cpu_attribution"], "NOT_AVAILABLE")
+
     def test_top_sort_and_ignored_non_profile_lines(self):
         data = annotate("cpu sample: chunk 00000010-00000011 time_us=3 calls=1\n"
                         "UNRELATED\n"

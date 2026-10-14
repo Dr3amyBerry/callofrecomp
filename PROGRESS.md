@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Ghidra function bodies and ARM64 inline-aware sample resolution
+
+- [x] Extended Ghidra's private `ExportPcode.java` data with inclusive `B` function-body ranges, preserving disconnected regions; `--function-bodies-only` extracts just metadata from the saved project without re-exporting P-code or compiling the game.
+- [x] Added compatible v2 sidecar mapping and `--body-records` input; it rejects stale/nonmatching original F entries, empty body data and dangerous destination overwrites. The existing legacy v1 files and default generated gameplay C remain unchanged.
+- [x] Used saved private Ghidra 12.1.4 projects and original exact CoD 1.5 raw P-code to build all four private v2 maps: 7,116 original Ghidra function-body intervals; 519,757 uniquely owned translated instructions, 80,013 not uniquely owned, out of 599,770. This is static Ghidra membership only, NOT actual per-function CPU.
+- [x] Added `resolve_guest_samples.py`: accepts pre-symbolized source-line TSV or normalized native ELF PC TSV, queries unstripped Android `libmain.so` via `llvm-addr2line -a -f -i`, recovers *inlined* generated-C call sites, then resolves guest instruction label and possible Ghidra function body. Header-only/helper PC samples, unknown lines and ambiguous bodies remain explicitly unowned.
+- [x] Verified a real unstripped ARM64 `libmain.so` resolves to private generated CoDSP C files. An **artificial** 11-sample ELF-address smoke linked 10 to guest instructions and unique body entries, 1 remained unresolved; this validates the symbolization chain, NOT game FPS or a representative CPU profile.
+- [x] Verified Ghidra 12.1.4 `-process ... -noanalysis` body exports for all four original modules; 90 Python tests pass (4 skips), and 25/25 CTest pass. No normal APK was rebuilt, since runtime/guest rendering C is unchanged.
+- [ ] Collect actual native ARM64 Simpleperf/perf DSO samples in the crowded training scene (only WSA x86_64 is currently ADB-connected), and prove build-ID/source hashes match before treating addresses as performance evidence. Continue to avoid tuning renderer options without measured payoff.
+
 ### 2026-10-14 — Original x86 function-entry diagnostics (research archived)
 
 - [x] Preserved previously discarded Ghidra `F` metadata in an opt-in JSON sidecar for `pcode2c.py`, plus a standalone streaming `I/F` header mapper and a non-attributing existing-CPU-log analyzer. No native rendering, simulation, loader or default generated C behavior changed.
