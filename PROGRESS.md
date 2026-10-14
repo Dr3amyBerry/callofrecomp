@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Punto de control consolidado y continuidad técnica (0/5)
+
+- [x] Estado integral a fecha actual, referencias, arquitectura, ensayos ANGLE/Vulkan, hashes y límites recogidos en [**PROJECT_STATUS_CHECKPOINT_2026-10-14.md**](docs/PROJECT_STATUS_CHECKPOINT_2026-10-14.md).
+- [x] Verificados `main` limpio en `1906ace`, [CI de `1906ace` aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38598366421), WSA API 33 x86_64 como único dispositivo; no hay TECNO ARM64 conectado.
+- [x] Estado de referencia: GL4ES estable, ANGLE desinstalado, settings de driver `null`; **60 FPS TECNO** sin confirmar, baseline física 24,70 FPS/38,895 ms CPU-frame y contador **0/5**.
+- [ ] Continuar con validación de **escena 3D Camp Toccoa** e imagen A/B bajo GL4ES vs ANGLE en WSA; medir FPS solo si hay escena idéntica y proceso reproducible. La optimización CPU ARM64 sigue pendiente de teléfono.
+
 ### 2026-10-14 — ANGLE x86_64 compilado y ejecutado sobre Vulkan en CallofRecomp WSA (0/5)
 
 - [x] Build Linux upstream real **exitosa**, [GitHub Actions #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796) (**34m50s**): `AngleLibraries.apk` x86_64 **8.162.364 bytes** y SHA-256 **`40a48ae3cb3ee6051768c6b7f9d23fea3e3eeea7e1876e4d833c950ab275baa3`**, commit/árbol oficial pinneado concordante, APK de `org.chromium.angle` con firma válida **CN=Unknown** (NO Google).

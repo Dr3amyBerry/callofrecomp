@@ -4,6 +4,13 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Próxima etapa de ejecución — WSA 3D reproducible, A/B/A exploratorio (2026-10-14)
+
+- [x] Documentado el [checkpoint integral](PROJECT_STATUS_CHECKPOINT_2026-10-14.md) del port, perfiles ARM64 históricos, Vulkan propio, Zink, build ANGLE, verificaciones WSA, restauración y riesgos.
+- [ ] Identificar de manera no destructiva la partida estable y una ruta reproducible para cargar la escena Camp Toccoa en WSA; **evitar reset de saves**.
+- [ ] Capturar imagen real 3D/HUD con GL4ES (A) y ANGLE/Vulkan (B), restaurar y repetir A. Registrar shader warmup, glitches, fallos y carga de la escena.
+- [ ] Capturar frametimes/FPS reales del juego con el mismo estado. Si las condiciones difieren, marcar **inconcluso**; nunca equiparar menú ni prototipo WSI con 3D/Camp Toccoa ni extrapolar WSA al TECNO.
+
 ## ANGLE Vulkan en juego real WSA, cierre de compatibilidad inicial (2026-10-14)
 
 - [x] GitHub Actions Linux compiló el APK experimental x86_64 desde fuente oficial pinneada; SHA, ABI, EGL/GLES, paquete y firma Android verificados. Compilación real en **34m50s**.
