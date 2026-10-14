@@ -19,6 +19,10 @@ retain the strict host cap. A warning identifies that combination because
 remaining driver synchronization may lower FPS. Display mode information is
 checked again during swaps while synchronization remains enabled.
 
+### WSA-only uncapped diagnostic
+
+The ordinary engine intentionally limits itself to **60 FPS**, even on WSA's **75-Hz** virtual display. To measure WSA gameplay headroom without the host cap, build an isolated APK using `python tools/recomp/build_android.py --abi x86_64 --wsa-uncap-bench`. The flag is **OFF by default**, rejected for ARM64, and does not switch OpenGL/GL4ES to Vulkan; driver VSync can still limit presentation. On WSA the controlled A2/B/A3 measurement was **55.05 → 57.20 → 55.30 FPS** with no CPU/frame reduction, so removing this cap alone cannot deliver 120 FPS. Restore the reference APK after the experiment. [Staged WSA benchmark](WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md).
+
 Frame timing output is opt-in through `CODRECOMP_FRAME_STATS`. On Android,
 create `frame_stats` in the writable profile directory to enable it; remove
 that file to disable it on the next launch. Reported times cover the runtime

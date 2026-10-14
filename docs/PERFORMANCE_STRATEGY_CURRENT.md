@@ -10,9 +10,11 @@
 
 El teléfono TECNO no está disponible. **Utilizar WSA `127.0.0.1:58526` exclusivamente mientras tanto**, para pruebas x86_64, diagnóstico de API, equivalencia funcional y prototipos seguros; **no extrapolar a FPS ARM64/Mali**. La meta y referencia física no cambian.
 
-Se comprobó Vulkan 1.3 **mediante código NDK real ejecutado en WSA**, dispositivo AMD y extensión `VK_KHR_swapchain`. No hay renderer Vulkan en el juego, superficie/swapchain/present ni mejora de FPS medida. DirectX 12 existe en Windows, no como API directa del proceso Android. **Se mantiene OpenGL/GL4ES como renderer de referencia**. Ver [auditoría de APIs y permisos GPU Mali](WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md).
+Se comprobó Vulkan 1.3 **mediante código NDK real ejecutado en WSA**, dispositivo AMD y extensión `VK_KHR_swapchain`. Posteriormente una aplicación independiente sí creó una superficie/swapchain Vulkan y presentó **1.276 frames a 75 FPS FIFO** (color sólido, NO render del juego). El control OpenGL del juego se mantuvo ~55 FPS; quitar únicamente el límite del host, sin cambiar GL4ES, dio **55,05 → 57,20 → 55,30 FPS** en A2/B/A3, sin reducir CPU/frame. La comparación real con Vulkan en el juego sigue pendiente. [Benchmarks WSA por etapas](WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md). DirectX 12 existe en Windows, no como API directa del proceso Android. **Se mantiene OpenGL/GL4ES como renderer de referencia**. Ver [auditoría de APIs y permisos GPU Mali](WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md).
 
 **Contador de experimentos fallidos: 0/5, sin cambios.** Las pruebas WSA y Vulkan de capacidades no constituyen un intento válido de rendimiento en el TECNO.
+
+**Cierre de mediciones WSA:** A1 GL4ES 55,20 FPS, B1 GL4ES sin cap 57,20, A3 GL4ES restaurado 55,30. Vulkan WSI aislado presentó ~75 FPS con color sólido; **no** es una mejora del juego. Se reinstaló la referencia A1 byte a byte y se verificó su SHA-256. Ver [informe completo](WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md). Contador oficial **0/5**, fases ARM64 sin cambios.
 
 ## Meta y referencia
 

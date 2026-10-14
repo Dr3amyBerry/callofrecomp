@@ -517,7 +517,20 @@ K(SwapBuffers) {
         last_interval = interval; last_refresh = refresh;
         Uint64 frequency = SDL_GetPerformanceFrequency();
         Uint64 now = SDL_GetPerformanceCounter();
+#ifdef CODRECOMP_WSA_UNCAP_BENCH
+        /* Only an opt-in x86_64 WSA diagnostic build may bypass the
+         * game's normal 60 FPS pacing. SDL/EGL or 75-Hz WSA VSync may
+         * still constrain presentation. NEVER enable in production. */
+        static int warned_uncap;
+        if (!warned_uncap) {
+            fprintf(stderr, "EXPERIMENTAL WSA BENCH: 60 FPS host cap disabled; "
+                    "GPU/display VSync and frame-time still limit throughput\n");
+            warned_uncap = 1;
+        }
+        Uint64 delay = 0;
+#else
         Uint64 delay = use_vsync ? 0 : frame_delay_ticks(previous, now, frequency);
+#endif
         Uint64 deadline = now + delay;
         while (delay) {
             Uint64 ms = delay * 1000 / frequency;

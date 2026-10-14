@@ -9,6 +9,23 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Cierre y restauración exacta de la referencia WSA
+
+- [x] Recuperados los datos previos sin repetir mediciones: B1 GL4ES sin cap **57,20 FPS**, A3 GL4ES restaurado **55,30 FPS**; no hubo reducción de CPU/frame.
+- [x] Tras detectar una diferencia entre el nuevo build estable y el backup A1, reinstalada en WSA **la APK original exacta**, no una variante recompilada. SHA-256 de `lib/x86_64/libmain.so` instalada = referencia A1: `403a5bc304b3ec36b43b04a8322c31a212727a8a8ff254e47b70afec2d960cde`. Datos de aplicación conservados.
+- [x] `CODRECOMP_WSA_UNCAP_BENCH:BOOL=OFF` en el build local, por defecto OFF. Resultados, herramientas y limitaciones recogidos en [informe WSA](docs/WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md).
+- [ ] A/B/A real del **juego** usando Vulkan, no solo color sólido: PENDIENTE. Teléfono no disponible y contador formal sin cambios en **0/5**.
+
+### 2026-10-14 — Benchmark por etapas WSA, sin ganancia Vulkan del juego aún (0/5)
+
+- [x] Camp Toccoa Equilibrado GL4ES antes/después: **A1 55,20 FPS / 17,14 ms CPU; A2 55,05 FPS / 17,315 ms CPU**, 60 ventanas cada uno.
+- [x] Vulkan NativeActivity Android separado: `VkAndroidSurfaceKHR`, `VkSwapchainKHR`, clear y present, 1280×720. **1.276 frames / 17,01 s = 75,014 FPS**, solo color sólido. Repetición solicitando inmediato volvió a FIFO: 75,055 FPS.
+- [x] WSA pantalla 75 Hz, Vulkan sin modo inmediato; juego tiene límite de 60 FPS en `frame_pacing.h`.
+- [x] Capturadores y pruebas reproducibles; logs, APK y guardados comerciales fuera de Git.
+- [x] Diagnóstico opcional `--wsa-uncap-bench` exclusivamente x86_64 y OFF por defecto: **A2/B/A3 55,05 → 57,20 → 55,30 FPS**; CPU/frame 17,315 → 17,47 → 17,27 ms. Solo se evita ~2 FPS de pacing, NO es Vulkan. La APK original fue reinstalada.
+- [ ] Backend Vulkan del juego completo y comparación final A/B/A siguen PENDIENTES. **No declarar mejora ni 120 FPS del juego**.
+- [x] [Informe de benchmarks](docs/WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md), contador oficial 0/5.
+
 ### 2026-10-14 — WSA sustituye temporalmente al TECNO; Vulkan Android confirmado, DirectX12 no integrado (0/5)
 
 - [x] Solo WSA en ADB, `127.0.0.1:58526` (x86_64, Android 13). Teléfono no disponible. El juego existente abrió su menú mediante OpenGL/GL4ES; no se alteraron saves ni APK.

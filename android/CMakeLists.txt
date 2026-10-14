@@ -52,6 +52,17 @@ if(CODRECOMP_GL_PROFILING)
       PROPERTY COMPILE_DEFINITIONS CODRECOMP_GL_PROFILING)
   endforeach()
 endif()
+# Diagnostic ONLY: compare actual WSA gameplay with and without the fixed
+# 60-FPS host cap. This does not switch renderer or improve GPU throughput.
+option(CODRECOMP_WSA_UNCAP_BENCH "Disable 60-FPS cap only in WSA x86_64 diagnostic build" OFF)
+if(CODRECOMP_WSA_UNCAP_BENCH)
+  if(NOT ANDROID_ABI STREQUAL "x86_64")
+    message(FATAL_ERROR "CODRECOMP_WSA_UNCAP_BENCH must only target WSA x86_64")
+  endif()
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/window.c" APPEND
+    PROPERTY COMPILE_DEFINITIONS CODRECOMP_WSA_UNCAP_BENCH)
+endif()
+
 # Opt-in CPU time attributable to GL4ES/GLES entry points on the guest thread.
 # The normal build never pays the clock_gettime cost.
 option(CODRECOMP_GL_TIMING "Compile opt-in renderer GL call CPU timing" OFF)

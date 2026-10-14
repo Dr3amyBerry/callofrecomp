@@ -2,6 +2,8 @@
 
 **Decisión actual:** NO reemplazar todavía el renderizador GL4ES/GLES; **explorar Vulkan como backend experimental Android** solo tras demostrar el coste de GPU o de la traducción GLES y establecer un alcance verificable. **NO implementar un renderizador híbrido «Vulkan + DirectX 12» dentro del proceso Android.** Mantener la estrategia de rendimiento v1 y el contador **0/5**.
 
+**Actualización posterior:** una NativeActivity aislada creó de verdad `VkAndroidSurfaceKHR`, `VkSwapchainKHR` y presentó frames a ~75 FPS FIFO en WSA. Las menciones siguientes a presentación «no probada» documentan el estado anterior. [Resultados nuevos](WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md). **El juego aún no tiene un renderer Vulkan.**
+
 ## Situación de pruebas (teléfono temporalmente no disponible)
 
 El usuario indicó que el TECNO físico **no está disponible**. En esta sesión **no se usó el teléfono**. El único dispositivo ADB conectado y utilizado fue **WSA `127.0.0.1:58526`, Android 13, x86_64**. WSA es válido para API/prototipos, validación funcional y A/B **dentro de WSA**, pero **NO predice FPS, frecuencias de GPU, drivers ni temperatura de la Mali ARM64**.
@@ -32,7 +34,7 @@ Implementar Vulkan real exigiría rediseñar la capa que traduce el API OpenGL h
 | GPU reportada | **AMD Radeon(TM) Graphics**, API **Vulkan 1.3.0** |
 | Familias de colas | 3; al menos una con capacidad gráfica |
 | `VK_KHR_swapchain` | Disponible entre extensiones de dispositivo |
-| Superficie EGL/Vulkan, `vkCreateSwapchainKHR`, presentación y tiempo GPU | **NO PROBADOS** |
+| Superficie Vulkan Android, swapchain y presentación | **PROBADOS en NativeActivity aislada (~75 FPS FIFO); tiempo de GPU por draw NO medido** |
 
 La prueba no usa assets del juego, se ejecutó únicamente en WSA (x86_64) y está implementada en [`tools/recomp/diagnostics/probe_android_vulkan.c`](../tools/recomp/diagnostics/probe_android_vulkan.c). Su salida privada exacta está bajo `.local/profiles/wsa_vulkan_probe_result.txt`. La presencia de una extensión no garantiza que una escena del juego pueda presentarse o que su rendimiento sea superior al de GLES.
 
@@ -65,7 +67,7 @@ Las siguientes observaciones vienen del **perfil anterior cuando sí estaba cone
 ## Plan WSA temporal y criterios para un piloto gráfico
 
 1. **Mantener OpenGL/GL4ES como A estable.** WSA x86_64 es banco de pruebas; grabar escena, Build ID, perfil Equilibrado, HUD y 40–60 ventanas de FPS sin instrumentación.
-2. **Probar viabilidad gráfica Vulkan aislada** (siguiente paso técnico, todavía no hecho): SDL2 Vulkan surface → `vkGetPhysicalDeviceSurfaceSupportKHR` → `vkCreateSwapchainKHR` → limpiar/color de fondo → `vkQueuePresentKHR`. Comparar tiempos CPU de presentación. Esto no es aún portar el renderizador ni demuestra FPS en CoDSP.
+2. **Viabilidad gráfica Vulkan aislada comprobada** (posterior al probe de enumeración): SDL2 Vulkan surface → `vkGetPhysicalDeviceSurfaceSupportKHR` → `vkCreateSwapchainKHR` → limpiar/color de fondo → `vkQueuePresentKHR`. Comparar tiempos CPU de presentación. Esto no es aún portar el renderizador ni demuestra FPS en CoDSP.
 3. Antes de escribir todo el renderer, valorar un **backend ANGLE GLES→Vulkan** de forma optativa en una compilación aislada si la versión de SDL/EGL, GL4ES y WSA son compatibles; exige pruebas de compatibilidad visual y GL extensions, no es un simple cambio de variable universal.
 4. Si hay ganancia reproducible en WSA y soporte de hardware futuro, decidir si merece la pena un **adaptador OpenGL heredado → Vulkan nativo**. Priorizar grandes bloques: recursos/estados/shaders, validación de menús, HUD widescreen, texturas, efectos, estabilidad y escenas concurridas. Planificar fuera de la rama estable.
 5. **DirectX 12 no entra en el renderer Android.** Solo contemplar un backend D3D12 separado si en el futuro existe un ejecutable Windows nativo y una necesidad demostrada. No agregar dos renderers ahora.
@@ -92,4 +94,4 @@ Conservar los resultados, logs, APKs y capturas en `.local/profiles` (ignorados 
 - **117 pruebas Python aprobadas (4 omitidas)** y **31/31 CTest** del proyecto. No hay un renderer nuevo que necesite pruebas de imagen, porque no se ha integrado ninguno.
 - No se invocó ADB del teléfono ausente, no se modificaron APK del juego, datos importados, configuración de gráficos ni guardados.
 
-**Estado de implementación al cerrar el informe:** únicamente se añadió la herramienta de *capability probe*, no un renderer nuevo. Código del juego y partidas intactos; Vulkan **confirmado para enumeración de dispositivo en WSA**; desempeño Vulkan **NO MEDIDO**.
+**Estado actualizado:** además del probe de enumeración, se añadió y ejecutó la prueba de superficie/swapchain/present independiente a ~75 FPS FIFO con un color sólido. **No existe backend Vulkan de CallofRecomp ni se ha medido su FPS**. El tiempo interno de GPU permanece sin medir; código jugable y partidas intactos.

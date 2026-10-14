@@ -45,6 +45,8 @@ def main():
                         help="compile optional guest OpenGL call counters")
     parser.add_argument("--gl-time-profile", action="store_true",
                         help="compile opt-in CPU timing for GL4ES/GLES entry points")
+    parser.add_argument("--wsa-uncap-bench", action="store_true",
+                        help="DIAGNOSTIC WSA x86_64 ONLY: bypass host 60 FPS cap; default OFF")
     parser.add_argument("--render-o2", action="store_true",
                         help="experiment: compile CoDSP renderer partitions p10 and p11 with -O2")
     parser.add_argument("--hot-x87-transform", action="store_true",
@@ -61,6 +63,8 @@ def main():
                         help="experiment: fuse verified CoDSP p1/p8 x87 compare/status/pop blocks; default OFF")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
+    if args.wsa_uncap_bench and args.abi != "x86_64":
+        parser.error("--wsa-uncap-bench is for --abi x86_64 WSA only")
     if not args.sdk or not args.java:
         parser.error("Set ANDROID_HOME and JAVA_HOME, or pass --sdk and --java")
     root = Path(__file__).resolve().parents[2]
@@ -110,6 +114,7 @@ def main():
             f"-DCODRECOMP_CPU_PROFILING={'ON' if args.cpu_profile else 'OFF'}",
             f"-DCODRECOMP_GL_PROFILING={'ON' if args.gl_profile else 'OFF'}",
             f"-DCODRECOMP_GL_TIMING={'ON' if args.gl_time_profile else 'OFF'}",
+            f"-DCODRECOMP_WSA_UNCAP_BENCH={'ON' if args.wsa_uncap_bench else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
             f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",

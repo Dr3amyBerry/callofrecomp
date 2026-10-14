@@ -17,7 +17,7 @@ límite de 60 FPS. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
 · [**Preparar los archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
-· [Decisión Vulkan/DirectX 12 en WSA](docs/WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md) · [Estrategia de rendimiento actual](docs/PERFORMANCE_STRATEGY_CURRENT.md) · [Estado técnico](PROGRESS.md)
+· [Benchmarks Vulkan/WSA](docs/WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md) · [Decisión Vulkan/DirectX 12 en WSA](docs/WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md) · [Estrategia de rendimiento actual](docs/PERFORMANCE_STRATEGY_CURRENT.md) · [Estado técnico](PROGRESS.md)
 
 ## Empezar en Android
 
