@@ -9,6 +9,8 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 - [x] El TECNO no está disponible: usar solo **WSA x86_64 (`127.0.0.1:58526`)** para las siguientes pruebas locales; no asumir que su rendimiento representa al ARM64.
 - [x] [Auditoría de APIs gráficas, causa de permisos GPU y decisión Vulkan/DX12](WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md). Código real Vulkan en WSA pasó `vkCreateInstance`, enumeró AMD Vulkan 1.3 y `VK_KHR_swapchain`.
 - [x] Surface+swapchain+present Vulkan aislados: **75,014 FPS FIFO** con clear a color sólido, NO FPS del juego.
+- [x] **Nuevo hito Vulkan:** shaders SPIR-V reales, pipeline gráfico y 4 vértices/6 índices, `vkCmdDrawIndexed` en WSA. **74,999 FPS** FIFO (1.276 frames, CPU del hilo 1,918 ms/frame), 75 Hz; captura confirma geometría coloreada. [Informe técnico](WSA_VULKAN_INDEXED_MESH_2026-10-14.md).
+- [ ] Próxima etapa gráfica: sampleo de texturas Vulkan `VkImage` y sampler, depth/blend y adaptación de estado del OpenGL original; sin integrar en APK pública antes de equivalencia visual.
 - [x] Juego OpenGL A1/A2 en WSA: **55,20 / 55,05 FPS** en Camp Toccoa.
 - [x] Diagnóstico del cap WSA x86_64: **A2/B/A3 55,05 → 57,20 → 55,30 FPS**; CPU 17,315 → 17,47 → 17,27 ms. Solo evita pacing, no Vulkan.
 - [ ] Renderizador Vulkan que dibuje la partida y A/B/A final: PENDIENTES. [Mediciones](WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md).

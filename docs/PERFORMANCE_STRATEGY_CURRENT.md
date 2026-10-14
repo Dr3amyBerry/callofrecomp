@@ -16,6 +16,8 @@ Se comprobó Vulkan 1.3 **mediante código NDK real ejecutado en WSA**, disposit
 
 **Cierre de mediciones WSA:** A1 GL4ES 55,20 FPS, B1 GL4ES sin cap 57,20, A3 GL4ES restaurado 55,30. Vulkan WSI aislado presentó ~75 FPS con color sólido; **no** es una mejora del juego. Se reinstaló la referencia A1 byte a byte y se verificó su SHA-256. Ver [informe completo](WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md). Contador oficial **0/5**, fases ARM64 sin cambios.
 
+**Avance Vulkan de geometría:** el prototipo aislado WSA también soporta `VkGraphicsPipeline`, shaders SPIR-V y `vkCmdDrawIndexed` en malla de 4 vértices/6 índices, comprobada visualmente. 74,999 FPS de presentación FIFO 75 Hz **no representan FPS de CallofRecomp**. GPU con texturas, profundidad y puente de estado OpenGL aún pendientes. [Hito técnico](WSA_VULKAN_INDEXED_MESH_2026-10-14.md). Contador **0/5**.
+
 ## Meta y referencia
 
 **Meta no negociable:** al menos **60 FPS sostenidos** en el punto de aparición del entrenamiento de Camp Toccoa, en el **TECNO CK6n ARM64**, perfil **Equilibrado**, sin reducir calidad, alterar el HUD panorámico, colisiones, controles ni partidas. No confundir FPS del menú, WSA o microbenchmarks con FPS del juego.

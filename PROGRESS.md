@@ -9,7 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
-### 2026-10-14 — Cierre y restauración exacta de la referencia WSA
+### 2026-10-14 — Vulkan experimental: primera geometría indexada con shaders SPIR-V (0/5)
+
+- [x] `--scene mesh` añadido a la APK Vulkan de diagnóstico independiente. Compilación GLSL → SPIR-V con `glslc` y validación `spirv-val` del NDK; carga de assets Android y creación de `VkGraphicsPipeline`.
+- [x] Render real con `VkBuffer` de vértices/índices, memoria `HOST_VISIBLE|HOST_COHERENT`, push constants, atributos posición/color/UV y `vkCmdDrawIndexed` (4 vértices, 6 índices, patrón checker procedural). Captura de WSA muestra la geometría coloreada.
+- [x] WSA Vulkan 1280×720 FIFO: **1.276 frames / 17,013 s = 74,999 FPS**, **1,918 ms de CPU/frame del hilo de prueba**, mediana de ventanas 74,993 FPS, p10 74,910. Limitado por 75 Hz: **no es FPS del juego**.
+- [x] Clear anterior **75,014 FPS / 1,902 ms CPU/frame**; no puede inferirse diferencia de carga GPU por FIFO. Evidencia privada en `.local/profiles/wsa_vulkan_ab/mesh-fifo`; [informe técnico](docs/WSA_VULKAN_INDEXED_MESH_2026-10-14.md).
+- [x] Cierre de validación: **127 pruebas Python (4 omitidas), 31/31 CTest**, sintaxis ARM64 de módulo de malla aprobada. APK original del juego intacta y app Vulkan aislada detenida.
+- [ ] Siguiente bloque: texturas GPU subidas con `VkImage`, descriptor/sampler, depth y estados heredados; solo después integrar adaptador de OpenGL del juego. Contador oficial **0/5**, APK de CallofRecomp sin cambios.
+
+
 
 - [x] Recuperados los datos previos sin repetir mediciones: B1 GL4ES sin cap **57,20 FPS**, A3 GL4ES restaurado **55,30 FPS**; no hubo reducción de CPU/frame.
 - [x] Tras detectar una diferencia entre el nuevo build estable y el backup A1, reinstalada en WSA **la APK original exacta**, no una variante recompilada. SHA-256 de `lib/x86_64/libmain.so` instalada = referencia A1: `403a5bc304b3ec36b43b04a8322c31a212727a8a8ff254e47b70afec2d960cde`. Datos de aplicación conservados.

@@ -10,6 +10,9 @@
  */
 #define VK_USE_PLATFORM_ANDROID_KHR 1
 #include <vulkan/vulkan.h>
+#if VK_BENCH_MESH_SCENE
+#include "wsa_vk_mesh.h"
+#endif
 #include <android/native_activity.h>
 #include <android/native_window.h>
 #include <android/log.h>
@@ -60,6 +63,9 @@ typedef struct {
     uint32_t count;
     uint32_t width, height;
     VkPresentModeKHR mode;
+#if VK_BENCH_MESH_SCENE
+    vk_demo_mesh mesh;
+#endif
 } VkBenchVk;
 
 static double wall_seconds(void) {
@@ -88,6 +94,9 @@ static uint32_t clamp_u32(uint32_t value,uint32_t lo,uint32_t hi) {
 
 static void destroy_vulkan(VkBenchVk *v) {
     if (v->device) vkDeviceWaitIdle(v->device);
+#if VK_BENCH_MESH_SCENE
+    vk_demo_mesh_destroy(&v->mesh);
+#endif
     if (v->device) {
         if(v->completed) for(uint32_t i=0;i<v->count;i++)
             if(v->completed[i])vkDestroySemaphore(v->device,v->completed[i],NULL);
@@ -272,6 +281,12 @@ static void *run_vulkan(void *arg) {
     REQUIRE(vkCreateRenderPass(v.device,&ri,NULL,&v.renderpass),
             "vkCreateRenderPass");
 
+#if VK_BENCH_MESH_SCENE
+    REQUIRE(vk_demo_mesh_create(&v.mesh,v.physical,v.device,v.renderpass,
+                                v.width,v.height,ctx->activity->assetManager),
+            "indexed_mesh_pipeline");
+    INFO("VK_MESH_READY vertices=4 indices=6 draws_per_frame=1 procedural_checker=1");
+#endif
     VkCommandPoolCreateInfo pci={0};
     pci.sType=VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     pci.queueFamilyIndex=v.qfamily;
@@ -310,6 +325,9 @@ static void *run_vulkan(void *arg) {
         begin.renderArea.extent=(VkExtent2D){v.width,v.height};
         begin.clearValueCount=1;begin.pClearValues=&clear;
         vkCmdBeginRenderPass(v.cmds[i],&begin,VK_SUBPASS_CONTENTS_INLINE);
+#if VK_BENCH_MESH_SCENE
+        vk_demo_mesh_draw(&v.mesh,v.cmds[i]);
+#endif
         vkCmdEndRenderPass(v.cmds[i]);
         REQUIRE(vkEndCommandBuffer(v.cmds[i]),"vkEndCommandBuffer");
         VkSemaphoreCreateInfo sem={0};
@@ -327,6 +345,12 @@ static void *run_vulkan(void *arg) {
         fence.flags=VK_FENCE_CREATE_SIGNALED_BIT;
         REQUIRE(vkCreateFence(v.device,&fence,NULL,&v.fences[i]),"vkCreateFence");
     }
+    INFO("VK_SCENE name=%s, integration=standalone, gameplay=0",
+#if VK_BENCH_MESH_SCENE
+        "mesh");
+#else
+        "clear");
+#endif
     INFO("VK_READY width=%u height=%u gpu=%s image_count=%u fifo=%d immediate_available=%d present_mode=%d",
          v.width,v.height,props.deviceName,v.count,VK_PRESENT_MODE_FIFO_KHR,
          immediate_supported,(int)v.mode);

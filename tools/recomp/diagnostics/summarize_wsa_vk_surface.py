@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Parse native WSA Vulkan presentation-probe logs.
 
-Input workload is ONLY Vulkan clear-to-color swapchain frames. Do not use
-these FPS figures as CallofRecomp FPS or claim an in-game improvement.
+Input workload is an isolated Vulkan clear or indexed-mesh swapchain demo,
+never full CallofRecomp gameplay. Do not claim an in-game FPS improvement.
 """
 from __future__ import annotations
 import argparse
@@ -22,6 +22,8 @@ RESULT = re.compile(
     r"present_wall_ms_per_frame=(\d+(?:\.\d+)?) "
     r"present_mode=(\w+) resolution=(\d+)x(\d+)"
 )
+SCENE = re.compile(r'VK_SCENE name=(clear|mesh), integration=standalone, gameplay=0')
+MESH_READY = re.compile(r'VK_MESH_READY vertices=(\d+) indices=(\d+) draws_per_frame=(\d+) procedural_checker=(\d+)')
 READY = re.compile(
     r"VK_READY width=(\d+) height=(\d+) gpu=(.+?) image_count=(\d+) "
     r"fifo=(\d+) immediate_available=(\d+) present_mode=(\d+)"
@@ -34,6 +36,14 @@ def parse_one(text: str)->dict:
     r=RESULT.findall(latest)
     w=WINDOW.findall(latest)
     p=READY.findall(latest)
+    scenes=SCENE.findall(latest)
+    if len(scenes)>1:raise ValueError('Conflicting scene markers in one session')
+    scene=scenes[0] if scenes else 'clear'  # Older clear-only builds have no marker.
+    meshes=MESH_READY.findall(latest)
+    if scene=='mesh' and len(meshes)!=1:
+        raise ValueError('Mesh scene missing pipeline/buffer/draw readiness marker')
+    if scene!='mesh' and meshes:
+        raise ValueError('Clear scene unexpectedly reports indexed mesh resources')
     if len(r)!=1 or len(p)!=1 or len(w)<10:
         raise ValueError(f'Incomplete Vulkan presentation run: result={len(r)} ready={len(p)} windows={len(w)}')
     fps=float(r[0][0])
@@ -46,8 +56,15 @@ def parse_one(text: str)->dict:
         raise ValueError('Invalid FPS/frame count consistency')
     n=len(windows)
     return {
-        'type':'Vulkan native Android swapchain clear-only, NOT CallofRecomp',
-        'workload':'single solid-color render pass, no geometry/textures/shaders/game logic/HUD',
+        'type':'Standalone Vulkan Android '+scene+' benchmark, NOT CallofRecomp',
+        'scene':scene,
+        'workload':('indexed quad (4 vertices, 6 indices), vertex+fragment SPIR-V, '+
+                    'procedural checker; no game assets/simulation/HUD' if scene=='mesh' else
+                    'single solid-color render pass, no geometry/textures/shaders/game logic/HUD'),
+        'mesh':({'vertices':int(meshes[0][0]),'indices':int(meshes[0][1]),
+                 'draws_per_frame':int(meshes[0][2]),
+                 'procedural_checker':bool(int(meshes[0][3]))}
+                if scene=='mesh' else None),
         'wsa_only':True,
         'gameplay_fps_comparable':False,
         'gpu_name':p[0][2],

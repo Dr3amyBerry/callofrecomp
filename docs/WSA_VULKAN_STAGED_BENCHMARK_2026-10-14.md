@@ -27,6 +27,10 @@
 
 **Resultado A2/B/A3:** 55,05 → **57,20** → 55,30 FPS (diferencia B de +1,90 a +2,15 FPS respecto a los controles), mientras la CPU/frame **17,315 → 17,47 → 17,27 ms** no disminuyó. Es una mejora de presentación limitada por eliminar el retardo del host, **no de eficiencia del renderizador Vulkan ni de cálculo del motor**. Ni siquiera sin el límite la misma escena llega a 60 FPS medianos en WSA, mucho menos a 120. El límite de pantalla 75 Hz con FIFO seguiría aplicando aunque el trabajo del motor se acelerase más.
 
+## Hito Vulkan posterior a la prueba de superficie
+
+Una versión independiente nueva incorpora **shaders de vértices y fragmentos SPIR-V, un buffer de vértices/índices y `vkCmdDrawIndexed`** con una malla de 4 vértices/6 índices y checker procedural. En WSA obtuvo **1.276 frames en 17,013 s; 74,999 FPS** (CPU 1,918 ms/frame), limitado por FIFO 75 Hz. La captura muestra la malla; **no son FPS del juego**. No altera los resultados históricos A1/Vulkan-clear/A2/B1/A3 ni los repite. [Detalles, código y próximos pasos](WSA_VULKAN_INDEXED_MESH_2026-10-14.md).
+
 ## Lo que se implementó de verdad
 
 - `tools/recomp/diagnostics/wsa_vk_surface_bench.c`: aplicación `NativeActivity` de Android independiente del juego, crea `VkAndroidSurfaceKHR`, selecciona cola gráfica con soporte de presentación, `VkSwapchainKHR`, imágenes, render pass (clear), framebuffers, comandos, semáforos y fences, ejecuta `vkQueuePresentKHR`, imprime estadísticas a logcat y libera recursos. **No tiene shaders de juego ni puente GL heredado.**
