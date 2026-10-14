@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 2: contraste limitado de un bloque x87 con Unicorn
+
+Para las cinco instrucciones `[0x0041B960,0x0041B973)` del cuerpo caliente, Unicorn x86 y la versión compilada de `pcode2c.Gen` coincidieron en **1.024/1.024 valores finales float32, memoria observable, GPR y PC** para casos finitos controlados. Un byte de memoria alterado fue detectado. **No se comparó el estado interno binary80, excepciones ni palabras de control/status**; por tanto esta evidencia **no habilita optimizaciones de x87**. Contador TECNO **0/5**. [Informe](CPU_PHASE2_X87_WINDOW_ORACLE_2026-10-14.md).
+
 ## Fase 2: prueba independiente del prólogo x86, todavía sin rendimiento ARM64
 
 Se comparó mediante **Unicorn x86 real** contra la versión **C compilada por `pcode2c.Gen`** el prólogo de 20 instrucciones del cuerpo caliente `0x0041B8F0`, hasta e incluyendo su primer `JE`. **1.024/1.024 casos** de entradas sintéticas compatibles sin diferencias en registros, CF/PF/ZF/SF/OF, memoria y PC; **512 saltos tomados y 512 no tomados**. Un PC incorrecto introducido artificialmente fue detectado. Hash del PE y p-code original fijado, blobs y DLL privados ignorados. **No** cubre x87, AF, la función entera ni garantiza FPS; pendiente ampliar el oráculo antes de activar fast paths. Sin hardware TECNO: **0/5**. [Informe](CPU_PHASE2_X86_PREFIX_ORACLE_2026-10-14.md).

@@ -4,6 +4,12 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Equivalencia x87 inicial: cinco instrucciones de coma flotante (2026-10-14)
+
+- [x] Oráculo x87 de salida: Unicorn ejecuta `fld/fsub/fmul/fsub/fstp` del CoDSP original frente al C traducido por el generador real.
+- [x] **1.024/1.024 resultados de memoria float32 coincidentes**, stack/operandos/registros generales y PC conservados; falla intencional en byte de salida detectada. Cinco tests sintéticos.
+- [ ] Expandir estado `binary80`, palabras de control/status y FCOM con NaN/excepciones antes de aceptar optimizaciones. No hay resultado de FPS ni intento TECNO: **0/5**. [Informe](CPU_PHASE2_X87_WINDOW_ORACLE_2026-10-14.md).
+
 ## Oráculo diferencial x86 independiente: primer bloque finalizado (2026-10-14)
 
 - [x] Implementar ejecutor Unicorn para **bytes auténticos x86**, confrontar con p-code traducido mediante `pcode2c.Gen` compilado a DLL (fuentes privados solo bajo `.local`). Entrada validada por hashes PE/p-code, Capstone, tamaño y destino real de la primera bifurcación.

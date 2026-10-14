@@ -35,6 +35,10 @@ python tools/recomp/diagnostics/verify_x86_prefix_oracle.py --pe ".local/private
 
 La ruta `--output` no debe existir. El proceso produce `translated_private.c`, `translated_private.dll` y `summary.json` **únicamente fuera del control de versiones**. En CI se ejecutan las pruebas sintéticas y no este comando dependiente del juego comercial.
 
+## Extensión posterior: oráculo aislado de cinco instrucciones x87
+
+La primera prueba de salida x87 se amplió en un ensayo independiente: **1.024/1.024 valores finales `float32` idénticos bit a bit** en `[0x41B960,0x41B973)` con Unicorn y la traducción compilada; también se comprobó que un byte de salida alterado es detectado. **No** implica equivalencia de `binary80` ni del estado FPU completo. [Informe independiente](CPU_PHASE2_X87_WINDOW_ORACLE_2026-10-14.md).
+
 ## Límites: qué NO se ha probado
 
 1. **No equivale a las 553 instrucciones de la función.** Solo se verificaron las primeras **20**, hasta el primer salto; las ramas posteriores, bucles, colisiones y la zona caliente de coma flotante aún necesitan oráculos delimitados.

@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 2: oráculo x87 de salida `float32` (0/5)
+
+- [x] Implementado **`verify_x87_window_oracle.py`** con x86 Unicorn y el `pcode2c.Gen` real, abarcando cinco instrucciones de la función `0x0041B8F0`: `[0x41B960,0x41B973)`, `fld/fsub/fmul/fsub/fstp`.
+- [x] **1.024/1.024 estados finitos** con resultado `float32` **idéntico bit a bit**, misma memoria de pila y operandos, registros generales y PC. Control negativo alterando un byte del resultado **rechazado**.
+- [x] Cinco pruebas offline sintéticas y bloqueo por hashes PE/p-code e identidad Capstone de las instrucciones; archivos privados nunca publicados, juego estable intacto.
+- [ ] Aún **NO** equivalencia del estado x87 completo `binary80`, control/status word, FCOM, NaN o excepciones; no equivale a la función completa ni a mejora ARM64. **0/5**. [Informe](docs/CPU_PHASE2_X87_WINDOW_ORACLE_2026-10-14.md).
+
 ### 2026-10-14 — Fase 2: oráculo x86 real ejecutado y validado (0/5)
 
 - [x] `verify_x86_prefix_oracle.py` ejecuta en **Unicorn x86** 20 instrucciones auténticas del prólogo de `0x0041B8F0` y las compara con el C compilado desde **`pcode2c.Gen` real**; binario y p-code privados verificados con SHA-256 fijo antes de empezar.
