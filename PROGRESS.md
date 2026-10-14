@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — TECNO ARM64: x87 normal-f2d mejora FPS reales, A/B/A/B (0/5)
+
+- [x] A/B/A/B en Camp Toccoa, TECNO CK6n fisico, Equilibrado y 40 ventanas estables/corrida: **A1 24,90 / B1 25,70 / A2 25,00 / B2 25,85 FPS**; medias A **24,95** vs B **25,775**, mejora **+0,825 FPS (+3,31 %)**.
+- [x] CPU/frame A promedio **38,570 ms** vs B **37,270 ms** (ahorro **1,300 ms/frame**), p10 por ventana 24,35 vs 25,20. B funciona con `--hot-x87-transform --x87-normal-f2d` sin modificar HUD/calidad; guardado comprobado identico SHA-256.
+- [x] Ensayo adicional `-O2` solo en geometria CoDSP p1: C1 **25,90 FPS mediana / 19,90 p10 / 37,180 ms CPU**, sin mejora CPU ni FPS medianos frente a B2. **Descartado; codigo de flag reverted y APK B reinstalada y verificada byte a byte**. 231 tests Python (4 omitidas), 34/34 CTest.
+- [ ] Meta TECNO **60 FPS sostenidos todavia pendiente**: quedarian ~20,6 ms/frame por ahorrar a partir de B. No extrapolar la mejora a otras misiones ni generalizar x87 sin oraculo independiente. [Informe completo](docs/TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md).
+
 ### 2026-10-14 — WSA: conversion x87 f2d, A/B/A sin mejora (0/5)
 
 - [x] Recuperada y auditada la build x86_64 `--x87-normal-f2d`, compilada y firmada; `CODRECOMP_X87_NORMAL_F2D=ON` solo en CoDSP p1/p8. APK A y dos saves verificados intactos antes del ensayo.

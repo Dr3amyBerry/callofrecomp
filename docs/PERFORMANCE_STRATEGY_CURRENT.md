@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Resultado nuevo en TECNO fisico ARM64: x87 normal-f2d mejoro el gameplay (exito, 0/5)
+
+**Datos controlados A/B/A/B**, Camp Toccoa, 40 ventanas de ~1 s por corrida: **A1 24,90 / B1 25,70 / A2 25,00 / B2 25,85 FPS mediana**. B tiene `--hot-x87-transform --x87-normal-f2d` y mantiene GL4ES y Equilibrado. Promedio B vs A: **+0,825 FPS (+3,31%)** y **1,300 ms CPU/frame menos** (38,570 → 37,270). Mejora fisica reproducida y mayor que variacion A, temperatura B incluso mayor; no alcanza 60 FPS. Ensayo `-O2` en geometria p1 no mejoro y tuvo p10 inferior (19,90), **descartado**. La APK B instalada se valido byte a byte contra respaldo; save intacto. **Contador de fallos validos: 0/5**, no modificar estrategia principal. [Informe TECNO A/B/A/B](TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md).
+
 ## WSA: conversion normal x87 f2d medida en el juego — descartada en x86_64
 
 A/B/A del **gameplay 3D de Camp Toccoa** con GL4ES, WSA x86_64, mismo guardado y camara: **A1 55,10 / B1 54,55 / A2 55,35 FPS medianos**, CPU/frame **17,310 / 17,765 / 17,290 ms** (20 ventanas por corrida). B es ~1,22 % mas lenta en FPS y suma ~0,465 ms CPU frente a la media A. **No hay ganancia demostrada**; `CODRECOMP_X87_NORMAL_F2D` queda OFF por defecto. APK original instalada nuevamente y binario `libmain.so` comprobado byte a byte. Es WSA, **no un intento valido en TECNO ARM64**; contador oficial **0/5**, fases vigentes intactas. [Informe](WSA_X87_NORMAL_F2D_ABA_2026-10-14.md).

@@ -2,6 +2,10 @@
 
 **Resultado actualizado:** cuello de botella de CPU verificado y primera mejora de FPS reproducida en el entrenamiento mediante una ruta nativa x87 **optativa**; todavía no aprobada para activación general. Este documento registra pruebas en un teléfono real, no promesas de producción. No contiene número de serie, perfiles brutos, archivos comerciales ni partidas.
 
+## Actualizacion posterior: x87 normal-f2d gano FPS de juego reales
+
+Medicion A/B/A/B en el TECNO CK6n: 24,90→25,70→25,00→25,85 FPS medianos (A1/B1/A2/B2). Frente a la media de ambas A, `--hot-x87-transform --x87-normal-f2d` ofrece **+0,825 FPS (+3,31 %)** y baja CPU/frame de 38,570 a 37,270 ms, sin cambio de guardado. El ensayo separado `-O2` geometria p1 no mejoro (C1 25,90 FPS y 19,90 p10) y se revirtio. APK B exacta reinstalada; **60 FPS todavia pendientes**. [Informe completo](TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md).
+
 ## Meta explícita: 60 FPS sostenidos en la zona inicial
 
 **PENDIENTE**, aunque hubo una mejora real y verificada. El usuario no dará
