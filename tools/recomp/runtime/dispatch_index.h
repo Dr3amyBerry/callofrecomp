@@ -16,6 +16,12 @@ static inline int dispatch_index_find(const dispatch_index *index,const recomp_c
     if(!cached)return -1;
     int candidate=(int)cached-1;
     if(candidate<count&&pc>=chunks[candidate].start&&pc<chunks[candidate].end)return candidate;
+    /* Adjacent chunks commonly share a 4-KiB index page. The index keeps
+       the last chunk on the page: test its immediate predecessor before
+       falling back to a binary search. Pages with more than two chunks,
+       including holes, still use the exact-range fallback. */
+    if(candidate>0&&candidate<count&&pc>=chunks[candidate-1].start
+       &&pc<chunks[candidate-1].end)return candidate-1;
     /* Chunks can share a 4-KiB page. Check exact boundaries on those pages. */
     int lo=0,hi=count-1;
     while(lo<=hi){int mid=(lo+hi)/2;

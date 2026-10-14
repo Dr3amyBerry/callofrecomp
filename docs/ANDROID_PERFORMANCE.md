@@ -113,3 +113,26 @@ incluye la variable experimental LIBGL_USEVBO. Se conservaron los guardados.
 Próxima hipótesis: medir trabajo real dentro de GL4ES (transformaciones,
 copias de índices y llamadas a GLES) para reducir el coste de la vía
 actual sin exponer extensiones guest que puedan cambiar el render.
+
+## Guest dispatcher: adjacent-page fast path (2026-10-14)
+
+The dispatcher index stores the last recompiled chunk intersecting each 4-KiB
+page. An exact-range check for the previous chunk now precedes the binary-search
+fallback. It avoids a binary search for a frequent shared-page case while
+retaining the original lookup for gaps, three-or-more shared chunks, and
+other addresses. The smoke fixture checks hundreds of colliding boundaries,
+page holes, high addresses, and rebuild/unload behavior.
+
+A Windows x86_64 synthetic microbenchmark of 32,768,000 lookups over 512
+adjacent chunks reported roughly **152 ms before versus 41 ms after** in seven
+runs per method, with the same checksum. This is an optimization of that
+lookup operation, **not a demonstrated FPS improvement**. In a separate
+60-window WSA comparison at the training entrance, median FPS was 52.7 before
+and 52.15 after; the differences are too small and noisy to claim a frame-rate
+benefit. We retain the narrowly beneficial hot path without changing GL4ES,
+game simulation, or the code-generator's default chunk partitioning.
+
+The function-aligned chunks experiment compiled and loaded correctly, but
+measured 52.1 FPS and 19.135 ms median engine thread time compared with 52.7 FPS
+and 18.865 ms in the baseline. This experimental generator remains private
+and is **not enabled by default**.

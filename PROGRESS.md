@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Rescate de optimización del dispatcher con beneficio local verificado
+
+- [x] Se comprobó que `main` y `origin/main` estaban sincronizados en `8ce2829` y se conservaron los informes privados y APK del A/B original; no se repitió una compilación completa de CoDSP.
+- [x] Se recuperó el acceso al chunk anterior en páginas de 4 KiB compartidas: evita la búsqueda binaria habitual cuando el objetivo es el vecino anterior. La comparación sintética guardada en Windows dio aproximadamente 152 ms frente a 41 ms, con igual checksum y más pruebas de límites y huecos.
+- [x] **No afirmar aumento de FPS**: la medición de una escena en WSA había sido 52,7 frente a 52,15 FPS; el cambio se conserva por la mejora concreta en el dispatcher, no como aceleración global validada.
+- [x] Se mantiene **sin habilitar** el alineamiento opcional por funciones: 52,1 FPS y 19,135 ms de CPU frente a 52,7 FPS y 18,865 ms de referencia. Los archivos privados experimentales permanecen disponibles para trabajos posteriores.
+- [ ] Pendiente: perfilado y optimización del trabajo por instrucción en los chunks calientes, más ensayos controlados en escenas exigentes y ARM64 real.
+
 ### A/B de modos VBO internos de GL4ES en WSA — 2026-10-13
 
 - [x] Prueba A/B aislada sin alterar main: se forzó LIBGL_USEVBO=2 y LIBGL_USEVBO=3 por separado en android/native_host.c de un worktree temporal y se compilaron APK x86_64 firmadas. Ambos modos llegaron a la misma entrada de training con la misma partida y perfil Equilibrado.
