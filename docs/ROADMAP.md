@@ -15,6 +15,14 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## Visual aspect fix before further performance experiments (completed)
+
+- [x] Retain real 3D widescreen camera: 1280×576 EGL aspect 2.22222 and expanded ~108.87° horizontal FOV, **not** a stretched 4:3 projection.
+- [x] Correct the compass plus selected square 2D HUD icons, as confirmed on the TECNO CK6n. Original resources are unchanged; Android generates a private override from imported data before engine startup.
+- [x] Guard original PK3 ZIP duplication compatibility, save/player controls and no proprietary redistributable assets; maintain synthetic Java tests and Android build.
+- [ ] Separately fulfill the **60 FPS spawn target**. The widescreen HUD repair is not a performance milestone; prior +19.58% FPS remains measured and the goal is open.
+- [Documentation and verification](HUD_WIDESCREEN_2026-10-14.md).
+
 ## Meta exigida: 60 FPS sostenidos donde aparece el jugador (NO alcanzada)
 
 - [x] Mejora reproducida en TECNO CK6n, training/Equilibrado: **21,45 -> 25,65 FPS (+19,58 %)** y **44,745 -> 37,495 ms CPU/frame** mediante fast path nativo optativo de CoDSP 0x005061B0. Esta mejora sí cuenta como avance.

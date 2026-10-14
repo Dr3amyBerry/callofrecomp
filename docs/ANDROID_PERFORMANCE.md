@@ -368,3 +368,16 @@ normales y experimentales por separado y se verificaron 26/26 CTest,
 No extrapolar estas mejoras a la zona concurrida, toda la campaña u otros
 teléfonos sin nuevos A/B/A y validación visual; más detalles en el
 [informe TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md).
+
+
+## Real widescreen 3D plus corrected 2D HUD (2026-10-14)
+
+A wide Android EGL buffer retains `r_customaspect` and the matching
+expanded horizontal `cg_fov` (for example 1280×576, aspect 2.22222,
+108.867°). Previously the original 640×480 2D HUD stretched the circular
+compass horizontally even though the 3D world was not stretched.
+`HudWidescreen.java` now builds a temporary private `ui/hud.menu` PK3
+override at startup from the user's installed original PK3. The
+compass and square posture/prompt/tank symbols are adjusted only in X.
+All original game files and 3D projection remain unchanged. See
+[method, visual verification, private-file rules and test coverage](HUD_WIDESCREEN_2026-10-14.md).

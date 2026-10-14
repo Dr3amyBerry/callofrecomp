@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Panorámico real conservado y HUD 2D corregido
+
+- [x] Verificado mediante el registro del TECNO que el motor continúa usando proporción **2,22:1** y FOV horizontal **108,87°**: no se estira artificialmente una imagen 4:3.
+- [x] Reparada la deformación horizontal de la brújula original y de iconos cuadrados (postura, cursor y tanque), sin alterar la proyección 3D, el menú principal, barras no cuadradas, el guardado ni las optimizaciones previas.
+- [x] `HudWidescreen.java` genera automáticamente en el arranque un pequeño PK3 privado a partir de los originales importados. El lector soporta entradas duplicadas que Android `ZipFile` rechaza; valida tamaños, CRC y límites; nunca modifica los PK3 comerciales ni distribuye sus datos.
+- [x] Prueba visual con paquete privado en la partida del TECNO: la brújula recuperó su forma circular. Tras eliminar el paquete manual, la nueva APK volvió a generarlo automáticamente: **HUD aspect fix enabled at 1280x576**. Pruebas Java sintéticas incluyen ZIP duplicados, formatos 16:9 y 2,22:1 y comportamiento 4:3.
+- [x] Regresión final: **94 pruebas Python (4 omitidas), 26/26 CTest**, APK ARM64 firmada con la vía x87 previa aún optativa y sin recursos comerciales incluidos; el TECNO cargó de nuevo el entrenamiento y el PK3 privado autogenerado apareció en la ruta de búsqueda original.
+- [ ] La meta separada de rendimiento (**60 FPS sostenidos en spawn**) sigue pendiente; esta corrección de interfaz no implica una mejora de FPS.
+
 ### 2026-10-14 — Perfil residual tras fast path x87 en TECNO
 
 - [x] Medido con Simpleperf el spawn de training **después** de habilitar la APK optimizada: 6.358 muestras en 17,95 s, cero perdidas, 5.476 muestras en libmain.so; 3.784 resueltas a cuerpos de funciones Ghidra únicos.

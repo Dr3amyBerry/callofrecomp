@@ -47,6 +47,21 @@ public final class GameActivity extends SDLActivity {
     }
     @Override protected String[] getArguments() {
         Rect buffer = mSurface.getHolder().getSurfaceFrame();
+        // The original 640x480 HUD stretches circles on wide EGL buffers.
+        // Generate an overlay only from the user's private ui/hud.menu;
+        // never ship, edit or repackage the original commercial PK3 files.
+        try {
+            boolean hudAdjusted = HudWidescreen.prepare(
+                LauncherActivity.originals(this), LauncherActivity.profile(this),
+                buffer.width(), buffer.height());
+            android.util.Log.i("CallofRecompHud", "HUD aspect fix " +
+                    (hudAdjusted ? "enabled" : "not applicable") +
+                    " at " + buffer.width() + "x" + buffer.height() +
+                    " (" + HudWidescreen.lastDiagnostic + ")");
+        } catch (IOException error) {
+            android.util.Log.w("CallofRecompHud",
+                    "Could not prepare optional 2D compass aspect fix", error);
+        }
         // SDL supplies argv[0] itself; these begin at argv[1].
         java.util.ArrayList<String> arguments = new java.util.ArrayList<>(java.util.Arrays.asList(
             LauncherActivity.originals(this).getAbsolutePath(),
