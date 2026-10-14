@@ -65,6 +65,41 @@ class WsaVkSurfaceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'sampled-image'):
             parse_one(prefix.replace('procedural_checker=0','procedural_checker=1'))
 
+    def test_gl_matrix_transforms_are_isolated_from_gameplay_fps(self):
+        prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
+                "VK_MESH_READY vertices=4 indices=6 draws_per_frame=3 procedural_checker=1\n"
+                "VK_MATRIX_READY transforms=translate_rotate_scale_ortho_frustum "
+                "matrix_layout=column_major composition=projection_modelview "
+                "clip_fix=y_flip_z_range draws_per_frame=3\n"
+                "VK_SCENE name=matrix, integration=standalone, gameplay=0\n"
+                "VK_READY width=1280 height=720 gpu=AMD image_count=5 "
+                "fifo=2 immediate_available=0 present_mode=2\n")
+        window="VK_WINDOW fps=75.000 frames=75 elapsed=1.000 thread_cpu_ms_per_frame=2.1000\n"
+        result=("VK_RESULT fps=75.000 frames=1275 seconds=17.000 "
+                "thread_cpu_ms_per_frame=2.10000 acquire_wall_ms_per_frame=10.00000 "
+                "present_wall_ms_per_frame=0.02500 present_mode=FIFO resolution=1280x720")
+        data=parse_one(prefix+window*16+result)
+        self.assertEqual(data["scene"],"matrix")
+        self.assertEqual(data["mesh"]["draws_per_frame"],3)
+        self.assertEqual(data["matrix"]["layout"],"column_major")
+        self.assertEqual(data["matrix"]["clip_conversion"],"y_flip_z_range")
+        self.assertIsNone(data["texture"])
+        self.assertFalse(data["gameplay_fps_comparable"])
+
+    def test_missing_matrices_or_incorrect_clip_conversion_rejected(self):
+        prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
+                "VK_MESH_READY vertices=4 indices=6 draws_per_frame=3 procedural_checker=1\n"
+                "VK_SCENE name=matrix, integration=standalone, gameplay=0\n")
+        with self.assertRaisesRegex(ValueError,"transformation readiness"):
+            parse_one(prefix)
+        marker=("VK_MATRIX_READY transforms=translate_rotate_scale_ortho_frustum "
+                "matrix_layout=column_major composition=projection_modelview "
+                "clip_fix=y_flip_z_range draws_per_frame=3\n")
+        with self.assertRaisesRegex(ValueError,"inconsistent GL->Vulkan"):
+            parse_one(prefix+marker.replace("y_flip_z_range","none"))
+        with self.assertRaisesRegex(ValueError,"Non-matrix"):
+            parse_one(prefix.replace("name=matrix","name=mesh")+marker)
+
     def test_alpha_discard_and_texenv_distinct_from_game(self):
         prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
                 "VK_MESH_READY vertices=4 indices=6 draws_per_frame=2 procedural_checker=0\n"

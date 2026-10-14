@@ -6,7 +6,7 @@
 #include "wsa_vk_mesh.h"
 #if VK_BENCH_DEPTH_SCENE
 #include "wsa_vk_gl_state_map.h"
-#elif VK_BENCH_ALPHA_SCENE
+#elif VK_BENCH_ALPHA_SCENE || VK_BENCH_MATRIX_SCENE
 #include "../runtime/gl_vk_state.h"
 #endif
 #include <android/asset_manager.h>
@@ -90,7 +90,13 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
     VkResult r=VK_ERROR_INITIALIZATION_FAILED;
     VkShaderModule vert=VK_NULL_HANDLE,frag=VK_NULL_HANDLE;
     VkShaderModule overlay=VK_NULL_HANDLE;
-    r=load_shader(device,assets,"wsa_mesh.vert.spv",&vert);
+    r=load_shader(device,assets,
+#if VK_BENCH_MATRIX_SCENE
+                  "wsa_matrix.vert.spv"
+#else
+                  "wsa_mesh.vert.spv"
+#endif
+                  ,&vert);
     if(r!=VK_SUCCESS)goto fail;
     r=load_shader(device,assets,m->alpha_scene ? "wsa_alpha.frag.spv" :
                   m->textured ? "wsa_texture.frag.spv" : "wsa_mesh.frag.spv",&frag);
@@ -406,5 +412,64 @@ void vk_demo_mesh_draw_alpha(const vk_demo_mesh *m,VkCommandBuffer cb) {
 #else
 void vk_demo_mesh_draw_alpha(const vk_demo_mesh *m,VkCommandBuffer cb){
     (void)m; (void)cb;
+}
+#endif
+
+#if VK_BENCH_MATRIX_SCENE
+/* Render three real Vulkan indexed draws using matrices composed from
+ * GL-style state calls. They are intentionally different:
+ * - left: ortho projection + translate, Z rotation and non-uniform scale
+ * - center: ortho projection + reversed Z rotation + non-uniform scale
+ * - right: perspective frustum + translate in -Z, rotate Y, scale
+ *
+ * Upload only PROJECTION * MODELVIEW, not a manually filled shader matrix.
+ * gl_vk_state_mvp() rejects invalid/unsupported state. The vertex shader
+ * converts GL NDC Y/Z into Vulkan clip coordinates. Not CoDSP gameplay.
+ */
+void vk_demo_mesh_draw_matrix(const vk_demo_mesh *m,VkCommandBuffer cb){
+    if(!m||!m->pipeline)return;
+    const VkDeviceSize offset=0;
+    const VkDeviceSize index_offset=(sizeof(quad)+3u)&~(VkDeviceSize)3u;
+    vkCmdBindPipeline(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,m->pipeline);
+    vkCmdBindVertexBuffers(cb,0,1,&m->vertices_indices,&offset);
+    vkCmdBindIndexBuffer(cb,m->vertices_indices,index_offset,VK_INDEX_TYPE_UINT16);
+    for(unsigned i=0;i<3;i++){
+        gl_vk_state gl;
+        gl_vk_state_reset(&gl);
+        const double ortho[6]={-1,1,-1,1,-1,1};
+        const double frustum[6]={-1,1,-1,1,1,10};
+        const double translations[3][6]={
+            {-.56,0.,0.,0.,0.,0.},
+            {0.,0.,0.,0.,0.,0.},
+            {1.55,0.,-3.,0.,0.,0.}
+        };
+        const double rotations[3][6]={
+            {23.,0.,0.,1.,0.,0.},
+            {-35.,0.,0.,1.,0.,0.},
+            {20.,0.,1.,0.,0.,0.}
+        };
+        const double scales[3][6]={
+            {.38,.55,1.,0.,0.,0.},
+            {.28,.48,1.,0.,0.,0.},
+            {.85,1.,1.,0.,0.,0.}
+        };
+        if(!gl_vk_state_apply(&gl,GLVK_OP_MATRIX_MODE,GLVK_PROJECTION,0,0,NULL)||
+           !gl_vk_state_apply(&gl,i==2?GLVK_OP_FRUSTUM:GLVK_OP_ORTHO,
+                                0,0,0,i==2?frustum:ortho)||
+           !gl_vk_state_apply(&gl,GLVK_OP_MATRIX_MODE,GLVK_MODELVIEW,0,0,NULL)||
+           !gl_vk_state_apply(&gl,GLVK_OP_TRANSLATE,0,0,0,translations[i])||
+           !gl_vk_state_apply(&gl,GLVK_OP_ROTATE,0,0,0,rotations[i])||
+           !gl_vk_state_apply(&gl,GLVK_OP_SCALE,0,0,0,scales[i]))
+            return;
+        float mvp[16];
+        if(!gl_vk_state_mvp(&gl,mvp))return;
+        vkCmdPushConstants(cb,m->layout,VK_SHADER_STAGE_VERTEX_BIT,
+                           0,sizeof(mvp),mvp);
+        vkCmdDrawIndexed(cb,m->index_count,1,0,0,0);
+    }
+}
+#else
+void vk_demo_mesh_draw_matrix(const vk_demo_mesh *m,VkCommandBuffer cb){
+    (void)m;(void)cb;
 }
 #endif

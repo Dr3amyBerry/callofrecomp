@@ -57,6 +57,8 @@ Los FPS rondan 75 por la **frecuencia de presentación del WSA**, no por equival
 - La `libmain.so` instalada en WSA continúa idéntica **byte a byte** a la referencia A1, SHA-256 `403a5bc304b3ec36b43b04a8322c31a212727a8a8ff254e47b70afec2d960cde`. La app Vulkan de diagnóstico se detuvo; ningún dato de partidas modificado.
 - El parser rechaza escenas `alpha` cuyos marcadores no confirmen el shader/estado esperado o cuyo número de draws sea inconsistente.
 
+**Actualización posterior:** se implementaron las operaciones tipadas de `glTranslate/Rotate/Scale/Ortho/Frustum`, con el backend Vulkan aislado demostrando transformaciones correctas sobre tres quads WSA. La integración con la geometría real del juego sigue pendiente. [Informe del hito de matrices](WSA_GL_MATRIX_BRIDGE_2026-10-14.md).
+
 ## Próximos bloqueos reales
 
 1. `GL_COMBINE` / `GL_ADD` / `DECAL` / `BLEND` en `glTexEnv`, y operación de múltiples unidades de textura en shaders; textura/alpha procedente del juego real, no solo checker artificial.

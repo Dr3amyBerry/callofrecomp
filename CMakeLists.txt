@@ -153,6 +153,14 @@ if(CODRECOMP_BUILD_TESTS)
         target_link_libraries(codrecomp_gl_vk_state_smoke PRIVATE m)
     endif()
     add_test(NAME gl_vk_state_smoke COMMAND codrecomp_gl_vk_state_smoke)
+    add_executable(codrecomp_gl_vk_matrix_transform_smoke
+        tests/gl_vk_matrix_transform_smoke.c
+        tools/recomp/runtime/gl_vk_state.c)
+    target_include_directories(codrecomp_gl_vk_matrix_transform_smoke PRIVATE tools/recomp/runtime)
+    if(NOT WIN32)
+        target_link_libraries(codrecomp_gl_vk_matrix_transform_smoke PRIVATE m)
+    endif()
+    add_test(NAME gl_vk_matrix_transform_smoke COMMAND codrecomp_gl_vk_matrix_transform_smoke)
 
     add_executable(codrecomp_gl_perf_smoke tests/gl_perf_metrics_smoke.c)
     target_include_directories(codrecomp_gl_perf_smoke PRIVATE tools/recomp/runtime)

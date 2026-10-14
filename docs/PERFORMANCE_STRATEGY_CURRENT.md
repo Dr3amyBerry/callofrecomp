@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Hito posterior: transformaciones y proyección GL → Vulkan (sin A/B del juego)
+
+La capa de observación tipada ahora reconoce las ocho llamadas de traslación, rotación, escala y proyección ortográfica/perspectiva, preservando el orden column-major de OpenGL y los slots dobles x86. El prototipo WSA `--scene matrix` usó el estado tipado para tres dibujos reales sobre Vulkan; validación visual y ejecución completa **75,024 FPS FIFO** (1.276 frames, 17,008 s; **no** FPS del juego ni demostración de aceleración). El renderer estable sigue siendo GL4ES; el próximo bloqueo es geometría real de vertex arrays/VBO, samplers y combiners. [Informe](WSA_GL_MATRIX_BRIDGE_2026-10-14.md). Estrategia original y contador **0/5** intactos.
+
 ## Hito de compatibilidad TexEnv y alpha test (sin A/B del juego)
 
 El prototipo WSA implementa ahora `glTexEnv` MODULATE/REPLACE por unidad y un shader con descarte de fragmentos por prueba alfa; la captura de la escena muestra dos quads con texturas/colores correctos y huecos por alfa. **75,043 FPS FIFO** del prototipo independiente **NO equivalen al juego completo ni demuestran aceleración de CallofRecomp**. Captura del juego anterior (164 snapshots) no se repitió; el registro continúa advirtiendo estados sin traducir. [Informe](WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md). Estrategia y contador 0/5 intactos.

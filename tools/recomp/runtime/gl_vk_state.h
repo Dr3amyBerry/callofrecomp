@@ -51,6 +51,8 @@ typedef enum {
     GLVK_OP_LOAD_MATRIX_F, GLVK_OP_MULT_MATRIX_F,
     GLVK_OP_LOAD_MATRIX_D, GLVK_OP_MULT_MATRIX_D,
     GLVK_OP_PUSH_MATRIX, GLVK_OP_POP_MATRIX,
+    GLVK_OP_TRANSLATE, GLVK_OP_ROTATE, GLVK_OP_SCALE,
+    GLVK_OP_ORTHO, GLVK_OP_FRUSTUM,
     GLVK_OP_UNSUPPORTED_STATE
 } gl_vk_opcode;
 
@@ -105,5 +107,9 @@ enum {
 void gl_vk_state_reset(gl_vk_state *s);
 int gl_vk_state_apply(gl_vk_state *s, gl_vk_opcode op,
                       uint32_t a, uint32_t b, uint32_t c, const void *pointer);
+/* Push product PROJECTION * MODELVIEW for vertex shader (column-major).
+ * Diagnostic geometry only; assumes input is already an OpenGL clip-space
+ * compatible vertex. Doesn't by itself translate GL vertex arrays. */
+int gl_vk_state_mvp(const gl_vk_state *s, float output[16]);
 int gl_vk_state_pipeline_ready(const gl_vk_state *s);
 uint32_t gl_vk_state_matrix_digest(const gl_vk_state *s);

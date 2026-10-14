@@ -152,6 +152,19 @@ VK_CAPTURE = {
 # Unsupported legacy changes must be VISIBLE in the diagnostic output.
 # Observing these does not permit assuming equivalent shaders or texture
 # samplers in the Vulkan prototype.
+# Each argument is decoded exactly like the forwarded host GL call. Double
+# values occupy TWO x86 guest stack slots; float values one.
+VK_MATRIX_CALLS = {
+    'glTranslatef': ('GLVK_OP_TRANSLATE', 'f', 3),
+    'glTranslated': ('GLVK_OP_TRANSLATE', 'd', 3),
+    'glScalef': ('GLVK_OP_SCALE', 'f', 3),
+    'glScaled': ('GLVK_OP_SCALE', 'd', 3),
+    'glRotatef': ('GLVK_OP_ROTATE', 'f', 4),
+    'glRotated': ('GLVK_OP_ROTATE', 'd', 4),
+    'glFrustum': ('GLVK_OP_FRUSTUM', 'd', 6),
+    'glOrtho': ('GLVK_OP_ORTHO', 'd', 6),
+}
+
 VK_UNSUPPORTED = {
     'glTexParameteri', 'glTexParameterf', 'glTexParameterfv', 'glTexParameteriv',
     'glTexImage2D', 'glTexSubImage2D',
@@ -162,8 +175,6 @@ VK_UNSUPPORTED = {
     'glTexGeni', 'glTexGenf', 'glTexGenfv',
     'glVertexPointer', 'glTexCoordPointer', 'glColorPointer',
     'glNormalPointer', 'glInterleavedArrays',
-    'glTranslatef', 'glTranslated', 'glRotatef', 'glRotated',
-    'glScalef', 'glScaled', 'glFrustum', 'glOrtho',
     'glBindBufferARB', 'glBufferDataARB', 'glBufferSubDataARB',
     'glClipPlane', 'glTexGeniv', 'glTexGend', 'glTexGendv',
 }
@@ -342,7 +353,19 @@ def main() -> int:
             body += f'    {invoke};\n'
             if n in TIME_EVENTS:
                 body += f'    GL_TIME_END({TIME_EVENTS[n]}, gl_start_ns);\n'
-            if n in VK_CAPTURE or n in VK_UNSUPPORTED:
+            if n in VK_MATRIX_CALLS:
+                op, kind, count = VK_MATRIX_CALLS[n]
+                arguments = [
+                    (f'(double)F32(ARG(esp, {i}))' if kind == 'f' else
+                     f'F64(esp, {i * 2})')
+                    for i in range(count)
+                ]
+                # Wrap compound literal in parentheses so the comma-separated
+                # initializer stays a single C macro argument.
+                arguments.extend(['0.0'] * (6 - count))
+                vector = '((const double[6]){' + ', '.join(arguments) + '})'
+                body += f'    GL_VK_OBSERVE({op}, 0, 0, 0, {vector});\n'
+            elif n in VK_CAPTURE or n in VK_UNSUPPORTED:
                 if n in VK_CAPTURE:
                     op, a, b, c, ptr = VK_CAPTURE[n]
                 else:

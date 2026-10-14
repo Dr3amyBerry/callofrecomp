@@ -35,6 +35,16 @@ COMMANDS = {
     'glTexEnvfv': [('GLenum','target'),('GLenum','pname'),('void *','param')],
     'glAlphaFunc': [('GLenum', 'func'), ('GLfloat', 'ref')],
     'glTranslatef': [('GLfloat', 'x'), ('GLfloat', 'y'), ('GLfloat', 'z')],
+    'glTranslated': [('GLdouble', 'x'), ('GLdouble', 'y'), ('GLdouble', 'z')],
+    'glScalef': [('GLfloat', 'x'), ('GLfloat', 'y'), ('GLfloat', 'z')],
+    'glScaled': [('GLdouble', 'x'), ('GLdouble', 'y'), ('GLdouble', 'z')],
+    'glRotatef': [('GLfloat', 'angle'), ('GLfloat', 'x'), ('GLfloat', 'y'), ('GLfloat', 'z')],
+    'glRotated': [('GLdouble', 'angle'), ('GLdouble', 'x'), ('GLdouble', 'y'), ('GLdouble', 'z')],
+    'glOrtho': [('GLdouble','left'),('GLdouble','right'),('GLdouble','bottom'),
+                ('GLdouble','top'),('GLdouble','near'),('GLdouble','far')],
+    'glFrustum': [('GLdouble','left'),('GLdouble','right'),('GLdouble','bottom'),
+                  ('GLdouble','top'),('GLdouble','near'),('GLdouble','far')],
+
 
 }
 
@@ -87,6 +97,15 @@ class GLGenerationTest(unittest.TestCase):
             self.assertIn('GLVK_LEGACY_MATRIX_TRANSFORM',s)
             self.assertIn('GLVK_OP_ALPHA_FUNC, ARG(esp, 0), ARG(esp, 1)',s)
             self.assertIn('legacy_tex=%llu',s)
+            # Same 32-bit x86 ABI slots as forwarded host GL. Double
+            # components consume two guest stack slots each.
+            self.assertIn('GLVK_OP_TRANSLATE, 0, 0, 0, ((const double[6]){(double)F32(ARG(esp, 0)), (double)F32(ARG(esp, 1)), (double)F32(ARG(esp, 2))',s)
+            self.assertIn('GLVK_OP_TRANSLATE, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4)',s)
+            self.assertIn('GLVK_OP_ROTATE, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6)',s)
+            self.assertIn('GLVK_OP_ORTHO, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6), F64(esp, 8), F64(esp, 10)',s)
+            self.assertIn('GLVK_OP_FRUSTUM, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6), F64(esp, 8), F64(esp, 10)',s)
+            self.assertIn('p_glRotated(F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6))',s)
+
             self.assertIn('getenv("CODRECOMP_GL_VK_CAPTURE")',s)
             self.assertIn('p_glLoadMatrixf(GP(ARG(esp, 0)));',s)
             self.assertIn('#ifdef CODRECOMP_GL_VK_STATE_CAPTURE',s)

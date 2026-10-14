@@ -31,3 +31,4 @@ void vk_demo_mesh_draw(const vk_demo_mesh *mesh, VkCommandBuffer cb);
 void vk_demo_mesh_destroy(vk_demo_mesh *mesh);
 void vk_demo_mesh_draw_depth(const vk_demo_mesh *mesh, VkCommandBuffer cb);
 void vk_demo_mesh_draw_alpha(const vk_demo_mesh *mesh, VkCommandBuffer cb);
+void vk_demo_mesh_draw_matrix(const vk_demo_mesh *mesh, VkCommandBuffer cb);

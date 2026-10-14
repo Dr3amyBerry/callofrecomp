@@ -9,6 +9,17 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Transformaciones y proyección de matrices OpenGL hacia Vulkan (0/5)
+
+- [x] `gl_vk_state` reconoce `glTranslatef/d`, `glRotated/f`, `glScale[d/f]`, `glOrtho` y `glFrustum`, aplicando `M←M×T` en matrices MODELVIEW/PROJECTION/TEXTURE, con validación de ejes, dimensiones de frustum y valores no finitos.
+- [x] `gen_gl.py` produce hooks de los ocho wrappers x86 con `F32` o `F64(esp, 0/2/4/6/8/10)` correctamente; **486 wrappers regenerados**, observación opcional sin sustituir GL4ES.
+- [x] `gl_vk_state_mvp` exporta `PROJECTION×MODELVIEW` y nuevo shader `wsa_matrix.vert` adapta Y y rango Z a Vulkan. La nueva escena WSA `--scene matrix` dibuja **tres objetos indexados** (traslación, rotación, escalado, ortho y perspectiva), confirmados visualmente.
+- [x] Primera ejecución detectó correctamente un error `dlopen: cannot locate symbol hypot` en la app independiente; se corrigió el enlace con **`-lm`**. La app inició y renderizó con éxito; el log incompleto se descartó.
+- [x] Ejecución WSA FIFO aislada completa: **1.276 frames / 17,008 s, 75,024 FPS**, CPU del hilo **2,38144 ms/frame**, 3 dibujos/frame a 1280×720. **No son FPS del juego ni demuestran mejora frente a GL4ES.**
+- [x] Pruebas: **140 Python (4 omitidas), 33/33 CTest**, comprobación de sintaxis ARM64, build WSA con shader SPIR-V validado; regresiones de build depth y alpha. Builds diagnósticos del juego `--gl-vk-state-capture` ON y normal OFF aprobados. **Estado final OFF**.
+- [x] APK original de CallofRecomp en WSA permanece byte a byte igual a A1 por SHA-256; datos guardados y perfiles anteriores intactos. No se repitieron benchmarks del juego.
+- [ ] Sigue pendiente la traducción de vertex arrays/draw calls del juego, texture uploads/samplers, combiners multitextura y equivalencia visual completa. [Informe de matrices](docs/WSA_GL_MATRIX_BRIDGE_2026-10-14.md). Estrategia oficial y contador **0/5**.
+
 ### 2026-10-14 — TexEnv MODULATE/REPLACE y descarte alfa Vulkan (0/5)
 
 - [x] Modelo tipado GL registra `glTexEnv[i/f/iv/fv]` en su **unidad activa**, con modos GL_MODULATE (por defecto) y GL_REPLACE; DECAL, BLEND, ADD y COMBINE continúan en **fail-closed** sin shader equivalente.

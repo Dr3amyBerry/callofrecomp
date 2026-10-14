@@ -334,7 +334,7 @@ static void *run_vulkan(void *arg) {
                                 VK_BENCH_DEPTH_SCENE,VK_BENCH_ALPHA_SCENE),
             "indexed_mesh_pipeline");
     INFO("VK_MESH_READY vertices=4 indices=6 draws_per_frame=%d procedural_checker=%d",
-         VK_BENCH_DEPTH_SCENE?4:VK_BENCH_ALPHA_SCENE?2:1,
+         VK_BENCH_DEPTH_SCENE?4:VK_BENCH_ALPHA_SCENE?2:VK_BENCH_MATRIX_SCENE?3:1,
          !VK_BENCH_TEXTURE_SCENE);
 #if VK_BENCH_TEXTURE_SCENE
     INFO("VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
@@ -396,7 +396,9 @@ static void *run_vulkan(void *arg) {
         begin.clearValueCount=2;
 #endif
         vkCmdBeginRenderPass(v.cmds[i],&begin,VK_SUBPASS_CONTENTS_INLINE);
-#if VK_BENCH_ALPHA_SCENE
+#if VK_BENCH_MATRIX_SCENE
+        vk_demo_mesh_draw_matrix(&v.mesh,v.cmds[i]);
+#elif VK_BENCH_ALPHA_SCENE
         vk_demo_mesh_draw_alpha(&v.mesh,v.cmds[i]);
 #elif VK_BENCH_DEPTH_SCENE
         vk_demo_mesh_draw_depth(&v.mesh,v.cmds[i]);
@@ -429,8 +431,15 @@ static void *run_vulkan(void *arg) {
     INFO("VK_ALPHA_READY env_modes=modulate_replace alpha_func=greater "
          "alpha_ref=0.500 alpha_source=rgba8_texture draws_per_frame=2");
 #endif
+#if VK_BENCH_MATRIX_SCENE
+    INFO("VK_MATRIX_READY transforms=translate_rotate_scale_ortho_frustum "
+         "matrix_layout=column_major composition=projection_modelview "
+         "clip_fix=y_flip_z_range draws_per_frame=3");
+#endif
     INFO("VK_SCENE name=%s, integration=standalone, gameplay=0",
-#if VK_BENCH_ALPHA_SCENE
+#if VK_BENCH_MATRIX_SCENE
+        "matrix");
+#elif VK_BENCH_ALPHA_SCENE
         "alpha");
 #elif VK_BENCH_DEPTH_SCENE
         "depth");

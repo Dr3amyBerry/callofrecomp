@@ -2,6 +2,9 @@
 #include <string.h>
 #include <math.h>
 
+/* Khronos fixed-function transformation angle is specified in degrees. */
+#define GLVK_PI 3.14159265358979323846264338327950288
+
 static void identity(float m[16]) {
     memset(m,0,sizeof(float)*16);
     for(unsigned i=0;i<4;i++)m[5*i]=1.0f;
@@ -113,6 +116,89 @@ static int use_matrix(gl_vk_state *s,const float *incoming,int multiply) {
     else memcpy(m->current,input,sizeof(input));
     return 1;
 }
+
+/* Apply M <- M*transform, preserving column-major OpenGL semantics.
+ * All six elements are transferred via memcpy because guest memory can be
+ * unaligned, and the observer must never fault on an unaligned double. */
+static int apply_transform(gl_vk_state *s,gl_vk_opcode op,const void *pointer) {
+    if(!pointer)return invalid(s,GLVK_UNSUPPORTED_PTR);
+    gl_vk_matrix *matrix=current_matrix(s);
+    if(!matrix)return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+    double v[6];
+    memcpy(v,pointer,sizeof(v));
+    int needed=(op==GLVK_OP_ROTATE?4:
+                op==GLVK_OP_ORTHO||op==GLVK_OP_FRUSTUM?6:3);
+    for(int i=0;i<needed;i++)
+        if(!isfinite(v[i]))return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+    float t[16];
+    identity(t);
+    if(op==GLVK_OP_TRANSLATE) {
+        for(int i=0;i<3;i++)t[12+i]=(float)v[i];
+    } else if(op==GLVK_OP_SCALE) {
+        t[0]=(float)v[0];t[5]=(float)v[1];t[10]=(float)v[2];
+    } else if(op==GLVK_OP_ROTATE) {
+        const double length=hypot(v[1],hypot(v[2],v[3]));
+        if(length==0.0||!isfinite(length))
+            return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+        const double x=v[1]/length,y=v[2]/length,z=v[3]/length;
+        const double radians=v[0]*(GLVK_PI/180.0);
+        if(!isfinite(radians))return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+        const double cosine=cos(radians),sine=sin(radians),k=1.0-cosine;
+        /* Column-major Rodrigues rotation, right-handed OpenGL. */
+        t[0]=(float)(x*x*k+cosine);
+        t[1]=(float)(y*x*k+z*sine);
+        t[2]=(float)(z*x*k-y*sine);
+        t[4]=(float)(x*y*k-z*sine);
+        t[5]=(float)(y*y*k+cosine);
+        t[6]=(float)(z*y*k+x*sine);
+        t[8]=(float)(x*z*k+y*sine);
+        t[9]=(float)(y*z*k-x*sine);
+        t[10]=(float)(z*z*k+cosine);
+    } else if(op==GLVK_OP_ORTHO || op==GLVK_OP_FRUSTUM) {
+        const double dx=v[1]-v[0],dy=v[3]-v[2],dz=v[5]-v[4];
+        if(dx==0.0||dy==0.0||dz==0.0||
+           !isfinite(dx)||!isfinite(dy)||!isfinite(dz))
+            return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+        if(op==GLVK_OP_FRUSTUM) {
+            if(v[4]<=0.0||v[5]<=0.0)
+                return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+            t[0]=(float)(2.0*v[4]/dx);
+            t[5]=(float)(2.0*v[4]/dy);
+            t[8]=(float)((v[1]+v[0])/dx);
+            t[9]=(float)((v[3]+v[2])/dy);
+            t[10]=(float)(-(v[5]+v[4])/dz);
+            t[11]=-1.f;
+            t[14]=(float)(-2.0*v[4]*v[5]/dz);
+            t[15]=0.f;
+        } else {
+            t[0]=(float)(2.0/dx);
+            t[5]=(float)(2.0/dy);
+            t[10]=(float)(-2.0/dz);
+            t[12]=(float)(-(v[1]+v[0])/dx);
+            t[13]=(float)(-(v[3]+v[2])/dy);
+            t[14]=(float)(-(v[5]+v[4])/dz);
+        }
+    } else {
+        return invalid(s,GLVK_UNSUPPORTED_ENUM);
+    }
+    for(int i=0;i<16;i++)
+        if(!isfinite(t[i]))return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+    float product[16];
+    matrix_mul(product,matrix->current,t);
+    for(int i=0;i<16;i++)
+        if(!isfinite(product[i]))return invalid(s,GLVK_UNSUPPORTED_MATRIX);
+    memcpy(matrix->current,product,sizeof(product));
+    return 1;
+}
+int gl_vk_state_mvp(const gl_vk_state *s,float output[16]){
+    if(!s||!output||s->unsupported_flags)return 0;
+    float combined[16];
+    matrix_mul(combined,s->projection.current,s->modelview.current);
+    for(int i=0;i<16;i++)if(!isfinite(combined[i]))return 0;
+    memcpy(output,combined,sizeof(combined));
+    return 1;
+}
+
 int gl_vk_state_apply(gl_vk_state *s,gl_vk_opcode op,
                       uint32_t a,uint32_t b,uint32_t c,const void *pointer) {
     if(!s)return 0;
@@ -232,6 +318,9 @@ int gl_vk_state_apply(gl_vk_state *s,gl_vk_opcode op,
             result=use_matrix(s,conv,op==GLVK_OP_MULT_MATRIX_D);
             break;
         }
+        case GLVK_OP_TRANSLATE:case GLVK_OP_ROTATE:case GLVK_OP_SCALE:
+        case GLVK_OP_ORTHO:case GLVK_OP_FRUSTUM:
+            result=apply_transform(s,op,pointer);break;
         case GLVK_OP_PUSH_MATRIX: {
             gl_vk_matrix *m=current_matrix(s);
             if(!m||m->stack_len==GLVK_MAX_MATRIX_STACK) {

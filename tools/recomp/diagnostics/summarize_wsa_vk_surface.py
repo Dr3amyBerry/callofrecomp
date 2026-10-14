@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Parse native WSA Vulkan presentation-probe logs.
 
-Input workload is an isolated Vulkan clear, mesh, texture, alpha-test, or depth/stencil+blend demo,
+Input workload is an isolated Vulkan clear, mesh, texture, alpha-test, matrix transform, or depth/stencil+blend demo,
 never full CallofRecomp gameplay. Do not claim an in-game FPS improvement.
 """
 from __future__ import annotations
@@ -22,7 +22,8 @@ RESULT = re.compile(
     r"present_wall_ms_per_frame=(\d+(?:\.\d+)?) "
     r"present_mode=(\w+) resolution=(\d+)x(\d+)"
 )
-SCENE = re.compile(r'VK_SCENE name=(clear|mesh|texture|depth|alpha), integration=standalone, gameplay=0')
+SCENE = re.compile(r'VK_SCENE name=(clear|mesh|texture|depth|alpha|matrix), integration=standalone, gameplay=0')
+MATRIX_READY = re.compile(r'VK_MATRIX_READY transforms=(\w+) matrix_layout=(\w+) composition=(\w+) clip_fix=(\w+) draws_per_frame=(\d+)')
 ALPHA_READY = re.compile(r'VK_ALPHA_READY env_modes=(\w+) alpha_func=(\w+) alpha_ref=([0-9.]+) alpha_source=(\w+) draws_per_frame=(\d+)')
 DEPTH_READY = re.compile(r'VK_DEPTH_READY format=(\d+) attachments=(\d+) depth_test=(\w+) depth_write=(\d+) stencil=(\w+) blend=(\w+) draws_per_frame=(\d+)')
 TEXTURE_READY = re.compile(r'VK_TEXTURE_READY width=(\d+) height=(\d+) mip_levels=(\d+) descriptor_sets=(\d+) sampler=(\w+) transfer=(\w+) image_layout=(\w+)')
@@ -43,7 +44,7 @@ def parse_one(text: str)->dict:
     if len(scenes)>1:raise ValueError('Conflicting scene markers in one session')
     scene=scenes[0] if scenes else 'clear'  # Older clear-only builds have no marker.
     meshes=MESH_READY.findall(latest)
-    if scene in ('mesh','texture','depth','alpha') and len(meshes)!=1:
+    if scene in ('mesh','texture','depth','alpha','matrix') and len(meshes)!=1:
         raise ValueError('Mesh/texture scene missing pipeline/buffer/draw readiness marker')
     if scene=='clear' and meshes:
         raise ValueError('Clear scene unexpectedly reports indexed mesh resources')
@@ -77,6 +78,19 @@ def parse_one(text: str)->dict:
                            alphas[0][3]!='rgba8_texture' or
                            alphas[0][4]!='2'):
         raise ValueError('Alpha scene has inconsistent env-mode or alpha-discard configuration')
+    matrices=MATRIX_READY.findall(latest)
+    if scene=='matrix' and len(matrices)!=1:
+        raise ValueError('Matrix scene missing OpenGL transformation readiness marker')
+    if scene!='matrix' and matrices:
+        raise ValueError('Non-matrix scene unexpectedly reports OpenGL transform resources')
+    if scene=='matrix' and (
+        meshes[0][2]!='3' or meshes[0][3]!='1' or
+        matrices[0][0]!='translate_rotate_scale_ortho_frustum' or
+        matrices[0][1]!='column_major' or
+        matrices[0][2]!='projection_modelview' or
+        matrices[0][3]!='y_flip_z_range' or
+        matrices[0][4]!='3'):
+        raise ValueError('Matrix scene has inconsistent GL->Vulkan transform configuration')
     if len(r)!=1 or len(p)!=1 or len(w)<10:
         raise ValueError(f'Incomplete Vulkan presentation run: result={len(r)} ready={len(p)} windows={len(w)}')
     fps=float(r[0][0])
@@ -91,7 +105,9 @@ def parse_one(text: str)->dict:
     return {
         'type':'Standalone Vulkan Android '+scene+' benchmark, NOT CallofRecomp',
         'scene':scene,
-        'workload':('two textured indexed draws comparing MODULATE vs REPLACE with fragment alpha-test discard; no gameplay/HUD/assets'
+        'workload':('three indexed colored quads with GL column-major transforms, ortho and perspective frustum, Y-flip and depth-range conversion; not gameplay'
+                    if scene=='matrix' else
+                    'two textured indexed draws comparing MODULATE vs REPLACE with fragment alpha-test discard; no gameplay/HUD/assets'
                     if scene=='alpha' else
                     'four indexed textured draws, independent per-swapchain depth/stencil, occlusion, stencil-clipped alpha blend; no game assets/simulation/HUD'
                     if scene=='depth' else
@@ -103,7 +119,7 @@ def parse_one(text: str)->dict:
         'mesh':({'vertices':int(meshes[0][0]),'indices':int(meshes[0][1]),
                  'draws_per_frame':int(meshes[0][2]),
                  'procedural_checker':bool(int(meshes[0][3]))}
-                if scene in ('mesh','texture','depth','alpha') else None),
+                if scene in ('mesh','texture','depth','alpha','matrix') else None),
         'texture':({'width':int(textures[0][0]),'height':int(textures[0][1]),
                     'mip_levels':int(textures[0][2]),
                     'descriptor_sets':int(textures[0][3]),
@@ -125,6 +141,12 @@ def parse_one(text: str)->dict:
                        'source':alphas[0][3],
                        'draws_per_frame':int(alphas[0][4])}
                       if scene=='alpha' else None),
+        'matrix':({'transforms':matrices[0][0],
+                   'layout':matrices[0][1],
+                   'composition':matrices[0][2],
+                   'clip_conversion':matrices[0][3],
+                   'draws_per_frame':int(matrices[0][4])}
+                  if scene=='matrix' else None),
         'wsa_only':True,
         'gameplay_fps_comparable':False,
         'gpu_name':p[0][2],

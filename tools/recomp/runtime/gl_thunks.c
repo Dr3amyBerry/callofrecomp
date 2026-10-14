@@ -1526,7 +1526,7 @@ static uint32_t t_glFrustum(uint32_t esp) {
     (void)esp;
     if (!p_glFrustum) gl_missing("glFrustum");
     p_glFrustum(F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6), F64(esp, 8), F64(esp, 10));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_FRUSTUM, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6), F64(esp, 8), F64(esp, 10)}));
     return 0;
 }
 
@@ -2745,7 +2745,7 @@ static uint32_t t_glOrtho(uint32_t esp) {
     (void)esp;
     if (!p_glOrtho) gl_missing("glOrtho");
     p_glOrtho(F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6), F64(esp, 8), F64(esp, 10));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_ORTHO, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6), F64(esp, 8), F64(esp, 10)}));
     return 0;
 }
 
@@ -3378,7 +3378,7 @@ static uint32_t t_glRotated(uint32_t esp) {
     (void)esp;
     if (!p_glRotated) gl_missing("glRotated");
     p_glRotated(F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_ROTATE, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), F64(esp, 6), 0.0, 0.0}));
     return 0;
 }
 
@@ -3388,7 +3388,7 @@ static uint32_t t_glRotatef(uint32_t esp) {
     (void)esp;
     if (!p_glRotatef) gl_missing("glRotatef");
     p_glRotatef(F32(ARG(esp, 0)), F32(ARG(esp, 1)), F32(ARG(esp, 2)), F32(ARG(esp, 3)));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_ROTATE, 0, 0, 0, ((const double[6]){(double)F32(ARG(esp, 0)), (double)F32(ARG(esp, 1)), (double)F32(ARG(esp, 2)), (double)F32(ARG(esp, 3)), 0.0, 0.0}));
     return 0;
 }
 
@@ -3407,7 +3407,7 @@ static uint32_t t_glScaled(uint32_t esp) {
     (void)esp;
     if (!p_glScaled) gl_missing("glScaled");
     p_glScaled(F64(esp, 0), F64(esp, 2), F64(esp, 4));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_SCALE, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), 0.0, 0.0, 0.0}));
     return 0;
 }
 
@@ -3417,7 +3417,7 @@ static uint32_t t_glScalef(uint32_t esp) {
     (void)esp;
     if (!p_glScalef) gl_missing("glScalef");
     p_glScalef(F32(ARG(esp, 0)), F32(ARG(esp, 1)), F32(ARG(esp, 2)));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_SCALE, 0, 0, 0, ((const double[6]){(double)F32(ARG(esp, 0)), (double)F32(ARG(esp, 1)), (double)F32(ARG(esp, 2)), 0.0, 0.0, 0.0}));
     return 0;
 }
 
@@ -4008,7 +4008,7 @@ static uint32_t t_glTranslated(uint32_t esp) {
     (void)esp;
     if (!p_glTranslated) gl_missing("glTranslated");
     p_glTranslated(F64(esp, 0), F64(esp, 2), F64(esp, 4));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_TRANSLATE, 0, 0, 0, ((const double[6]){F64(esp, 0), F64(esp, 2), F64(esp, 4), 0.0, 0.0, 0.0}));
     return 0;
 }
 
@@ -4018,7 +4018,7 @@ static uint32_t t_glTranslatef(uint32_t esp) {
     (void)esp;
     if (!p_glTranslatef) gl_missing("glTranslatef");
     p_glTranslatef(F32(ARG(esp, 0)), F32(ARG(esp, 1)), F32(ARG(esp, 2)));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_MATRIX_TRANSFORM, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_TRANSLATE, 0, 0, 0, ((const double[6]){(double)F32(ARG(esp, 0)), (double)F32(ARG(esp, 1)), (double)F32(ARG(esp, 2)), 0.0, 0.0, 0.0}));
     return 0;
 }
 
