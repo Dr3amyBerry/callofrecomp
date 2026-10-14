@@ -15,6 +15,12 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## DCE en el generador pcode2c: optimización fuente sin ganancia ARM64
+
+- [x] `--prune-dead-temporaries --dead-temp-parts 1,8`, optativo OFF por defecto. Reduce 32.704 operaciones únicas estáticas y ~1,25 MB de C entre p1/p8.
+- [x] Validación C compilada de estado completo, ejecución ARM64 en TECNO y dos APK con **idéntico SHA256 de `.text`**. Clang ya eliminaba todo ese trabajo; **no hay mejora de FPS**.
+- [ ] Cambiar a perfil real de instrucciones *sobrevivientes* (x87 y memoria/alias), con experimentos que modifiquen instrucciones máquina y un A/B/A de spawn antes de aprobar. [Informe](CODSP_PCODE_TEMP_DCE_2026-10-14.md).
+
 ## FCOM x87 p1/p8: ganancia B1 no reproducida en B2 (OFF)
 
 - [x] Simpleperf TECNO: 86,13 % de muestras CPU en `libmain`, 1,43 % GL4ES, 4,70 % driver GLES Mali (no cuenta ejecución GPU). Revisados GL4ES y renderer del proyecto.

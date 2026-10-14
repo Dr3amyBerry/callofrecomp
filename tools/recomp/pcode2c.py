@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pe_inspect import PEFile  # noqa: E402
 from flag_liveness import dead_flag_writes
+from temp_liveness import dead_unique_writes
 from function_map import build_function_map, write_function_map, scan_pcode_provenance
 
 CHUNK = 1500
@@ -236,7 +237,8 @@ class Gen:
 
 def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
              local_temporaries: bool = True, separate_spaces: bool = True,
-             eliminate_dead_flags: bool = True):
+             eliminate_dead_flags: bool = True, eliminate_dead_temporaries: bool = False,
+             dead_temp_parts: frozenset[int] | None = None):
     """Return ([part sources], main source, unsupported ops)."""
     g = Gen(userops)
     # Silent per-module fallback could mix local writers with another module's
@@ -253,6 +255,18 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
     bodies = [list(header) for _ in range(parts)]
     for ci, chunk in enumerate(chunks):
         dead_flags = dead_flag_writes(chunk) if eliminate_dead_flags else set()
+        output_part = ci * parts // len(chunks)
+        dead_temps = set()
+        if eliminate_dead_temporaries and local_temporaries and (
+                dead_temp_parts is None or output_part in dead_temp_parts):
+            dead_flags_by_instruction = {}
+            for j, k in dead_flags:
+                dead_flags_by_instruction.setdefault(j, set()).add(k)
+            for j, (_, _, ops) in enumerate(chunk):
+                if temporary_layout(ops) is not None:
+                    for k in dead_unique_writes(
+                            ops, removed_flags=dead_flags_by_instruction.get(j, ())):
+                        dead_temps.add((j, k))
         out = bodies[ci * parts // len(chunks)]
         start = len(out)
         unsupported_before = dict(g.unsupported)
@@ -280,7 +294,7 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
                 if i in rel_targets:
                     out.append(f' L_{addr:x}_{i}:;')
                 # Keep every p-code index/label: relative branches use indices.
-                out.append(' ;' if (idx, i) in dead_flags else
+                out.append(' ;' if (idx, i) in dead_flags or (idx, i) in dead_temps else
                            ' ' + g.op(mn, o, ins, jump, None))
             if len(ops) in rel_targets:
                 out.append(f' L_{addr:x}_{len(ops)}:;')
@@ -346,10 +360,25 @@ def main() -> int:
                     help='diagnostic: omit disjoint RAM/register alias information')
     ap.add_argument('--keep-dead-flags', action='store_true',
                     help='diagnostic: retain flag writes even when provably unobserved')
+    ap.add_argument('--prune-dead-temporaries', action='store_true',
+                    help='EXPERIMENT: eliminate proven-dead integer unique calculations, OFF by default')
+    ap.add_argument('--dead-temp-parts', type=str,
+                    help='optional comma-separated output part numbers to constrain DCE, e.g. 1,8')
     ap.add_argument('--function-map-out', type=Path,
                     help='optional JSON: original Ghidra function entries to generated chunks; '
                          'store under ignored recomp_out/')
     args = ap.parse_args()
+    dead_temp_parts = None
+    if args.dead_temp_parts:
+        if not args.prune_dead_temporaries:
+            ap.error('--dead-temp-parts requires --prune-dead-temporaries')
+        try:
+            chosen = [int(x) for x in args.dead_temp_parts.split(',')]
+        except ValueError:
+            ap.error('--dead-temp-parts must be comma-separated integers')
+        if not chosen or any(x < 0 or x >= args.parts for x in chosen):
+            ap.error('--dead-temp-parts contains an invalid output part')
+        dead_temp_parts = frozenset(chosen)
     if args.function_map_out:
         protected = {args.pcode.resolve(), args.pe.resolve(), args.out.resolve()}
         protected.update(args.out.with_name(f'{args.out.stem}_p{k}.c').resolve()
@@ -367,7 +396,8 @@ def main() -> int:
     ident = ''.join(c if c.isalnum() else '_' for c in args.pe.stem.lower())
     bodies, main_src, unsupported = generate(insns, userops, pe, args.pe.name, ident, args.parts,
                                              not args.global_temporaries, not args.shared_spaces,
-                                             not args.keep_dead_flags)
+                                             not args.keep_dead_flags, args.prune_dead_temporaries,
+                                             dead_temp_parts)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]

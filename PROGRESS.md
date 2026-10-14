@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — DCE de temporales en pcode2c (ARM64 final sin cambios)
+
+- [x] Implementado `temp_liveness.py`: liveness por byte/CFG/bucles para temporales únicos cuyos consumidores eran flags x86 ya muertos, solo para operaciones enteras sin posible fallo. Activación `pcode2c.py --prune-dead-temporaries --dead-temp-parts 1,8`, OFF por defecto.
+- [x] Sobre 333.208 instrucciones Ghidra CoDSP, se eliminaron 15.555 operaciones de p1 y 17.149 de p8 del C fuente, manteniendo índices, etiquetas y líneas originales.
+- [x] Validado con **109 pruebas Python (4 omitidas)**, **31/31 CTest**, 2.048 estados diferenciales completos en TECNO ARM64 y compilación ARM64 real de ambas particiones.
+- [x] **Resultado negativo de rendimiento:** A/B de APK ARM64 `libmain.so` contiene `.text` **idéntica byte a byte** (41.779.524 bytes, SHA-256 `8846b89d...`) pese a la reducción del fuente. Clang `-O1` ya realizaba la eliminación. **Sin ganancia FPS demostrada.**
+- [ ] Objetivo **60 FPS sostenidos ABIERTO**. Siguiente bloque: analizar instrucciones ARM64 *que sobreviven al compilador* (x87/alias de memoria/dispatcher), medir con Simpleperf y exigir A/B/A in-game. [Informe](docs/CODSP_PCODE_TEMP_DCE_2026-10-14.md).
+
 ### 2026-10-14 — Auditoría GL4ES/Mali y FCOM p1/p8: experimento inconcluyente/regresión B2
 
 - [x] Reprocesado perf.data TECNO con Simpleperf: 6.358 muestras, `libmain` 86,13 %, driver Mali GLES 4,70 %, GL4ES 1,43 %. No extrapolar a tiempo GPU.
