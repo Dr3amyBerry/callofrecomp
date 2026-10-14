@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Auditoría GL4ES/Mali y FCOM p1/p8: experimento inconcluyente/regresión B2
+
+- [x] Reprocesado perf.data TECNO con Simpleperf: 6.358 muestras, `libmain` 86,13 %, driver Mali GLES 4,70 %, GL4ES 1,43 %. No extrapolar a tiempo GPU.
+- [x] 448 comparaciones x87 completas fusionadas tras validación estricta de tres patrones/hashes en CoDSP p1/p8, flag `--x87-fcom-fastpath` **OFF por defecto**.
+- [x] Equivalencia de estado completo en ARM64 TECNO: **151.638 casos correctos**. Suite local final **103 Python (4 omitidas)** y **31/31 CTest**.
+- [x] A/B/A misma partida, 40 ventanas tardías por corrida: x87 referencia **24,90 FPS / 38,590 ms CPU**, FCOM+x87 **26,15 FPS / 36,875 ms**, referencia reinstalada **24,90 FPS / 38,625 ms**. **B2 cae a 19,80 FPS / 48,210 ms; A3 sin FCOM recupera 25,10 FPS / 38,305 ms.** NO SE ACEPTA ganancia estable. Se conserva flag OFF por defecto, pendiente de explicación de regresión.
+- [ ] Conseguir **60 FPS sostenidos** en spawn (referencia estable ~25) sin bajar calidad. Siguiente: análisis de eliminación segura de EFLAGS muertos en traductor y nuevos hotspots Simpleperf, con oráculo de estado. [Informe](docs/ARM64_RENDERER_CPU_FCOM_2026-10-14.md).
+
 ### 2026-10-14 — Nuevo experimento x87 normal-f2d (OFF por defecto)
 
 - [x] Auditoría de la sesión anterior: Git `bd84510` limpio y sincronizado; 98 tests Python, 29/29 CTest, registros A3/B2 comparados de nuevo (**25,45 vs 25,70 FPS**; mejora NaN no acreditada).

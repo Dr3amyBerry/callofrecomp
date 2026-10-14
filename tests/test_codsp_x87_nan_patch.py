@@ -2,7 +2,7 @@ import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools/recomp'))
-from patch_codsp_x87_nan import patch, HEADER, INCLUDE
+from patch_codsp_x87_nan import patch, HEADER, INCLUDE, FCOM_INCLUDE, FCOM_SITES
 
 class X87NanPatchTests(unittest.TestCase):
     def sample(self, filename="codsp_recomp_p1.c"):
@@ -19,6 +19,13 @@ class X87NanPatchTests(unittest.TestCase):
             self.assertIn(INCLUDE,out)
             self.assertEqual(s.count("\n"),out.count("\n"))
             self.assertEqual(patch(out,name,expected=2),(out,False))
+    def test_compatible_with_checked_fcom_include(self):
+        for name in ["codsp_recomp_p1.c","codsp_recomp_p8.c"]:
+            source,_=patch(self.sample(name),name,expected=2)
+            wrapped=source.replace(INCLUDE,FCOM_INCLUDE)+(' // CODSP_FCOM_GUARD(fake)\n'*FCOM_SITES[name])
+            self.assertEqual(patch(wrapped,name,expected=2),(wrapped,False))
+            with self.assertRaises(ValueError):
+                patch(wrapped.replace('CODSP_FCOM_GUARD(fake)','invalid',1),name,expected=2)
     def test_fail_closed_on_mismatched_private_code(self):
         s=self.sample()
         with self.assertRaises(ValueError):patch(s,"unrelated.c",expected=2)

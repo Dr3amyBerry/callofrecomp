@@ -15,6 +15,13 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## FCOM x87 p1/p8: ganancia B1 no reproducida en B2 (OFF)
+
+- [x] Simpleperf TECNO: 86,13 % de muestras CPU en `libmain`, 1,43 % GL4ES, 4,70 % driver GLES Mali (no cuenta ejecución GPU). Revisados GL4ES y renderer del proyecto.
+- [x] 448 comparaciones completas, ruta nativa optativa detrás de `--x87-fcom-fastpath`, OFF por defecto; oráculo diferencial ARM64 de 151.638 estados.
+- [x] A/B/A/B/A de 40 ventanas en spawn: **24,90 → 26,15 → 24,90 → 19,80 → 25,10 FPS**. B2 tuvo regresión importante, por lo que el ahorro de B1 no es estable ni está aprobado. CPU 38,59 → 36,875 → 38,625 → 48,210 → 38,305 ms/frame. No equivale a 60 FPS.
+- [ ] Investigar variación B2 con trace de frecuencias, cargas y perfil comparativo; medir misiones variadas, comprobar estado original x86 de manera independiente y probar reducción de cálculos de flags muertos con liveness por bloque. Mantener FCOM OFF. [Informe](ARM64_RENDERER_CPU_FCOM_2026-10-14.md).
+
 ## Nuevo experimento: x87 normal-f2d (FPS sin validar)
 
 - [x] Se probó un fast path opcional para valores binary80 normales representables exactamente como binary64 (CoDSP p1/p8), **OFF por defecto**.
