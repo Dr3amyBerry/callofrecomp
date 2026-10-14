@@ -4,6 +4,14 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## WSA temporal, evaluación Vulkan/DirectX12 y bloqueo de métricas Mali (2026-10-14)
+
+- [x] El TECNO no está disponible: usar solo **WSA x86_64 (`127.0.0.1:58526`)** para las siguientes pruebas locales; no asumir que su rendimiento representa al ARM64.
+- [x] [Auditoría de APIs gráficas, causa de permisos GPU y decisión Vulkan/DX12](WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md). Código real Vulkan en WSA pasó `vkCreateInstance`, enumeró AMD Vulkan 1.3 y `VK_KHR_swapchain`.
+- [ ] Próxima prueba gráfica acotada: Vulkan surface + swapchain + present aislados en WSA. **No** convertir el juego a Vulkan/DX12 sin un perfil que lo justifique.
+- [ ] GPU física ARM64: contadores Mali aún pendientes de herramientas compatibles y disponibilidad del teléfono. No pedir permisos ordinarios de Android ni root.
+- [x] Renderer OpenGL/GL4ES conservado sin cambios, estrategia actual y contador **0/5** sin cambios.
+
 ## Ejecución real de la estrategia vigente (2026-10-14)
 
 - [x] **Fase 1 CPU:** dos perfiles ARM64 del spawn, muestras totales 7.953 y 6.541; Build ID de ELF comprobado contra el APK instalado; última referencia 24,70 FPS / 38,895 ms CPU/frame / p10 23,30; [informe con evidencia y método](PERFORMANCE_STRATEGY_RUN_2026-10-14.md).

@@ -6,6 +6,14 @@
 
 [Informe de ejecución del perfil TECNO y selección de función](PERFORMANCE_STRATEGY_RUN_2026-10-14.md) — dos capturas reales de Simpleperf, ELF instalado verificado, top de geometría/visibilidad y diagnóstico ARM64 de `0x0041B8F0`. GPU hardware sigue sin contador accesible mediante ADB. La primera función para fase 2 está seleccionada, pero **no se ha habilitado optimización estructural nueva**. Fase 3 permanece pendiente. **Contador: 0/5**; el diagnóstico no constituye un experimento A/B válido.
 
+## Modo temporal WSA y evaluación de Vulkan / DirectX 12 (2026-10-14)
+
+El teléfono TECNO no está disponible. **Utilizar WSA `127.0.0.1:58526` exclusivamente mientras tanto**, para pruebas x86_64, diagnóstico de API, equivalencia funcional y prototipos seguros; **no extrapolar a FPS ARM64/Mali**. La meta y referencia física no cambian.
+
+Se comprobó Vulkan 1.3 **mediante código NDK real ejecutado en WSA**, dispositivo AMD y extensión `VK_KHR_swapchain`. No hay renderer Vulkan en el juego, superficie/swapchain/present ni mejora de FPS medida. DirectX 12 existe en Windows, no como API directa del proceso Android. **Se mantiene OpenGL/GL4ES como renderer de referencia**. Ver [auditoría de APIs y permisos GPU Mali](WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md).
+
+**Contador de experimentos fallidos: 0/5, sin cambios.** Las pruebas WSA y Vulkan de capacidades no constituyen un intento válido de rendimiento en el TECNO.
+
 ## Meta y referencia
 
 **Meta no negociable:** al menos **60 FPS sostenidos** en el punto de aparición del entrenamiento de Camp Toccoa, en el **TECNO CK6n ARM64**, perfil **Equilibrado**, sin reducir calidad, alterar el HUD panorámico, colisiones, controles ni partidas. No confundir FPS del menú, WSA o microbenchmarks con FPS del juego.

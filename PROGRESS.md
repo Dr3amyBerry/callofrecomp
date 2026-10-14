@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — WSA sustituye temporalmente al TECNO; Vulkan Android confirmado, DirectX12 no integrado (0/5)
+
+- [x] Solo WSA en ADB, `127.0.0.1:58526` (x86_64, Android 13). Teléfono no disponible. El juego existente abrió su menú mediante OpenGL/GL4ES; no se alteraron saves ni APK.
+- [x] Renderer auditado: Win32 GL original → `gl_thunks.c` → GL4ES → GLES2 → emulación EGL Microsoft. No existe Vulkan/D3D12 integrado en el runtime.
+- [x] Prueba Vulkan del NDK dentro de WSA: API **1.3**, `vkCreateInstance=VK_SUCCESS`, un AMD Radeon, extensiones `VK_KHR_swapchain` y colas. **No hay superficie, swapchain real ni present de frames verificado.**
+- [x] Host Windows: DirectX 12 detectado por `dxdiag` y Vulkan 1.3 por `vulkaninfo`, pero los niveles D3D12 del driver no se confirmaron; evitar un segundo renderer Windows sin justificación.
+- [x] Aclarado `Permission denied` del TECNO previo: ADB `shell` no puede leer frecuencia Mali en `/sys/class/devfreq/...`; contadores de GPU Perfetto de ese hardware no estaban expuestos. No es permiso de cámara/archivos, ni implica que la GPU esté bloqueada.
+- [ ] Próximo paso: spike **Vulkan surface/swapchain/present aislado** en WSA, luego comparar CPU+GPU antes de considerar cambios al renderer. **60 FPS ARM64 sigue pendiente; estrategia vigente y 0/5 sin cambios.**
+- [x] Documentación: [Decisión Vulkan/DirectX12 y permisos](docs/WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md). Ningún parche de renderer habilitado.
+
 ### 2026-10-14 — Ejecución de estrategia: perfil CPU real, objetivo estructural seleccionado (0/5)
 
 - [x] Fase 1: dos sesiones Simpleperf durante gameplay en el TECNO con Build ID instalado coincidente con ELF sin strip. A1 7.953 muestras/21,94 s sin pérdidas; A2 6.541 muestras. Mayor CPU muestreado en `libmain.so`: 83,93 % de A1.
