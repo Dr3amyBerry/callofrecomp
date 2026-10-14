@@ -1,5 +1,7 @@
 # Estado consolidado y continuación — CallofRecomp (2026-10-14)
 
+**Avance posterior de fase 2:** [auditoría `0x0041B8F0` y laboratorio de copias x87](CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md). La función quedó delimitada, pero sustituir `rd/wr` por `memcpy` no redujo las instrucciones ARM64 en el experimento aislado. No se aceptó optimización ni se probó hardware TECNO.
+
 **Hito posterior completado:** [A1/B/A2 de Camp Toccoa con GL4ES y ANGLE/Vulkan](ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md). Los 54,75 / 55,15 / 55,20 FPS medianos demuestran compatibilidad 3D básica, no una aceleración. WSA y guardados restaurados; próxima prioridad CPU ARM64.
 
 **Punto de control verificado en `main`:** `1906ace6a75fb836ff58775fc4ef1dfdf6742ed6` al comenzar este bloque. Entorno: DESKTOP-O3DC9UA / workspace `callofrecomp`; única conexión ADB: WSA `127.0.0.1:58526`, Android 33, x86_64. Teléfono físico TECNO CK6n **no conectado**. Los registros de desarrollo y ensayos anteriores no demuestran FPS nuevos en ARM64.

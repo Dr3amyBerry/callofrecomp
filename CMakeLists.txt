@@ -225,6 +225,10 @@ if(CODRECOMP_BUILD_TESTS)
     check_c_source_compiles("int main(void) { unsigned __int128 x = 1; return (int)(x - 1); }"
         CODRECOMP_HAS_INT128)
     if(CODRECOMP_HAS_INT128)
+        # Synthetic x87 binary80 stack copy equivalence experiment.
+        # This is NOT enabled in the Android game runtime.
+        add_executable(codrecomp_x87_stack_copy_lab_smoke tests/x87_stack_copy_lab.c)
+        add_test(NAME x87_stack_copy_lab_smoke COMMAND codrecomp_x87_stack_copy_lab_smoke)
         if(Python3_Interpreter_FOUND)
             set_tests_properties(static_analysis_python PROPERTIES
                 ENVIRONMENT "RECOMP_TEST_CC=${CMAKE_C_COMPILER}")

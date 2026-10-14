@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Diagnóstico Fase 2 posterior: candidato CPU y prueba fallida de ahorro de instrucciones
+
+Se auditó el cuerpo original `0x0041B8F0` con p-code/Ghidra privados y sitios ARM64 reales: 553 instrucciones, 3.957 operaciones, 1.789 copias y rangos repartidos en un chunk compartido por 12 funciones. Se probó aisladamente una conversión `rd/wr`→`memcpy` para el desplazamiento de siete registros x87 de 80 bits: **20.000 casos equivalentes**, pero **29 instrucciones AArch64 en ambos núcleos** bajo Clang `-O1` y `-O2`. No cambiar el generador ni afirmar mejora por C más corto. Sin teléfono conectado no hay nuevo A/B ARM64 real; mantener 60 FPS como meta y **0/5**. [Informe fase 2](CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md).
+
 ## Resultado posterior: A1/B/A2 completo en Camp Toccoa WSA, sin mejora de ANGLE (0/5)
 
 Ensayo controlado de **gameplay 3D** con mismo save/cámara y 60-FPS host cap: **GL4ES A1 54,75**, **ANGLE/Vulkan B 55,15**, **GL4ES A2 55,20** FPS medianos (20 ventanas de ~1 segundo, 30 s/run); p10 respectivamente **50,2 / 47,6 / 54,6** FPS. CPU/frame **17,54 / 17,80 / 17,43 ms**. B solo +0,175 FPS (+0,318 %) frente a la media A, dentro de la variación A1–A2; p10 B inferior. El mismo PID confirmó ANGLE/Vulkan al inicio y al cierre de B. Imagen 3D con SSIM 0,995943 frente a GL4ES, capturas privadas no sincronizadas y no prueba exhaustiva. **Sin mejora demostrada: mantener GL4ES producción y estrategia de fases ARM64 vigente.** APK y saves idénticos tras rollback; el TECNO no estuvo conectado, por tanto **0/5 intentos válidos**. [Reporte completo](ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md).

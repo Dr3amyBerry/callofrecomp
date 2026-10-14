@@ -4,6 +4,12 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Fase 2 estructural: diagnóstico de una función caliente de ARM64 (2026-10-14)
+
+- [x] Delimitada función CoDSP `0x0041B8F0` con 553 instrucciones, dos rangos Ghidra y 3.957 p-code; 1.789 `COPY`, 187 `LOAD`, 67 `STORE`. Es parte del chunk 19 con 12 entradas y su perfil de 100 sitios nativos es solo parcial.
+- [x] Añadida herramienta de auditoría con validaciones conservadoras, más CTest de **20.000 estados sintéticos x87 de 80 bits**: reemplazar copias `rd/wr` por `memcpy` no redujo las **29 instrucciones ARM64** a `-O1` ni a `-O2`. **No habilitar esta transformación**.
+- [ ] Seguir con oráculo independiente de un único grupo caliente (CFG, registros, flags, x87, memoria), comprobar cambio `.text` real y solo después medir en TECNO con A/B/A/B/A. Estrategia y contador **0/5** intactos. [Informe completo](CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md).
+
 ## Resultado de la validación gráfica 3D en WSA y decisión (2026-10-14)
 
 - [x] Ejecutado **A1/B/A2 en la misma partida de Camp Toccoa**. A1 GL4ES 54,75 FPS; B ANGLE/Vulkan 55,15 FPS; A2 GL4ES 55,20 FPS de mediana. El p10 de B (47,6 FPS) fue inferior al de ambas referencias A, sin prueba estadística de regresión concluyente.

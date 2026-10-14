@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 2 CPU: 0x0041B8F0 delimitada y laboratorio ARM64 auditado (0/5)
+
+- [x] **Auditoría reproducible** de `0x0041B8F0`: 553 instrucciones x86 / 3.957 p-code, dos intervalos Ghidra y chunk 19 compartido por 12 funciones; **1.789 COPY**, 187 LOAD, 67 STORE, 418 operaciones flotantes. La lista de 100 sitios nativos cubre solo 127 de 270 muestras, así que la selección de ventanas no es un perfil completo.
+- [x] `tools/recomp/diagnostics/audit_hot_function.py` cruza p-code, propiedad del cuerpo y sitios ARM64, sin publicar material comercial; rechaza mapa inconsistente, intervalos solapados, propiedad ambigua y muestras duplicadas. Pruebas sintéticas incorporadas.
+- [x] **Experimento sintético x87:** comparar 7 copias de registros de 10 bytes mediante `rd/wr` frente a `memcpy` (respetando huecos de 6 bytes): **20.000 casos idénticos**, pero **29 instrucciones AArch64** en ambas variantes con NDK Clang `-O1` y `-O2`. Se **descarta** el parche simplista: no hay ahorro nativo demostrado.
+- [ ] Próxima tarea: validar CFG completo, aliasing, EFLAGS y x87 de un único subbloque; crear oráculo independiente antes de transformar código. No se modificó el motor/renderer ni la APK. TECNO no conectado; **0/5**. [Auditoría y decisión](docs/CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md).
+
 ### 2026-10-14 — Ensayo A1/B/A2 real de Camp Toccoa: ANGLE sin ganancia en WSA (0/5)
 
 - [x] WSA x86_64 en **Camp Toccoa, spawn 3D**, guardado idéntico, cámara estática, **Equilibrado** y cap de 60 FPS; tres capturas de ~30 s cada una, 20 ventanas ~1 s analizadas por captura, sin menú/carga.
