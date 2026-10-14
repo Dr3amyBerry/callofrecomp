@@ -4,6 +4,16 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Estrategia vigente de rendimiento (decisión formal)
+
+**Fuente autoritativa:** [Estrategia actual y registro de experimentos](PERFORMANCE_STRATEGY_CURRENT.md).
+
+1. Perfilar el frame CPU/GPU real del TECNO (Simpleperf, perfiles GPU, frecuencias y temperaturas).
+2. Probar una optimización estructural del traductor/recompilador en **una única función caliente**, verificando diferencias en ARM64 nativo.
+3. Priorizar fast paths ARM64 completos por coste dinámico y validarlos con equivalencia de estado y FPS sostenido A/B/A/B/A.
+
+**Política de revisión:** después de **5 experimentos válidos consecutivos sin mejora reproducible**, revisar formalmente el enfoque antes de seguir invirtiendo tiempo. El contador comienza en **0/5** desde la adopción de esta política; los ensayos históricos no se computan retroactivamente. Éxitos confirmados reinician el contador; ensayos inconclusos no cuentan. El umbral exige revisión, **no cambio automático**. Meta 60 FPS sostenidos: **PENDIENTE**.
+
 ## Current status snapshot (2026-10-14)
 
 - Exact 1.5 original PE32/DLL fingerprints, SP ABI probes and the portable host: implemented and exercised in local tests.

@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Estrategia oficial de rendimiento adoptada (0/5)
+
+- [x] Documento autoritativo: [Estrategia vigente de rendimiento](docs/PERFORMANCE_STRATEGY_CURRENT.md) con tres fases: perfilado CPU/GPU en TECNO → optimización estructural de una función → fast paths nativos completos basados en muestras reales.
+- [x] Establecido contador **0/5 intentos válidos consecutivos fallidos** a partir de esta decisión. Antecedentes previos (FCOM, DCE, NaN, GL4ES, flags) documentados pero **no contados retroactivamente**.
+- [x] Exigidas pruebas controladas, integridad de HUD/partidas y mejora reproducible para confirmar éxito. Intentos inconclusos no cuentan y los éxitos confirmados reinician el contador.
+- [ ] Al llegar a **5/5 fallos**, revisión formal obligatoria y decisión documentada de mantener, modificar o sustituir estrategia; **no cambio automático**.
+- [ ] **60 FPS sostenidos en Camp Toccoa TECNO: PENDIENTE**. No se ejecutaron nuevas pruebas de rendimiento como parte de esta decisión documental.
+
 ### 2026-10-14 — DCE de temporales en pcode2c (ARM64 final sin cambios)
 
 - [x] Implementado `temp_liveness.py`: liveness por byte/CFG/bucles para temporales únicos cuyos consumidores eran flags x86 ya muertos, solo para operaciones enteras sin posible fallo. Activación `pcode2c.py --prune-dead-temporaries --dead-temp-parts 1,8`, OFF por defecto.
