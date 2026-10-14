@@ -52,6 +52,20 @@ int main(void) {
     assert(!compass_marker_project(&zero,f,1.0f));
     compass_marker_rect bad={45,410,10,10};
     assert(!compass_marker_project(&bad,f,INFINITY));
+    // Objective-star direct syscall receives already *physical* dimensions.
+    // Prior implementation treated them as 640x480 virtual values and
+    // incorrectly either skipped or misplaced the 32x32 medallion.
+    compass_marker_rect star={2.0f*(55.0f+43.75f-16.0f),
+                              1.2f*(425.0f-16.0f),64.0f,38.4f};
+    assert(compass_marker_project_pixels(&star,f,1.0f,2.0f,1.2f));
+    assert(near(star.width,38.4f)); // a physically round 32x32 star icon
+    assert(near(star.height,38.4f));
+    assert(near(star.x+star.width*.5f,2.0f*(55.0f+26.25f*f)));
+    assert(near(star.y,1.2f*(425.0f-16.0f)));
+    compass_marker_rect unsupported={12,20,40,40};
+    assert(!compass_marker_project_pixels(&unsupported,f,1.0f,0,1.2f));
+    assert(near(unsupported.width,40));
+    assert(!compass_marker_project_pixels(&unsupported,0.0f,1.0f,2,1.2f));
     // Both X and Y of a 4:3 screen remain untouched because the hook is off.
     puts("compass marker aspect and guard smoke: PASS");
     return 0;

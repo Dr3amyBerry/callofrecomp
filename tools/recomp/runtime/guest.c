@@ -629,7 +629,7 @@ void guest_configure_compass_markers(int width, int height, int overlay_ready) {
 }
 
 static void guest_project_compass_marker(uint32_t esp, unsigned arg_start,
-                                         unsigned log_bit) {
+                                         unsigned log_bit, int physical_pixels) {
     // One stack frame: return address, optionally syscall opcode, then
     // float x,y,w,h. Called only from original CoD 1.5 pointer functions.
     if (esp > UINT32_MAX - arg_start - 12) return;
@@ -646,7 +646,18 @@ static void guest_project_compass_marker(uint32_t esp, unsigned arg_start,
     memcpy(&mark.width, &old_w, sizeof old_w);
     memcpy(&mark.height, &old_h, sizeof old_h);
     memcpy(&zoom, &scale_bits, sizeof zoom);
-    if (!compass_marker_project(&mark, compass_marker_horizontal, zoom))
+    if (physical_pixels) {
+        // The direct 0x4b objective-star syscall pre-scales to viewport
+        // pixels inside cgame; the other sprite helpers take virtual units.
+        if (!guest_committed(0x300fe9a0u) ||
+            !guest_committed(0x300fe9a4u)) return;
+        uint32_t x_bits = mem32(0x300fe9a0u), y_bits = mem32(0x300fe9a4u);
+        float sx, sy;
+        memcpy(&sx, &x_bits, sizeof sx);
+        memcpy(&sy, &y_bits, sizeof sy);
+        if (!compass_marker_project_pixels(&mark,
+                compass_marker_horizontal, zoom, sx, sy)) return;
+    } else if (!compass_marker_project(&mark, compass_marker_horizontal, zoom))
         return;
     uint32_t new_x, new_y, new_w;
     memcpy(&new_x, &mark.x, sizeof new_x);
@@ -657,8 +668,18 @@ static void guest_project_compass_marker(uint32_t esp, unsigned arg_start,
     wr(G(wa), 4, new_w);
     if (!(compass_marker_log_flags & log_bit)) {
         compass_marker_log_flags |= log_bit;
-        fprintf(stdout, "codrecomp: compass marker projected call=0x%08x factor=%.5f zoom=%.3f\n",
-                mem32(esp), compass_marker_horizontal, zoom);
+        float raw_w, raw_h;
+        memcpy(&raw_w, &old_w, sizeof raw_w);
+        memcpy(&raw_h, &old_h, sizeof raw_h);
+        float xscale=0.0f, yscale=0.0f;
+        if (guest_committed(0x300fe9a0u) && guest_committed(0x300fe9a4u)) {
+            uint32_t xb=mem32(0x300fe9a0u), yb=mem32(0x300fe9a4u);
+            memcpy(&xscale, &xb, sizeof xscale);
+            memcpy(&yscale, &yb, sizeof yscale);
+        }
+        fprintf(stdout, "codrecomp: compass marker projected call=0x%08x factor=%.5f zoom=%.3f physical=%d sizes=%.3fx%.3f -> %.3fx%.3f scale=%.3f,%.3f\n",
+                mem32(esp), compass_marker_horizontal, zoom, physical_pixels,
+                raw_w, raw_h, mark.width, mark.height, xscale, yscale);
     }
 }
 #endif
@@ -675,13 +696,14 @@ void guest_run(void) {
             thunk_slot *t = &thunks[(PC - THUNK_BASE) / 16];
             uint32_t esp = reg32(REG_ESP), ret = mem32(esp);
 #ifdef __ANDROID__
-            // Objective-star sprite uses R_DRAWSTRETCHPIC syscall #0x4b
-            // directly. Identify the *exact* CoDSP 1.5 cgame caller
-            // before touching its ephemeral stack floats.
+            // Objective-star sprite uses engine syscall #0x4b after
+            // cgame's 0x3001cf3a CALLIND (return 0x3001cf40). Do not confuse
+            // it with the preceding 0x4a color syscall at 0x3001ced4.
+            // Correct only the target sprite's temporary draw arguments.
             if (compass_marker_horizontal > 0.0f &&
-                ret == 0x3001cedau && mem32(esp + 4) == 0x4bu &&
+                ret == 0x3001cf40u && mem32(esp + 4) == 0x4bu &&
                 module_loaded_at(0x30000000u))
-                guest_project_compass_marker(esp, 8, 4u);
+                guest_project_compass_marker(esp, 8, 4u, 1);
 #endif
             uint64_t sample = profile_begin();
             set_reg32(REG_EAX, t->fn(esp));
@@ -690,6 +712,26 @@ void guest_run(void) {
             PC = ret;
             continue;
         }
+#ifdef __ANDROID__
+        // The single-player cgame gets its native engine syscall callback
+        // through dllEntry and stores it at this verified 1.5 address.
+        // Unlike a host thunk, the pointer normally leads to *recompiled*
+        // CoDSP guest code. The earlier thunk-only star fix therefore did
+        // not run: recognize the exact return PC of the objective-star
+        // CALLIND at the engine callback ENTRY, before its 0x4b draw call.
+        // Check the target first to avoid inspecting the stack for other
+        // engine functions or altering normal sprite drawing.
+        if (compass_marker_horizontal > 0.0f && PC < 0x01000000u &&
+            guest_committed(0x300657e8u) &&
+            PC == mem32(0x300657e8u) && PC != 0 &&
+            module_loaded_at(0x30000000u)) {
+            uint32_t esp = reg32(REG_ESP);
+            if (esp <= UINT32_MAX - 44u &&
+                guest_committed(esp) && guest_committed(esp + 40u) &&
+                mem32(esp) == 0x3001cf40u && mem32(esp + 4u) == 0x4bu)
+                guest_project_compass_marker(esp, 8u, 4u, 1);
+        }
+#endif
 #ifdef CODRECOMP_HOT_X87_FASTPATH
         // Verified only for the exact CoDSP 1.5 guest function entry.
         // Any unsafe address or nonfinite value falls back to generated p-code.
@@ -707,11 +749,11 @@ void guest_run(void) {
             module_loaded_at(0x30000000u)) {
             uint32_t esp = reg32(REG_ESP), caller = mem32(esp);
             if (PC == 0x30012260u && caller == 0x3000d971u)
-                guest_project_compass_marker(esp, 4, 1u); // allies
+                guest_project_compass_marker(esp, 4, 1u, 0); // allies
             else if (PC == 0x30012260u && caller == 0x3000df4fu)
-                guest_project_compass_marker(esp, 4, 2u); // tanks
+                guest_project_compass_marker(esp, 4, 2u, 0); // tanks
             else if (PC == 0x30012200u && caller == 0x3001d0b7u)
-                guest_project_compass_marker(esp, 4, 8u); // objective pulse
+                guest_project_compass_marker(esp, 4, 8u, 0); // objective pulse
         }
 #endif
         int found = dispatch_index_find(&code_index, all_chunks, all_chunk_count, PC);

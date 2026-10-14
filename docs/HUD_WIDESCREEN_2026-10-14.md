@@ -32,10 +32,11 @@ generates a tiny overlay PK3 at:
 `<app internal files>/profile/main/zzzz_codrecomp_hud_fix.pk3`
 
 The patch changes only the relevant horizontal coordinates and sizes
-inside the Compass, Cursorhints, stance and tankstatus menu sections.
-Vertical coordinates, textures, ownermade HUD callbacks, health bars,
-weapon displays, buttons, menus, control coordinates and all 3D drawing
-remain intact. The compass layers, needle and pointer surfaces are
+inside the Compass, Cursorhints, stance, tankstatus **and Health** menu
+sections. The Health cross, backing strip and fill are compensated together,
+without changing the health value. Vertical coordinates, textures, original
+owner-draw callbacks, weapon displays, buttons, menus, controls and all
+3D drawing remain intact. The compass layers, needle and pointer surfaces are
 adjusted as one unit, preserving their alignment.
 
 The formula is:
@@ -83,7 +84,7 @@ duplicated ZIP directory entries.
   camera FOV correctly.
 - Synthetic pure-Java ZIP/geometry tests verify 2.23:1 and 16:9
   compensation, all six compass layers, the compass needle, centered
-  posture/prompt icons, untouched health bar, fail-closed unfamiliar
+  posture/prompt icons, correctly aligned health bar, fail-closed unfamiliar
   HUD, ZIP indices containing duplicate entries, untouched source PK3
   and cleanup at 4:3.
 - Full local regression: **94 Python unit tests passed (4 skipped), 26/26 CTest passed**, and the signed Android ARM64 APK installed and loaded the original saved training mission. The regular APK has **zero embedded commercial PK3/PE/DLL resources**.
@@ -93,8 +94,8 @@ duplicated ZIP directory entries.
 
 ## Scope and limits
 
-This fixes the identified square 2D HUD decorations without making
-arbitrary changes to non-square life/ammo bars, menu backgrounds, fonts
+This fixes the identified square 2D HUD decorations and the health strip
+without changing the ammo bars, menu backgrounds, fonts
 or every original 2D effect. It has been validated on the installed
 Spanish-language CoD 1.5 HUD; other radically changed modded HUD
 scripts may be deliberately skipped. The renderer and original
@@ -158,3 +159,52 @@ Malformed/nonfinite marker geometry is rejected.
 
 The previously installed APK was backed up privately before the tests.
 No commercial resources or save games were published or replaced.
+
+## Follow-up: health strip and genuinely round objective stars (2026-10-14)
+
+The original Health menu defined a medical cross at 12×12, a backing
+strip at 130×12 and a filled strip at 128×10, all in virtual 640×480.
+In widescreen 1280×576, the renderer widened those horizontally by
+2.0 while Y used 1.2. The newer Java HUD overlay scales the X offsets
+and widths of **all three Health children**, retains their respective Y
+and height, and moves the zero-width parent to keep the health strip's
+original right edge at virtual X=631. Health percentages and owner-draw
+logic are unchanged. For an unfamiliar custom Health layout, this specific
+fix fails closed rather than corrupting an unrelated widget.
+
+The gold ring and star were **not** fixed by the earlier marker hook.
+Private original p-code shows that `0x3001ceda` is the return from the
+preceding **0x4a color syscall**. The actual 0x4b objective sprite draw
+is the CALLIND at guest `0x3001cf3a`, returning to `0x3001cf40`.
+The cgame callback points into the original **recompiled CoDSP guest
+motor**, not normally the host thunk dispatch, so the old thunk-only
+hook did not fire. The corrected hook identifies that exact call at
+the callback's entry, with guest return, opcode, loaded module and
+widescreen overlay guards. It does not affect other HUD components.
+
+Unlike ally and pulse draw helpers, the objective sprite's 0x4b call
+already receives X/Y/width/height in **physical pixel units**. The
+new `compass_marker_project_pixels()` restores 640×480 virtual units
+using the cgame's own X/Y scale floats (2.0 and 1.2 on the TECNO),
+performs the previous X-aspect and perimeter correction, and rescales
+to pixels. Without this conversion, the sprite appears stretched even
+when the compass backing is circular.
+
+### Observed result
+
+- Physical TECNO CK6n with previously saved training game: the direct
+  star draw was logged, transforming **64.0×38.4 → 38.4×38.4**
+  physical pixels; actual yellow-ring bounding box in the 2400×1080
+  screen capture measured **29×29 pixels**. This validates roundness
+  of the visible objective indicator, not merely mathematical tests.
+- The right-side health bar appears shorter and proportionate, with
+  medical cross and background aligned at the same right margin.
+- Exact aspect 1280×576 and panoramic camera/FOV were unchanged.
+- Regression completed: **94 Python unit tests passed (4 skipped)**,
+  **27/27 CTest**; signed ARM64 Android APK installed. The previously
+  working opt-in x87 path is still included; all proprietary game
+  resources, profiles and APK backup remain local/ignored.
+- The **60 FPS sustained training-spawn target remains open**.
+  This HUD work was not a controlled FPS-optimization A/B/A trial.
+  Dynamic tank markers and additional campaign scenarios remain
+  separate visual-verification items.

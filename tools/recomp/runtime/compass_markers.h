@@ -64,4 +64,34 @@ static inline int compass_marker_project(compass_marker_rect *r,
     r->width = new_w;
     return 1;
 }
+
+// The objective-star drawpath goes straight to syscall 0x4b with physical
+// pixel dimensions. Convert back to the game's virtual 640x480 HUD units
+// BEFORE applying the same center/radius/aspect correction used for allies.
+// Returning to pixels after correction avoids double-scaling and restores
+// a circular star medallion (w / h consistent with the physical aspect).
+static inline int compass_marker_project_pixels(compass_marker_rect *r,
+                                                float factor, float hud_size,
+                                                float x_scale, float y_scale) {
+    if (!r || !isfinite(x_scale) || !isfinite(y_scale) ||
+        x_scale < 0.1f || x_scale > 20.0f ||
+        y_scale < 0.1f || y_scale > 20.0f)
+        return 0;
+    compass_marker_rect virtual_rect = {
+        r->x / x_scale, r->y / y_scale,
+        r->width / x_scale, r->height / y_scale
+    };
+    if (!compass_marker_project(&virtual_rect, factor, hud_size)) return 0;
+    const compass_marker_rect corrected = {
+        virtual_rect.x * x_scale,
+        virtual_rect.y * y_scale,
+        virtual_rect.width * x_scale,
+        virtual_rect.height * y_scale
+    };
+    if (!isfinite(corrected.x) || !isfinite(corrected.y) ||
+        !isfinite(corrected.width) || !isfinite(corrected.height))
+        return 0;
+    *r = corrected;
+    return 1;
+}
 #endif

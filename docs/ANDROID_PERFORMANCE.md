@@ -29,6 +29,22 @@ change alters objective scripts or simulation timing. Automated budget tests and
 build/regression checks do not establish performance or presentation on a real
 phone; manual checks remain with the user in flash mode.
 
+## October 14: HUD aspect corrections are not FPS optimizations
+
+On the TECNO CK6n, the launcher keeps 1280×576 aspect 2.2222 and
+approximately 108.87° horizontal FOV. The private HUD overlay now
+restores the health cross, backing and fill together, and the runtime
+normalizes original cgame objective/star sprite draws in addition to
+the earlier green compass markers. The physical objective ring was
+verified 29×29px after converting 64×38.4px guest sprite input to
+38.4×38.4px output.
+
+These are 2D presentation corrections, not a new performance claim.
+A later 30-window local diagnostic included early 18–20 FPS samples
+and later ~25 FPS samples; the scene/thermal conditions were not a
+controlled A/B/A comparison. **60 sustained FPS in training spawn
+is still pending**. See the companion HUD widescreen report.
+
 ## WSA x86_64 A/B and writable overlay microbenchmark (2026-10-13)
 
 Recompiled `9147588` as an x86_64 WSA APK from an isolated, clean worktree.

@@ -15,6 +15,19 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## Health bar and circular objective stars (corrected on TECNO)
+
+- [x] Scale all Health script children (cross, backdrop, fill) together,
+  without changing health values or right-edge alignment.
+- [x] Distinguish cgame's 0x4a color call from the 0x4b direct objective
+  draw at `0x3001cf40`; enter the original CoDSP callback, not a host thunk.
+- [x] Convert pre-scaled pixel geometry back to virtual HUD units before
+  applying the compass shape adjustment, then return to device pixels.
+- [x] Objective gold ring measured **29×29 actual screen pixels** on
+  TECNO CK6n; full 94 Python / 27 CTest regression passed.
+- [ ] 60 FPS at training spawn and other untested campaign icon variants
+  are still open, independently of this completed HUD fix.
+
 ## Widescreen dynamic compass pointers (corrected in training)
 
 - [x] Isolated the original cgame dynamic friend, tank and objective marker
@@ -23,8 +36,9 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
   icons remain inside the circular compass without changing direction.
 - [x] TECNO training screenshot plus runtime logs verified green friend
   and objective-pulse correction; 94 Python tests and 27/27 CTest passed.
-- [ ] Visual coverage for tank and main objective-star markers remains
-  pending in their corresponding missions.
+- [x] Main objective-star circle visually verified in training (actual
+  screenshot bbox 29×29px; cgame draw 64×38.4 → 38.4×38.4px).
+- [ ] Tank and additional campaign objective icon coverage remains pending.
 - [ ] Target of **60 sustained FPS at training spawn** still pending;
   current visual-fix benchmark ~25.75 FPS is not a new proven speedup.
 

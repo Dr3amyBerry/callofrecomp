@@ -97,8 +97,7 @@ final class HudWidescreen {
         return menu.substring(0, start) + block + menu.substring(end);
     }
 
-    // These are square HUD decorations; skip other menus (health/ammo bars
-    // contain genuinely non-square artwork and must not be compressed).
+    // These are square HUD decorations; other menus are handled separately.
     private static String patchSquareMenu(String script, String name,
                                           String originalParent, double x,
                                           double width, double correction,
@@ -126,6 +125,42 @@ final class HudWidescreen {
         return script.substring(0, start) + block + script.substring(end);
     }
 
+    // The original health strip (cross + backing + fill) also uses 4:3
+    // virtual X units. Normalize the whole group, not just the cross,
+    // to keep the bar fill, background and medical icon aligned. Preserve
+    // its original right edge at x=631 and original Y positioning.
+    private static String patchHealth(String script, double correction) {
+        final String tag = "name \"Health\"";
+        if (count(script, tag) != 1) return script; // optional custom HUD
+        int at = script.indexOf(tag);
+        int start = script.lastIndexOf("menuDef", at);
+        if (start < 0) return script;
+        int open = script.indexOf('{', start);
+        int end = open >= 0 ? blockEnd(script, open) : -1;
+        if (end < 0) return script;
+        String block = script.substring(start, end);
+        if (!block.contains("name \"healthbarback\"") ||
+                !block.contains("name \"healthbar\"") ||
+                !block.contains("name \"healthbarcross\"")) return script;
+        // Original right edge = 488 + 13 + 130 = 631, nine virtual
+        // units from 640. Scale X distances, not the health percentage.
+        String patched = replaceOnce(block, "rect 488 460 0 0",
+                "rect " + number(631.0 - 143.0 * correction) + " 460 0 0");
+        if (patched == null) return script;
+        patched = replaceOnce(patched, "rect 13 0 130 12",
+                "rect " + number(13.0 * correction) + " 0 " +
+                        number(130.0 * correction) + " 12");
+        if (patched == null) return script;
+        patched = replaceOnce(patched, "rect 14 1 128 10",
+                "rect " + number(14.0 * correction) + " 1 " +
+                        number(128.0 * correction) + " 10");
+        if (patched == null) return script;
+        patched = replaceOnce(patched, "rect 0 0 12 12",
+                "rect 0 0 " + number(12.0 * correction) + " 12");
+        if (patched == null) return script;
+        return script.substring(0, start) + patched + script.substring(end);
+    }
+
     /** Null means no safe changes can be made; caller must remove stale overlay. */
     static String patchMenu(String original, int width, int height) {
         if (width <= 0 || height <= 0 || (double) width / height <= 4.0 / 3.0 + 0.0001)
@@ -142,6 +177,7 @@ final class HudWidescreen {
                 100.0 + move, size, correction, false);
         result = patchSquareMenu(result, "tankstatus", "rect 100 434.375 40 40",
                 100.0 + move, size, correction, true);
+        result = patchHealth(result, correction);
         return result;
     }
 

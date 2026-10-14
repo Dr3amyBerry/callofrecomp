@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Barra de salud y estrellas circulares sin deformación
+
+- [x] La salud en `ui/hud.menu` seguía con las medidas virtuales 4:3: cruz 12×12, fondo 130×12 y relleno 128×10. `HudWidescreen.patchHealth` aplica el factor horizontal común **0,60** (TECNO 1280×576), conserva el 100 % del avance de salud, altura y esquina derecha (borde original x=631). Menús modificados/no reconocidos se dejan intactos.
+- [x] Hallado el error exacto en el hook de estrellas: `0x3001ceda` era el retorno de la llamada **0x4a de color**, no el dibujado. El P-code original confirma la llamada **0x4b de dibujo** en `0x3001cf3a`, retorno `0x3001cf40`.
+- [x] El callback de cgame entra al motor CoDSP **recompilado**, normalmente no al puente de thunks de host. Ahora se protege el parche por el puntero de `dllEntry`, el retorno exacto `0x3001cf40`, el syscall `0x4b`, módulo cargado y un PK3 privado con HUD compatible. Convierte solo los parámetros ya escalados a píxeles de estrella a coordenadas virtuales, corrige su ancho/radio y vuelve a píxeles. Los verdes previamente arreglados no se tocan.
+- [x] **Prueba física TECNO CK6n**: registro de la estrella 64×38,4 → **38,4×38,4** píxeles, escalas de cgame 2,0/1,2 y factor 0,60; medición del anillo amarillo en captura real: **29×29 píxeles**. Barra de salud visualmente más corta y cruz alineada; panorámico real intacto (1280×576, FOV horizontal ~108,87°).
+- [x] Compilación y firma de APK ARM64, instalación sobre el mismo teléfono conservando partidas; **94 pruebas Python (4 omitidas), 27/27 CTest**. APK previa respaldada en área privada ignorada; no se distribuyen originales comerciales.
+- [ ] Sigue pendiente verificar otros iconos de misión que no aparezcan en este entrenamiento (especialmente tanque), y conseguir **60 FPS sostenidos en el spawn**. La reparación gráfica no se contabiliza como ganancia de FPS; no se hizo A/B/A controlado de rendimiento.
+
 ### 2026-10-14 — Indicadores verdes dentro de la brújula panorámica
 
 - [x] Hallado el problema real: el cgamex86.dll original calcula los puntos verdes, tanques y objetivos con un radio propio de **43,75 unidades**; la corrección anterior solo había estrechado el dibujo del círculo.

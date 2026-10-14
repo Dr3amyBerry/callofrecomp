@@ -23,7 +23,9 @@ public final class HudWidescreenSmoke {
                 + "itemDef { rect 0 0 40 40 } "
                 + "itemDef { rect 20 20 40 40 } }\n"
                 + "menuDef { name \"Health\" rect 488 460 0 0 "
-                + "itemDef { rect 13 0 130 12 } }\n"
+                + "itemDef { name \"healthbarback\" rect 13 0 130 12 } "
+                + "itemDef { name \"healthbar\" rect 14 1 128 10 } "
+                + "itemDef { name \"healthbarcross\" rect 0 0 12 12 } }\n"
                 + "menuDef { name \"Compass\" "
                 + "rect COMPASS_X COMPASS_Y COMPASS_SIZE COMPASS_SIZE ");
         s.append("itemDef { name \"compassback\" "
@@ -59,8 +61,21 @@ public final class HudWidescreenSmoke {
                 "stance and tank icon should preserve their centers");
         check(wide.contains("rect 11.958333 20 23.916667 40"),
                 "tank secondary icon must preserve relative X");
-        check(wide.contains("rect 13 0 130 12"),
-                "do not distort the non-square health bar");
+        check(wide.contains("rect 545.497917 460 0 0"),
+                "health strip stays anchored at the original right edge");
+        check(wide.contains("rect 7.772917 0 77.729167 12"),
+                "health backdrop must preserve its original proportions");
+        check(wide.contains("rect 8.370833 1 76.533333 10"),
+                "the filled health bar must remain aligned with its backdrop");
+        check(wide.contains("rect 0 0 7.175000 12"),
+                "medical cross must be physically square");
+        check(source.contains("rect 13 0 130 12"),
+                "original health HUD remains unmodified");
+        String incompatible = source.replace("rect 14 1 128 10", "rect 14 1 127 10");
+        String fallback = HudWidescreen.patchMenu(incompatible, 1280, 576);
+        check(fallback != null && fallback.contains("rect 488 460 0 0") &&
+                fallback.contains("rect 14 1 127 10"),
+                "unsupported customized health strips must be left alone");
         check(source.contains("rect 300 325 40 40"),
                 "source must be left unchanged");
         check(HudWidescreen.patchMenu(source, 640, 480) == null,
