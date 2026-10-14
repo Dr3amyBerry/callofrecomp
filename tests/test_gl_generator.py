@@ -21,6 +21,18 @@ COMMANDS = {
                      ('GLenum', 'type'), ('void *', 'pixels')],
     'glBufferDataARB': [('GLenum', 'target'), ('GLsizeiptr', 'size'),
                         ('void *', 'data'), ('GLenum', 'usage')],
+    'glEnable': [('GLenum', 'cap')],
+    'glDisable': [('GLenum', 'cap')],
+    'glDepthFunc': [('GLenum', 'func')],
+    'glBlendFunc': [('GLenum', 'src'), ('GLenum', 'dst')],
+    'glMatrixMode': [('GLenum', 'mode')],
+    'glLoadMatrixf': [('void *', 'matrix')],
+    'glMultMatrixf': [('void *', 'matrix')],
+    'glStencilFunc': [('GLenum', 'func'), ('GLint', 'ref'), ('GLuint', 'mask')],
+    'glTexEnvi': [('GLenum', 'target'), ('GLenum', 'pname'), ('GLint', 'param')],
+    'glAlphaFunc': [('GLenum', 'func'), ('GLfloat', 'ref')],
+    'glTranslatef': [('GLfloat', 'x'), ('GLfloat', 'y'), ('GLfloat', 'z')],
+
 }
 
 def xml_source():
@@ -56,6 +68,23 @@ class GLGenerationTest(unittest.TestCase):
             self.assertIn('GL_PERF(GL_PERF_DRAW_ELEMENTS',s)
             self.assertIn('GL_PERF(GL_PERF_TEX_IMAGE',s)
             self.assertIn('gl_perf_enabled = getenv("CODRECOMP_GL_STATS") != NULL;',s)
+            # New observer is generated from the same Khronos schema; the
+            # game still forwards every call to the real GL4ES function.
+            self.assertIn('GLVK_OP_ENABLE, ARG(esp, 0)',s)
+            self.assertIn('GLVK_OP_DEPTH_FUNC, ARG(esp, 0)',s)
+            self.assertIn('GLVK_OP_BLEND_FUNC, ARG(esp, 0), ARG(esp, 1)',s)
+            self.assertIn('GLVK_OP_LOAD_MATRIX_F, 0, 0, 0, GP(ARG(esp, 0))',s)
+            self.assertIn('GLVK_OP_STENCIL_FUNC, ARG(esp, 0), ARG(esp, 1), ARG(esp, 2)',s)
+            self.assertIn('GLVK_OP_UNSUPPORTED_STATE',s)
+            self.assertIn('GLVK_LEGACY_TEXTURE_STATE',s)
+            self.assertIn('GLVK_LEGACY_MATRIX_TRANSFORM',s)
+            self.assertIn('GLVK_OP_ALPHA_FUNC, ARG(esp, 0), ARG(esp, 1)',s)
+            self.assertIn('legacy_tex=%llu',s)
+            self.assertIn('getenv("CODRECOMP_GL_VK_CAPTURE")',s)
+            self.assertIn('p_glLoadMatrixf(GP(ARG(esp, 0)));',s)
+            self.assertIn('#ifdef CODRECOMP_GL_VK_STATE_CAPTURE',s)
+            self.assertIn('gl_vk_state_apply(&gl_vk_observer',s)
+
 
 if __name__ == '__main__':
     unittest.main()

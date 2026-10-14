@@ -74,6 +74,8 @@ Archivos APK, logs, JSON y PNG de resultados en `.local/profiles/wsa_vulkan_ab/d
 - Marcadores finales completos `VK_MESH_READY=4 draws` + `VK_DEPTH_READY=4 draws` y `VK_RESULT` validados por el analizador; captura visual examinada.
 - La `libmain.so` de **CallofRecomp original instalada en WSA** se comprobó nuevamente idéntica a la referencia A mediante SHA-256 `403a5bc304b3ec36b43b04a8322c31a212727a8a8ff254e47b70afec2d960cde`. **No se han repetido benchmarks de gameplay ni tocado sus partidas.**
 
+**Actualización posterior:** ya se creó el observador tipado de OpenGL en el generador de thunks y se ha usado un traductor Vulkan sobre los mismos pipelines opacos/translúcidos de este prototipo. La prueba del juego real en WSA reveló estados faltantes; [ver diagnóstico de cobertura](GL_VK_STATE_BRIDGE_2026-10-14.md). La lista siguiente documenta el estado de desarrollo al finalizar el hito anterior.
+
 ## Próxima etapa técnica
 
 El prototipo demuestra attachments depth/stencil y blending alfa, pero **todavía no es un backend Vulkan compatible con OpenGL 1.x del juego**. Quedan funciones con coste e impacto visual real: mapeo de estados `glEnable(GL_DEPTH_TEST)`, stencil y alpha; blending de texturas, `glTexEnv`, multitexturizado, matrices `MODELVIEW/PROJECTION`, culling, wrap/filter, mipmaps y materiales. Priorizar una **captura y traducción tipada del estado del puente GL a Vulkan**, sin editar manualmente centenares de thunks generados, antes de intentar sustituir GL4ES.

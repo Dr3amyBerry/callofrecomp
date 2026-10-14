@@ -17,6 +17,8 @@ add_subdirectory("${GL4ES_SOURCE_DIR}" gl4es)
 set(ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 set(RECOMP_SOURCE_DIR "${ROOT}/recomp_out" CACHE PATH "Private generated C")
 file(GLOB RUNTIME "${ROOT}/tools/recomp/runtime/*.c")
+# Pure opt-in observer implementation; do not link it into the normal APK.
+list(REMOVE_ITEM RUNTIME "${ROOT}/tools/recomp/runtime/gl_vk_state.c")
 set(GENERATED)
 foreach(module codsp uix86 cgamex86 gamex86)
   file(GLOB sources "${RECOMP_SOURCE_DIR}/${module}_recomp*.c")
@@ -61,6 +63,18 @@ if(CODRECOMP_WSA_UNCAP_BENCH)
   endif()
   set_property(SOURCE "${ROOT}/tools/recomp/runtime/window.c" APPEND
     PROPERTY COMPILE_DEFINITIONS CODRECOMP_WSA_UNCAP_BENCH)
+endif()
+
+# Observation only. The GL4ES host call remains authoritative; Vulkan
+# state recorder is OFF by default and only GL wrappers + swap frame compile
+# with instrumentation. This is NOT a Vulkan rendering backend for the game.
+option(CODRECOMP_GL_VK_STATE_CAPTURE "Opt-in typed legacy OpenGL state observer for Vulkan research" OFF)
+if(CODRECOMP_GL_VK_STATE_CAPTURE)
+  target_sources(main PRIVATE "${ROOT}/tools/recomp/runtime/gl_vk_state.c")
+  foreach(source gl_thunks.c window.c)
+    set_property(SOURCE "${ROOT}/tools/recomp/runtime/${source}" APPEND
+      PROPERTY COMPILE_DEFINITIONS CODRECOMP_GL_VK_STATE_CAPTURE)
+  endforeach()
 endif()
 
 # Opt-in CPU time attributable to GL4ES/GLES entry points on the guest thread.

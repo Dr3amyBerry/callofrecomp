@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Diagnóstico GL→Vulkan del juego real, sin intento de optimización
+
+Un observador optativo generado por `gen_gl.py` rastreó la partida GL4ES de WSA, entre menú y entrenamiento. El análisis de **164 muestras** encontró **0 estados declarados equivalentes en el subconjunto traducido** y máscara `0x19`: capacidades no traducidas, estado de texturas y API GL heredada. El traductor genera estructuras Vulkan válidas para depth/stencil, blending y culling, pero **no** es un renderer completo. El log es una captura de compatibilidad, no permite medir FPS nuevos ni atribuir aceleración a Vulkan. Se restauró la APK original exacta; el contador sigue en **0/5**. [Documentación y siguiente cobertura](GL_VK_STATE_BRIDGE_2026-10-14.md).
+
 ## Ejecución más reciente — diagnóstico sin consumo de intentos
 
 [Informe de ejecución del perfil TECNO y selección de función](PERFORMANCE_STRATEGY_RUN_2026-10-14.md) — dos capturas reales de Simpleperf, ELF instalado verificado, top de geometría/visibilidad y diagnóstico ARM64 de `0x0041B8F0`. GPU hardware sigue sin contador accesible mediante ADB. La primera función para fase 2 está seleccionada, pero **no se ha habilitado optimización estructural nueva**. Fase 3 permanece pendiente. **Contador: 0/5**; el diagnóstico no constituye un experimento A/B válido.

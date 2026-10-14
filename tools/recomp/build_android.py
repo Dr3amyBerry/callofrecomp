@@ -45,6 +45,8 @@ def main():
                         help="compile optional guest OpenGL call counters")
     parser.add_argument("--gl-time-profile", action="store_true",
                         help="compile opt-in CPU timing for GL4ES/GLES entry points")
+    parser.add_argument("--gl-vk-state-capture", action="store_true",
+                        help="compile opt-in GL->Vulkan typed state observer, NOT a Vulkan game backend; default OFF")
     parser.add_argument("--wsa-uncap-bench", action="store_true",
                         help="DIAGNOSTIC WSA x86_64 ONLY: bypass host 60 FPS cap; default OFF")
     parser.add_argument("--render-o2", action="store_true",
@@ -114,6 +116,7 @@ def main():
             f"-DCODRECOMP_CPU_PROFILING={'ON' if args.cpu_profile else 'OFF'}",
             f"-DCODRECOMP_GL_PROFILING={'ON' if args.gl_profile else 'OFF'}",
             f"-DCODRECOMP_GL_TIMING={'ON' if args.gl_time_profile else 'OFF'}",
+            f"-DCODRECOMP_GL_VK_STATE_CAPTURE={'ON' if args.gl_vk_state_capture else 'OFF'}",
             f"-DCODRECOMP_WSA_UNCAP_BENCH={'ON' if args.wsa_uncap_bench else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",

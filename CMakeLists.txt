@@ -145,6 +145,15 @@ if(CODRECOMP_BUILD_TESTS)
     add_executable(codrecomp_gl_time_smoke tests/gl_call_timing_smoke.c)
     target_include_directories(codrecomp_gl_time_smoke PRIVATE tools/recomp/runtime)
     add_test(NAME gl_call_timing_smoke COMMAND codrecomp_gl_time_smoke)
+    add_executable(codrecomp_gl_vk_state_smoke
+        tests/gl_vk_state_smoke.c
+        tools/recomp/runtime/gl_vk_state.c)
+    target_include_directories(codrecomp_gl_vk_state_smoke PRIVATE tools/recomp/runtime)
+    if(NOT WIN32)
+        target_link_libraries(codrecomp_gl_vk_state_smoke PRIVATE m)
+    endif()
+    add_test(NAME gl_vk_state_smoke COMMAND codrecomp_gl_vk_state_smoke)
+
     add_executable(codrecomp_gl_perf_smoke tests/gl_perf_metrics_smoke.c)
     target_include_directories(codrecomp_gl_perf_smoke PRIVATE tools/recomp/runtime)
     add_test(NAME gl_perf_smoke COMMAND codrecomp_gl_perf_smoke)

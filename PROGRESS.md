@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Puente tipado OpenGL → Vulkan: captura de estados del juego real (0/5)
+
+- [x] Modelo `gl_vk_state` para depth, blending, stencil, culling, alpha test, matrices column-major y unidades de textura; rechazo explícito de enums/estados sin equivalencia.
+- [x] `gen_gl.py` genera observación de estado **después** de las llamadas host OpenGL/GL4ES; `--gl-vk-state-capture` OFF por defecto y el código del observador no se compila en la APK normal.
+- [x] Conversor `wsa_vk_gl_state_map.c` a estructuras Vulkan depth/stencil, blend y raster; prototipo WSA revalidado visualmente con la escena texturizada/transparente existente. No hay renderer Vulkan del juego.
+- [x] **Una sesión real de CallofRecomp en WSA** entre menú y entrenamiento: **164 snapshots, 0/164 declarados traducibles**, flags de incompatibilidad **0x19** (capacidad desconocida, textura, GL heredado). Los incrementos acumulados de llamadas **NO** son FPS ni CPU/frame.
+- [x] Registro privado `.local/profiles/vk_bridge`, analizador y pruebas reproducibles; APK A1 original reinstalada y hash de `libmain.so` verificado.
+- [x] Histograma por familias (tex state/upload, matrix, vertex, lights, buffers, otros) implementado para **capturas futuras**, ausente en el log existente; no se repitieron benchmarks históricos.
+- [ ] Pendiente: equivalencia de `glTexEnv`, transformaciones GL, alpha discard, texturas múltiples, estado de buffer/arrays y renderer Vulkan completo. [Informe](docs/GL_VK_STATE_BRIDGE_2026-10-14.md). Estrategia oficial **0/5**.
+
 ### 2026-10-14 — Vulkan experimental: profundidad, stencil y alpha blend probados en WSA (0/5)
 
 - [x] `--scene depth` en APK de prueba independiente: 5 attachments `VkImage` depth+stencil (uno por framebuffer), formato **D32_SFLOAT_S8_UINT**, memory DEVICE_LOCAL, clear depth 1/stencil 0.

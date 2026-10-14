@@ -16,6 +16,7 @@ Usa los menús y recursos de tu instalación de PC, con controles táctiles
 límite de 60 FPS. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
+· [**Captura OpenGL → estado Vulkan del juego real**](docs/GL_VK_STATE_BRIDGE_2026-10-14.md)
 · [**Vulkan: profundidad, stencil y transparencia**](docs/WSA_VULKAN_DEPTH_STENCIL_BLEND_2026-10-14.md)
 · [**Texturas y sampler Vulkan**](docs/WSA_VULKAN_TEXTURE_2026-10-14.md)
 · [**Geometría y shaders Vulkan**](docs/WSA_VULKAN_INDEXED_MESH_2026-10-14.md)

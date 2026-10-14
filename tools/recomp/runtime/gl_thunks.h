@@ -32,6 +32,11 @@ void gl_time_frame(uint64_t now_ms);
 #define gl_time_frame(ms) ((void)0)
 #endif
 extern const thunk_def gl_thunks[];
+#if defined(CODRECOMP_GL_VK_STATE_CAPTURE)
+void gl_vk_capture_frame(uint64_t now_ms);
+#else
+#define gl_vk_capture_frame(ms) ((void)0)
+#endif
 // UI-thread input: 0 absolute menu pointer, 1 scancode, 2 mouse button,
 // 3 relative look, 4 menu activation after a frame (control 1 cancels).
 // Absolute coordinates use 0..65535; key/button x is held.

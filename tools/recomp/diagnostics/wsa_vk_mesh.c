@@ -4,6 +4,9 @@
  */
 #define VK_USE_PLATFORM_ANDROID_KHR 1
 #include "wsa_vk_mesh.h"
+#if VK_BENCH_DEPTH_SCENE
+#include "wsa_vk_gl_state_map.h"
+#endif
 #include <android/asset_manager.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -168,21 +171,26 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
     VkPipelineColorBlendStateCreateInfo blend={0};
     blend.sType=VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     blend.attachmentCount=1;blend.pAttachments=&attachment;
-    VkStencilOpState stencil_opaque={0};
-    stencil_opaque.failOp=VK_STENCIL_OP_KEEP;
-    stencil_opaque.passOp=VK_STENCIL_OP_REPLACE;
-    stencil_opaque.depthFailOp=VK_STENCIL_OP_KEEP;
-    stencil_opaque.compareOp=VK_COMPARE_OP_ALWAYS;
-    stencil_opaque.compareMask=0xff;
-    stencil_opaque.writeMask=0xff;
     VkPipelineDepthStencilStateCreateInfo depth={0};
-    depth.sType=VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth.depthTestEnable=VK_TRUE;
-    depth.depthWriteEnable=VK_TRUE;
-    depth.depthCompareOp=VK_COMPARE_OP_LESS_OR_EQUAL;
-    depth.stencilTestEnable=VK_TRUE;
-    depth.front=stencil_opaque;
-    depth.back=stencil_opaque;
+#if VK_BENCH_DEPTH_SCENE
+    /* Use the same typed legacy GL state model as the generated-bridge
+     * observer, then translate it to real Vulkan pipeline descriptors. */
+    gl_vk_state legacy;
+    gl_vk_state_reset(&legacy);
+#define GLSTATE(op,a,b,c) do { if(!gl_vk_state_apply(&legacy,(op),(a),(b),(c),NULL))       {r=VK_ERROR_FEATURE_NOT_PRESENT;goto fail;} } while(0)
+    GLSTATE(GLVK_OP_ENABLE,GLVK_DEPTH_TEST,0,0);
+    GLSTATE(GLVK_OP_DEPTH_FUNC,GLVK_LEQUAL,0,0);
+    GLSTATE(GLVK_OP_ENABLE,GLVK_STENCIL_TEST,0,0);
+    GLSTATE(GLVK_OP_STENCIL_FUNC,GLVK_ALWAYS,0,0xff);
+    GLSTATE(GLVK_OP_STENCIL_MASK,0xff,0,0);
+    GLSTATE(GLVK_OP_STENCIL_OP,GLVK_KEEP,GLVK_KEEP,GLVK_REPLACE);
+    vk_gl_pipeline_state opaque;
+    if(!vk_gl_translate_pipeline(&legacy,&opaque))
+        {r=VK_ERROR_FEATURE_NOT_PRESENT;goto fail;}
+    raster=opaque.raster;
+    attachment=opaque.color;
+    depth=opaque.depth;
+#endif
     VkDynamicState dynamic_names[]={VK_DYNAMIC_STATE_STENCIL_REFERENCE};
     VkPipelineDynamicStateCreateInfo dynamic={0};
     dynamic.sType=VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -205,27 +213,28 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
         /* Equal-to-stencil-2 translucent overlay. Depth writes are off; the
          * opaque background/foreground/occlusion keep depth writes on. */
         stages[1].module=overlay;
-        VkStencilOpState stencil_overlay={0};
-        stencil_overlay.failOp=VK_STENCIL_OP_KEEP;
-        stencil_overlay.passOp=VK_STENCIL_OP_KEEP;
-        stencil_overlay.depthFailOp=VK_STENCIL_OP_KEEP;
-        stencil_overlay.compareOp=VK_COMPARE_OP_EQUAL;
-        stencil_overlay.compareMask=0xff;
-        stencil_overlay.writeMask=0;
-        depth.depthWriteEnable=VK_FALSE;
-        depth.front=stencil_overlay;
-        depth.back=stencil_overlay;
-        attachment.blendEnable=VK_TRUE;
-        attachment.srcColorBlendFactor=VK_BLEND_FACTOR_SRC_ALPHA;
-        attachment.dstColorBlendFactor=VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        attachment.colorBlendOp=VK_BLEND_OP_ADD;
-        attachment.srcAlphaBlendFactor=VK_BLEND_FACTOR_ONE;
-        attachment.dstAlphaBlendFactor=VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        attachment.alphaBlendOp=VK_BLEND_OP_ADD;
+#if VK_BENCH_DEPTH_SCENE
+        GLSTATE(GLVK_OP_DEPTH_MASK,0,0,0);
+        GLSTATE(GLVK_OP_ENABLE,GLVK_BLEND,0,0);
+        GLSTATE(GLVK_OP_BLEND_FUNC,GLVK_SRC_ALPHA,GLVK_ONE_MINUS_SRC_ALPHA,0);
+        GLSTATE(GLVK_OP_STENCIL_FUNC,GLVK_EQUAL,2,0xff);
+        GLSTATE(GLVK_OP_STENCIL_MASK,0,0,0);
+        GLSTATE(GLVK_OP_STENCIL_OP,GLVK_KEEP,GLVK_KEEP,GLVK_KEEP);
+        vk_gl_pipeline_state translucent;
+        if(!vk_gl_translate_pipeline(&legacy,&translucent))
+            {r=VK_ERROR_FEATURE_NOT_PRESENT;goto fail;}
+        raster=translucent.raster;
+        attachment=translucent.color;
+        depth=translucent.depth;
+#endif
         r=vkCreateGraphicsPipelines(device,VK_NULL_HANDLE,1,&ci,NULL,
                                    &m->overlay_pipeline);
         if(r!=VK_SUCCESS)goto fail;
     }
+
+#if VK_BENCH_DEPTH_SCENE
+#undef GLSTATE
+#endif
 
     const VkDeviceSize vertex_bytes=sizeof(quad);
     const VkDeviceSize index_bytes=sizeof(indices);

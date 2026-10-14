@@ -18,6 +18,8 @@ SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_surface_bench.c'
 MESH_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_mesh.c'
 TEXTURE_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_texture.c'
 DEPTH_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_depth.c'
+GL_STATE_SOURCE=ROOT/'tools/recomp/runtime/gl_vk_state.c'
+GL_STATE_MAP_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_gl_state_map.c'
 SHADERS=ROOT/'tools/recomp/diagnostics/shaders'
 PACKAGE='org.rigorcore.vkswapbench'
 
@@ -77,7 +79,7 @@ def main():
         srcs.append(MESH_SOURCE)
         srcs.append(TEXTURE_SOURCE)
         if args.scene=='depth':
-            srcs.append(DEPTH_SOURCE)
+            srcs.extend([DEPTH_SOURCE,GL_STATE_SOURCE,GL_STATE_MAP_SOURCE])
         compiler=ndk/'shader-tools/windows-x86_64/glslc.exe'
         validator=ndk/'shader-tools/windows-x86_64/spirv-val.exe'
         if not compiler.is_file() or not validator.is_file():

@@ -113,6 +113,120 @@ void gl_time_frame(uint64_t now_ms) {
 '''
 
 
+# Opt-in observer for GL->Vulkan state translation research. These typed
+# operations are added at GENERATION time, after forwarding to GL4ES, and
+# must never suppress or replace the original OpenGL host call.
+# The observer is deliberately fail-closed for states the prototype cannot
+# yet translate. It does not make Vulkan the game's renderer.
+VK_CAPTURE = {
+    'glEnable': ('GLVK_OP_ENABLE', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glDisable': ('GLVK_OP_DISABLE', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glDepthFunc': ('GLVK_OP_DEPTH_FUNC', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glDepthMask': ('GLVK_OP_DEPTH_MASK', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glBlendFunc': ('GLVK_OP_BLEND_FUNC', 'ARG(esp, 0)', 'ARG(esp, 1)', '0', 'NULL'),
+    'glStencilFunc': ('GLVK_OP_STENCIL_FUNC', 'ARG(esp, 0)', 'ARG(esp, 1)',
+                      'ARG(esp, 2)', 'NULL'),
+    'glStencilOp': ('GLVK_OP_STENCIL_OP', 'ARG(esp, 0)', 'ARG(esp, 1)',
+                    'ARG(esp, 2)', 'NULL'),
+    'glStencilMask': ('GLVK_OP_STENCIL_MASK', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glCullFace': ('GLVK_OP_CULL_FACE', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glFrontFace': ('GLVK_OP_FRONT_FACE', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glAlphaFunc': ('GLVK_OP_ALPHA_FUNC', 'ARG(esp, 0)', 'ARG(esp, 1)', '0', 'NULL'),
+    'glActiveTexture': ('GLVK_OP_ACTIVE_TEXTURE', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glActiveTextureARB': ('GLVK_OP_ACTIVE_TEXTURE', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glBindTexture': ('GLVK_OP_BIND_TEXTURE', 'ARG(esp, 0)', 'ARG(esp, 1)', '0', 'NULL'),
+    'glMatrixMode': ('GLVK_OP_MATRIX_MODE', 'ARG(esp, 0)', '0', '0', 'NULL'),
+    'glLoadIdentity': ('GLVK_OP_LOAD_IDENTITY', '0', '0', '0', 'NULL'),
+    'glLoadMatrixf': ('GLVK_OP_LOAD_MATRIX_F', '0', '0', '0', 'GP(ARG(esp, 0))'),
+    'glMultMatrixf': ('GLVK_OP_MULT_MATRIX_F', '0', '0', '0', 'GP(ARG(esp, 0))'),
+    'glLoadMatrixd': ('GLVK_OP_LOAD_MATRIX_D', '0', '0', '0', 'GP(ARG(esp, 0))'),
+    'glMultMatrixd': ('GLVK_OP_MULT_MATRIX_D', '0', '0', '0', 'GP(ARG(esp, 0))'),
+    'glPushMatrix': ('GLVK_OP_PUSH_MATRIX', '0', '0', '0', 'NULL'),
+    'glPopMatrix': ('GLVK_OP_POP_MATRIX', '0', '0', '0', 'NULL'),
+}
+
+# Unsupported legacy changes must be VISIBLE in the diagnostic output.
+# Observing these does not permit assuming equivalent shaders or texture
+# samplers in the Vulkan prototype.
+VK_UNSUPPORTED = {
+    'glTexEnvi', 'glTexEnvf', 'glTexEnvfv', 'glTexEnviv',
+    'glTexParameteri', 'glTexParameterf', 'glTexParameterfv', 'glTexParameteriv',
+    'glTexImage2D', 'glTexSubImage2D',
+    'glLightfv', 'glLightf', 'glMaterialfv', 'glMaterialf',
+    'glFogf', 'glFogfv', 'glFogi', 'glFogiv',
+    'glShadeModel', 'glPolygonMode',
+    'glViewport', 'glScissor', 'glDepthRange', 'glColorMaterial',
+    'glTexGeni', 'glTexGenf', 'glTexGenfv',
+    'glVertexPointer', 'glTexCoordPointer', 'glColorPointer',
+    'glNormalPointer', 'glInterleavedArrays',
+    'glTranslatef', 'glTranslated', 'glRotatef', 'glRotated',
+    'glScalef', 'glScaled', 'glFrustum', 'glOrtho',
+    'glBindBufferARB', 'glBufferDataARB', 'glBufferSubDataARB',
+    'glClipPlane', 'glTexGeniv', 'glTexGend', 'glTexGendv',
+}
+
+def vk_legacy_category(name: str) -> str:
+    if name.startswith(('glTexEnv', 'glTexGen', 'glTexParameter')):
+        return 'GLVK_LEGACY_TEXTURE_STATE'
+    if name.startswith(('glTexImage', 'glTexSubImage')):
+        return 'GLVK_LEGACY_TEXTURE_UPLOAD'
+    if name.startswith(('glTranslate', 'glRotate', 'glScale', 'glFrustum', 'glOrtho')):
+        return 'GLVK_LEGACY_MATRIX_TRANSFORM'
+    if name in {'glVertexPointer', 'glTexCoordPointer', 'glColorPointer',
+                'glNormalPointer', 'glInterleavedArrays'}:
+        return 'GLVK_LEGACY_VERTEX_INPUT'
+    if name.startswith(('glLight', 'glFog', 'glMaterial')):
+        return 'GLVK_LEGACY_LIGHTING_FOG'
+    if name.startswith(('glBindBuffer', 'glBufferData', 'glBufferSubData')):
+        return 'GLVK_LEGACY_BUFFER'
+    return 'GLVK_LEGACY_OTHER'
+
+
+VK_OBSERVER_IMPL = r"""
+#ifdef CODRECOMP_GL_VK_STATE_CAPTURE
+#include "gl_vk_state.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+static gl_vk_state gl_vk_observer;
+static int gl_vk_observer_enabled;
+static uint64_t gl_vk_window_start;
+#define GL_VK_OBSERVE(op,a,b,c,ptr) do { if (gl_vk_observer_enabled) \
+    (void)gl_vk_state_apply(&gl_vk_observer,(op),(a),(b),(c),(ptr)); } while(0)
+void gl_vk_capture_frame(uint64_t now_ms) {
+    if(!gl_vk_observer_enabled)return;
+    if(!gl_vk_window_start){gl_vk_window_start=now_ms;return;}
+    if(now_ms-gl_vk_window_start<5000)return;
+    const gl_vk_state *s=&gl_vk_observer;
+    printf("gl vkstate: tracked=%llu unsupported=%llu mask=0x%x state_ready=%d "
+           "mvproj_hash=%08x depth=%u blend=%u stencil=%u alpha=%u "
+           "tex0=%u tex1=%u matrix_push=%llu matrix_pop=%llu "
+           "legacy_tex=%llu legacy_upload=%llu legacy_matrix=%llu "
+           "legacy_vertex=%llu legacy_light=%llu legacy_buffer=%llu legacy_other=%llu\n",
+           (unsigned long long)s->supported_calls,
+           (unsigned long long)s->unsupported_calls,
+           s->unsupported_flags,gl_vk_state_pipeline_ready(s),
+           gl_vk_state_matrix_digest(s),
+           s->enabled_depth,s->enabled_blend,s->enabled_stencil,s->enabled_alpha,
+           s->texture[0].bound_2d,s->texture[1].bound_2d,
+           (unsigned long long)s->matrix_pushes,
+           (unsigned long long)s->matrix_pops,
+           (unsigned long long)s->legacy_categories[GLVK_LEGACY_TEXTURE_STATE],
+           (unsigned long long)s->legacy_categories[GLVK_LEGACY_TEXTURE_UPLOAD],
+           (unsigned long long)s->legacy_categories[GLVK_LEGACY_MATRIX_TRANSFORM],
+           (unsigned long long)s->legacy_categories[GLVK_LEGACY_VERTEX_INPUT],
+           (unsigned long long)s->legacy_categories[GLVK_LEGACY_LIGHTING_FOG],
+           (unsigned long long)s->legacy_categories[GLVK_LEGACY_BUFFER],
+           (unsigned long long)s->legacy_categories[GLVK_LEGACY_OTHER]);
+    fflush(stdout);
+    gl_vk_window_start=now_ms;
+}
+#else
+#define GL_VK_OBSERVE(op,a,b,c,ptr) ((void)0)
+#endif
+"""
+
+
 def classify(param) -> tuple[str, str]:
     """Return argument kind and its native C type."""
     text = ''.join(param.itertext())
@@ -176,6 +290,8 @@ def main() -> int:
            '#endif', '']
     out.extend(TIME_IMPL.strip().splitlines())
     out.append('')
+    out.extend(VK_OBSERVER_IMPL.strip().splitlines())
+    out.append('')
     table = []
     for n in names:
         c = cmds[n]
@@ -223,6 +339,13 @@ def main() -> int:
             body += f'    {invoke};\n'
             if n in TIME_EVENTS:
                 body += f'    GL_TIME_END({TIME_EVENTS[n]}, gl_start_ns);\n'
+            if n in VK_CAPTURE or n in VK_UNSUPPORTED:
+                if n in VK_CAPTURE:
+                    op, a, b, c, ptr = VK_CAPTURE[n]
+                else:
+                    op, a, b, c, ptr = ('GLVK_OP_UNSUPPORTED_STATE',
+                                         vk_legacy_category(n), '0', '0', 'NULL')
+                body += f'    GL_VK_OBSERVE({op}, {a}, {b}, {c}, {ptr});\n'
             if n in PERF_EVENTS:
                 event, idx = PERF_EVENTS[n]
                 size = (f'((int32_t)ARG(esp, {idx}) > 0 ? ARG(esp, {idx}) : 0)'
@@ -254,6 +377,12 @@ def main() -> int:
                 '    gl_perf_enabled = getenv("CODRECOMP_GL_STATS") != NULL;',
                 '    gl_perf_start_ms = 0;',
                 '    gl_perf_reset(&gl_perf_window);',
+                '#endif'])
+    out.extend(['#ifdef CODRECOMP_GL_VK_STATE_CAPTURE',
+                '    const char *vk_capture_env = getenv("CODRECOMP_GL_VK_CAPTURE");',
+                '    gl_vk_observer_enabled = !vk_capture_env || strcmp(vk_capture_env, "0") != 0;',
+                '    gl_vk_window_start = 0;',
+                '    gl_vk_state_reset(&gl_vk_observer);',
                 '#endif'])
     out.extend(['#ifdef CODRECOMP_GL_TIMING',
                 '    gl_time_enabled = getenv("CODRECOMP_GL_TIME") != NULL;',
