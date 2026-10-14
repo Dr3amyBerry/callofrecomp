@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 2: oráculo x86 real ejecutado y validado (0/5)
+
+- [x] `verify_x86_prefix_oracle.py` ejecuta en **Unicorn x86** 20 instrucciones auténticas del prólogo de `0x0041B8F0` y las compara con el C compilado desde **`pcode2c.Gen` real**; binario y p-code privados verificados con SHA-256 fijo antes de empezar.
+- [x] **1.024/1.024 ejecuciones correctas** sobre memoria/estado sintetizado, **512 rutas JE tomadas + 512 no tomadas**; equivalencia exacta de 8 registros, CF/PF/ZF/SF/OF, tres regiones de memoria y PC. Inyección intencionada de un PC incorrecto **detectada**.
+- [x] Siete pruebas offline adicionales de seguridad/procedencia, rechazo de salidas no ignoradas, destinos de salto falsos y traducciones no soportadas. El C/DLL original derivado se queda bajo `.local/profiles`; ninguna APK o shader del juego cambia.
+- [ ] Ampliar después de la primera rama y cubrir **x87 binary80**, AF, estados excepcionales y CFG del resto de la función; esta prueba no certifica los 553 x86 ni mide FPS. Contador TECNO **0/5**. [Informe del oráculo](docs/CPU_PHASE2_X86_PREFIX_ORACLE_2026-10-14.md).
+
 ### 2026-10-14 — Fase 2 CPU: 0x0041B8F0 delimitada y laboratorio ARM64 auditado (0/5)
 
 - [x] **Auditoría reproducible** de `0x0041B8F0`: 553 instrucciones x86 / 3.957 p-code, dos intervalos Ghidra y chunk 19 compartido por 12 funciones; **1.789 COPY**, 187 LOAD, 67 STORE, 418 operaciones flotantes. La lista de 100 sitios nativos cubre solo 127 de 270 muestras, así que la selección de ventanas no es un perfil completo.

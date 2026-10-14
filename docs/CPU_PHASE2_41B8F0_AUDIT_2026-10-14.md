@@ -52,6 +52,10 @@ En ambas variantes el patrón de loads/stores es comparable (8 + 2 bytes para ca
 
 La compilación de laboratorio es opcional y no cambia el renderer ni el motor del juego. CMake solo compila y ejecuta este test si existe soporte para `unsigned __int128`. Los productos compilados quedan en `.local/`.
 
+## Avance posterior: oráculo x86 real del prólogo
+
+El bloqueo de falta de oráculo ya está **parcialmente resuelto** para las primeras **20 instrucciones** de esta función: [oráculo x86 independiente y 1.024 casos verificados](CPU_PHASE2_X86_PREFIX_ORACLE_2026-10-14.md). Aún no hay oráculo de la zona caliente x87, ni aceptación de una transformación para producción. **0/5**.
+
 ## 4. Riesgos que bloquean cachear registros globalmente
 
 1. La función tiene dos intervalos de cuerpo y comparte el **chunk 19 con otras 11 entradas**; no se puede tratar el chunk como una sola función sin verificar aristas.

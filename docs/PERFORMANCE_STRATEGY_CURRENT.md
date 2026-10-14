@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 2: prueba independiente del prólogo x86, todavía sin rendimiento ARM64
+
+Se comparó mediante **Unicorn x86 real** contra la versión **C compilada por `pcode2c.Gen`** el prólogo de 20 instrucciones del cuerpo caliente `0x0041B8F0`, hasta e incluyendo su primer `JE`. **1.024/1.024 casos** de entradas sintéticas compatibles sin diferencias en registros, CF/PF/ZF/SF/OF, memoria y PC; **512 saltos tomados y 512 no tomados**. Un PC incorrecto introducido artificialmente fue detectado. Hash del PE y p-code original fijado, blobs y DLL privados ignorados. **No** cubre x87, AF, la función entera ni garantiza FPS; pendiente ampliar el oráculo antes de activar fast paths. Sin hardware TECNO: **0/5**. [Informe](CPU_PHASE2_X86_PREFIX_ORACLE_2026-10-14.md).
+
 ## Diagnóstico Fase 2 posterior: candidato CPU y prueba fallida de ahorro de instrucciones
 
 Se auditó el cuerpo original `0x0041B8F0` con p-code/Ghidra privados y sitios ARM64 reales: 553 instrucciones, 3.957 operaciones, 1.789 copias y rangos repartidos en un chunk compartido por 12 funciones. Se probó aisladamente una conversión `rd/wr`→`memcpy` para el desplazamiento de siete registros x87 de 80 bits: **20.000 casos equivalentes**, pero **29 instrucciones AArch64 en ambos núcleos** bajo Clang `-O1` y `-O2`. No cambiar el generador ni afirmar mejora por C más corto. Sin teléfono conectado no hay nuevo A/B ARM64 real; mantener 60 FPS como meta y **0/5**. [Informe fase 2](CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md).

@@ -4,6 +4,12 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Oráculo diferencial x86 independiente: primer bloque finalizado (2026-10-14)
+
+- [x] Implementar ejecutor Unicorn para **bytes auténticos x86**, confrontar con p-code traducido mediante `pcode2c.Gen` compilado a DLL (fuentes privados solo bajo `.local`). Entrada validada por hashes PE/p-code, Capstone, tamaño y destino real de la primera bifurcación.
+- [x] **20 instrucciones** de `0x0041B8F0–0x0041B940` verificadas en **1.024 estados** con 512 salidas por cada ruta; registros, EFLAGS disponibles, memoria y PC equivalentes. Prueba negativa de rama corrupta rechazada.
+- [ ] Fase siguiente: estados x87 reales y ventanas flotantes, CFG y aliasing, oráculo completo; solo luego valorar optimización ARM64 con diffs de código máquina y teléfono TECNO. **0/5**. [Informe](CPU_PHASE2_X86_PREFIX_ORACLE_2026-10-14.md).
+
 ## Fase 2 estructural: diagnóstico de una función caliente de ARM64 (2026-10-14)
 
 - [x] Delimitada función CoDSP `0x0041B8F0` con 553 instrucciones, dos rangos Ghidra y 3.957 p-code; 1.789 `COPY`, 187 `LOAD`, 67 `STORE`. Es parte del chunk 19 con 12 entradas y su perfil de 100 sitios nativos es solo parcial.
