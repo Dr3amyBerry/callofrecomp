@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Objetivo de rendimiento: 60 FPS sostenidos en zona inicial (PENDIENTE)
+
+- **Criterio de cierre del usuario:** NO dar el proyecto de rendimiento por terminado hasta alcanzar **60 FPS sostenidos donde aparece el jugador al iniciar training** en el TECNO CK6n ARM64, calidad Equilibrado y misma partida/vista. Esto se refiere a la zona de aparición, no al menú ni a una zona diferente.
+- **Mejora previa confirmada y conservada, pero NO objetivo completado:** A/B/A real: APK anterior A2 **21,45 FPS / 44,745 ms CPU**, fast path nativo B **25,65 FPS / 37,495 ms CPU**, **+4,20 FPS (+19,58 %) y -7,25 ms CPU/frame**, 40 ventanas de ~1 s por corrida; A1 original 21,55 FPS.
+- **Brecha restante:** faltan 34,35 FPS respecto al objetivo; presupuesto de frame de 60 FPS ~16,67 ms frente a ~37,50 ms de CPU/frame ahora. La ruta x87 sola no basta.
+- [ ] Validar ≥60 ventanas consecutivas de ~1 segundo de **juego estable** en el punto de aparición con FPS cerca del techo de 60, tiempos de CPU, FPS bajos y variables térmicas; excluir carga, menús, pantallas de pausa y transiciones; repetir A/B/A.
+- [ ] Continuar perfilando Simpleperf sobre la APK **ya optimizada** y atacar nuevos cuellos de botella con pruebas de equivalencia y A/B/A. Mantener el fast path OFF por defecto hasta validar su seguridad general.
+
 ### 2026-10-14 — Fast path x87 nativo optativo y FPS A/B/A reales
 
 - [x] Se continuó el trabajo anterior **sin descartar ni sobrescribir** sus cambios no confirmados. Se conservan el informe TECNO, analizador de FPS y perfiles privados.

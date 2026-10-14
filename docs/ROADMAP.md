@@ -15,6 +15,14 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## Meta exigida: 60 FPS sostenidos donde aparece el jugador (NO alcanzada)
+
+- [x] Mejora reproducida en TECNO CK6n, training/Equilibrado: **21,45 -> 25,65 FPS (+19,58 %)** y **44,745 -> 37,495 ms CPU/frame** mediante fast path nativo optativo de CoDSP 0x005061B0. Esta mejora sí cuenta como avance.
+- [ ] Objetivo final: **60 FPS sostenidos en la zona de aparición inicial del entrenamiento**, sin sustituirla por el menú o una zona menos exigente.
+- [ ] Medir al menos 60 ventanas estables seguidas, FPS bajos, CPU y temperatura; confirmar A/B/A, guardado y jugabilidad.
+- [ ] Identificar en el teléfono los cuellos de botella restantes y validarlos uno a uno. El objetivo exige ~16,67 ms por frame frente a ~37,50 ms CPU/frame ahora.
+- **Estado:** inacabado; la optimización experimental sigue OFF por defecto en la compilación estándar.
+
 ## Phase 0 — Immutable baseline
 
 - Fingerprint original binaries with SHA-256.

@@ -2,6 +2,27 @@
 
 **Resultado actualizado:** cuello de botella de CPU verificado y primera mejora de FPS reproducida en el entrenamiento mediante una ruta nativa x87 **optativa**; todavía no aprobada para activación general. Este documento registra pruebas en un teléfono real, no promesas de producción. No contiene número de serie, perfiles brutos, archivos comerciales ni partidas.
 
+## Meta explícita: 60 FPS sostenidos en la zona inicial
+
+**PENDIENTE**, aunque hubo una mejora real y verificada. El usuario no dará
+la optimización por completada hasta medir **60 FPS sostenidos en el punto
+donde aparece el personaje** al comenzar training en el TECNO CK6n,
+calidad Equilibrado. No confundir la zona inicial con el menú o el
+sector concurrido que está más adelante.
+
+La mejora anterior **sí ocurrió**: **21,45 -> 25,65 FPS** de mediana
+en 40 ventanas estables (**+4,20 FPS, +19,58 %**) y
+**44,745 -> 37,495 ms de CPU/frame (-7,25 ms)**. Esa ganancia se
+mantendrá registrada sin afirmar que ya son 60 FPS. Faltan **34,35 FPS**.
+Para 60 FPS, el tiempo total por frame debe estar cerca de 16,67 ms;
+el uso de CPU del motor actual todavía ronda 37,50 ms/frame.
+
+Criterio de validación pendiente: capturar al menos 60 ventanas de
+~1 segundo de gameplay consecutivo en el mismo spawn, sin cargas,
+menús o pausas, con FPS bajos/medianos, CPU y estado térmico, y
+comparaciones A/B/A. No aceptar los ~53 FPS del menú ni los ~25,65 FPS
+del entrenamiento como objetivo final.
+
 ## Entorno y reproducibilidad
 
 - TECNO CK6n, Android 14, MT6768, Mali-G52; 2 núcleos de hasta 2 GHz y 6 de hasta 1,8 GHz.
