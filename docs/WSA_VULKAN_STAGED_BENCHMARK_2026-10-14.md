@@ -35,6 +35,10 @@ Una versión independiente nueva incorpora **shaders de vértices y fragmentos S
 
 Tras la malla indexada se completó otra prueba aislada en WSA: **64×64 RGBA8 cargado mediante staging buffer a `VkImage` óptima en GPU, `VkImageView`, sampler, descriptor combinado y `sampler2D`**, con 1.277 frames en 17,000 segundos (**75,117 FPS FIFO**, CPU del hilo 1,989 ms/frame). Se confirmó visualmente la textura sobre la malla y se conservó el log y captura como prueba privada. **Sigue sin renderizar la escena real de CallofRecomp y no modifica A1/A2/B1/A3.** [Detalle de implementación](WSA_VULKAN_TEXTURE_2026-10-14.md).
 
+## Nuevo hito aislado: depth/stencil y blending Vulkan
+
+La prueba `--scene depth` ya crea **5 attachments depth+stencil** independientes por framebuffer, prueba profundidad, reemplazo/comparación de stencil y **mezcla alfa** con una segunda pipeline. Ejecuta cuatro dibujos indexados por frame sobre la textura RGBA8 ya implementada. En WSA registró **1.276 frames / 17,012 segundos, 75,005 FPS FIFO y 2,20648 ms de CPU del hilo/frame**; captura privada muestra oclusión y overlay translúcido recortado. No existe todavía backend Vulkan funcional del juego ni mejora demostrada frente a GL4ES; A1/A2/B1/A3 del juego se conservan sin repetir. [Implementación y detalles](WSA_VULKAN_DEPTH_STENCIL_BLEND_2026-10-14.md).
+
 ## Lo que se implementó de verdad
 
 - `tools/recomp/diagnostics/wsa_vk_surface_bench.c`: aplicación `NativeActivity` de Android independiente del juego, crea `VkAndroidSurfaceKHR`, selecciona cola gráfica con soporte de presentación, `VkSwapchainKHR`, imágenes, render pass (clear), framebuffers, comandos, semáforos y fences, ejecuta `vkQueuePresentKHR`, imprime estadísticas a logcat y libera recursos. **No tiene shaders de juego ni puente GL heredado.**

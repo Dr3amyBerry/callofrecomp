@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Vulkan experimental: profundidad, stencil y alpha blend probados en WSA (0/5)
+
+- [x] `--scene depth` en APK de prueba independiente: 5 attachments `VkImage` depth+stencil (uno por framebuffer), formato **D32_SFLOAT_S8_UINT**, memory DEVICE_LOCAL, clear depth 1/stencil 0.
+- [x] Renderpass de color+depth, pipeline opaco con **depth LESS_OR_EQUAL y stencil ALWAYS/REPLACE**, segundo pipeline **stencil EQUAL 2, sin depth write, alpha blend SRC_ALPHA / ONE_MINUS_SRC_ALPHA**.
+- [x] Cuatro `vkCmdDrawIndexed` por frame (fondo, primer plano, objeto rechazado en profundidad, overlay transparente recortado). Confirmación visual WSA en PNG privado.
+- [x] Compilación/validación de nuevo `wsa_overlay.frag` a SPIR-V y módulo `wsa_vk_depth.c` con detección de formato, creación y cleanup por swapchain.
+- [x] **WSA FIFO 1280×720:** **1.276 frames / 17,012 s = 75,005 FPS**, CPU del hilo de prueba **2,20648 ms/frame**; NO representa CallofRecomp. Corrida inicial 75,096 FPS y marcadores ajustados en segunda corrida; no se repitieron benchmarks históricos.
+- [ ] Próximo trabajo: traductor tipado de estados GL fixed-function (depth/blend/stencil/alpha, matrices, texturas) antes de integrar backend al juego. Estrategia y contador **0/5** intactos. [Informe](docs/WSA_VULKAN_DEPTH_STENCIL_BLEND_2026-10-14.md).
+
 ### 2026-10-14 — Vulkan experimental: VkImage texturizada, sampler y descriptor probados (0/5)
 
 - [x] `--scene texture` en APK Vulkan independiente de WSA: **64×64 RGBA8** generado por la CPU, `VkBuffer` de staging, memoria HOST_VISIBLE+HOST_COHERENT, `vkCmdCopyBufferToImage` sobre imagen DEVICE_LOCAL, layout transitions hasta SHADER_READ_ONLY_OPTIMAL.

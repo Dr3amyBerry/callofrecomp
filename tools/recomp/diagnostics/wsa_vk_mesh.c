@@ -57,6 +57,7 @@ static VkResult load_shader(VkDevice device,AAssetManager *assets,
 
 void vk_demo_mesh_destroy(vk_demo_mesh *m) {
     if(!m||!m->device)return;
+    if(m->overlay_pipeline)vkDestroyPipeline(m->device,m->overlay_pipeline,NULL);
     if(m->pipeline)vkDestroyPipeline(m->device,m->pipeline,NULL);
     if(m->layout)vkDestroyPipelineLayout(m->device,m->layout,NULL);
     if(m->vertices_indices)vkDestroyBuffer(m->device,m->vertices_indices,NULL);
@@ -70,20 +71,27 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
                             uint32_t width,uint32_t height,
                             AAssetManager *assets,
                             VkQueue queue,uint32_t queue_family,
-                            int textured) {
-    if(!m||!physical||!device||!renderpass||!width||!height)
+                            int textured,int depth_scene) {
+    if(!m||!physical||!device||!renderpass||!width||!height||
+       (depth_scene&&!textured))
         return VK_ERROR_INITIALIZATION_FAILED;
     memset(m,0,sizeof(*m));
     m->device=device;
     m->index_count=INDEX_COUNT;
     m->textured=!!textured;
+    m->depth_scene=!!depth_scene;
     VkResult r=VK_ERROR_INITIALIZATION_FAILED;
     VkShaderModule vert=VK_NULL_HANDLE,frag=VK_NULL_HANDLE;
+    VkShaderModule overlay=VK_NULL_HANDLE;
     r=load_shader(device,assets,"wsa_mesh.vert.spv",&vert);
     if(r!=VK_SUCCESS)goto fail;
     r=load_shader(device,assets,m->textured ?
                   "wsa_texture.frag.spv" : "wsa_mesh.frag.spv",&frag);
     if(r!=VK_SUCCESS)goto fail;
+    if(m->depth_scene) {
+        r=load_shader(device,assets,"wsa_overlay.frag.spv",&overlay);
+        if(r!=VK_SUCCESS)goto fail;
+    }
 
     if(m->textured) {
         r=vk_demo_texture_create(&m->texture,physical,device,queue,queue_family);
@@ -160,6 +168,26 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
     VkPipelineColorBlendStateCreateInfo blend={0};
     blend.sType=VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     blend.attachmentCount=1;blend.pAttachments=&attachment;
+    VkStencilOpState stencil_opaque={0};
+    stencil_opaque.failOp=VK_STENCIL_OP_KEEP;
+    stencil_opaque.passOp=VK_STENCIL_OP_REPLACE;
+    stencil_opaque.depthFailOp=VK_STENCIL_OP_KEEP;
+    stencil_opaque.compareOp=VK_COMPARE_OP_ALWAYS;
+    stencil_opaque.compareMask=0xff;
+    stencil_opaque.writeMask=0xff;
+    VkPipelineDepthStencilStateCreateInfo depth={0};
+    depth.sType=VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth.depthTestEnable=VK_TRUE;
+    depth.depthWriteEnable=VK_TRUE;
+    depth.depthCompareOp=VK_COMPARE_OP_LESS_OR_EQUAL;
+    depth.stencilTestEnable=VK_TRUE;
+    depth.front=stencil_opaque;
+    depth.back=stencil_opaque;
+    VkDynamicState dynamic_names[]={VK_DYNAMIC_STATE_STENCIL_REFERENCE};
+    VkPipelineDynamicStateCreateInfo dynamic={0};
+    dynamic.sType=VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic.dynamicStateCount=1;
+    dynamic.pDynamicStates=dynamic_names;
     VkGraphicsPipelineCreateInfo ci={0};
     ci.sType=VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     ci.stageCount=2;ci.pStages=stages;
@@ -167,8 +195,37 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
     ci.pViewportState=&vp;ci.pRasterizationState=&raster;
     ci.pMultisampleState=&multi;ci.pColorBlendState=&blend;
     ci.layout=m->layout;ci.renderPass=renderpass;ci.subpass=0;
+    if(m->depth_scene) {
+        ci.pDepthStencilState=&depth;
+        ci.pDynamicState=&dynamic;
+    }
     r=vkCreateGraphicsPipelines(device,VK_NULL_HANDLE,1,&ci,NULL,&m->pipeline);
     if(r!=VK_SUCCESS)goto fail;
+    if(m->depth_scene) {
+        /* Equal-to-stencil-2 translucent overlay. Depth writes are off; the
+         * opaque background/foreground/occlusion keep depth writes on. */
+        stages[1].module=overlay;
+        VkStencilOpState stencil_overlay={0};
+        stencil_overlay.failOp=VK_STENCIL_OP_KEEP;
+        stencil_overlay.passOp=VK_STENCIL_OP_KEEP;
+        stencil_overlay.depthFailOp=VK_STENCIL_OP_KEEP;
+        stencil_overlay.compareOp=VK_COMPARE_OP_EQUAL;
+        stencil_overlay.compareMask=0xff;
+        stencil_overlay.writeMask=0;
+        depth.depthWriteEnable=VK_FALSE;
+        depth.front=stencil_overlay;
+        depth.back=stencil_overlay;
+        attachment.blendEnable=VK_TRUE;
+        attachment.srcColorBlendFactor=VK_BLEND_FACTOR_SRC_ALPHA;
+        attachment.dstColorBlendFactor=VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        attachment.colorBlendOp=VK_BLEND_OP_ADD;
+        attachment.srcAlphaBlendFactor=VK_BLEND_FACTOR_ONE;
+        attachment.dstAlphaBlendFactor=VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        attachment.alphaBlendOp=VK_BLEND_OP_ADD;
+        r=vkCreateGraphicsPipelines(device,VK_NULL_HANDLE,1,&ci,NULL,
+                                   &m->overlay_pipeline);
+        if(r!=VK_SUCCESS)goto fail;
+    }
 
     const VkDeviceSize vertex_bytes=sizeof(quad);
     const VkDeviceSize index_bytes=sizeof(indices);
@@ -212,6 +269,7 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
 fail:
     if(vert)vkDestroyShaderModule(device,vert,NULL);
     if(frag)vkDestroyShaderModule(device,frag,NULL);
+    if(overlay)vkDestroyShaderModule(device,overlay,NULL);
     if(r!=VK_SUCCESS)vk_demo_mesh_destroy(m);
     return r;
 }
@@ -232,5 +290,55 @@ void vk_demo_mesh_draw(const vk_demo_mesh *m,VkCommandBuffer cb) {
     vkCmdBindVertexBuffers(cb,0,1,&m->vertices_indices,&offset);
     vkCmdBindIndexBuffer(cb,m->vertices_indices,index_offset,VK_INDEX_TYPE_UINT16);
     vkCmdPushConstants(cb,m->layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(identity),identity);
+    vkCmdDrawIndexed(cb,m->index_count,1,0,0,0);
+}
+
+/* Four actual indexed draws, deliberately ordered to prove all three tests:
+ * 1. Background z=.78, stencil=1
+ * 2. Smaller opaque object z=.25, stencil=2
+ * 3. Occluded object z=.93 (depth must reject it behind both 1 and 2)
+ * 4. Semitransparent overlay z=.10, stencil==2, blended over near object
+ *
+ * Each push matrix transforms vertices in clip space. No game assets.
+ */
+static void vk_demo_depth_matrix(float dst[16],float scale,float tx,float ty,float z) {
+    memset(dst,0,sizeof(float)*16);
+    dst[0]=scale;
+    dst[5]=scale;
+    dst[10]=1.f;
+    dst[12]=tx;
+    dst[13]=ty;
+    dst[14]=z;
+    dst[15]=1.f;
+}
+
+void vk_demo_mesh_draw_depth(const vk_demo_mesh *m,VkCommandBuffer cb) {
+    if(!m||!m->depth_scene||!m->pipeline||!m->overlay_pipeline)return;
+    VkDeviceSize offset=0;
+    const VkDeviceSize index_offset=(sizeof(quad)+3u)&~(VkDeviceSize)3u;
+    vkCmdBindVertexBuffers(cb,0,1,&m->vertices_indices,&offset);
+    vkCmdBindIndexBuffer(cb,m->vertices_indices,index_offset,VK_INDEX_TYPE_UINT16);
+    vkCmdBindDescriptorSets(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            m->layout,0,1,&m->texture.descriptor,0,NULL);
+    vkCmdBindPipeline(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,m->pipeline);
+    const struct {float scale,tx,ty,z;uint32_t ref;} draw[]={
+        {1.0f,0.0f,0.0f,0.78f,1u},
+        {0.63f,0.11f,0.08f,0.25f,2u},
+        {0.42f,-0.07f,-0.06f,0.93f,3u}
+    };
+    float transform[16];
+    for(uint32_t i=0;i<sizeof(draw)/sizeof(draw[0]);i++) {
+        vk_demo_depth_matrix(transform,draw[i].scale,draw[i].tx,
+                             draw[i].ty,draw[i].z);
+        vkCmdSetStencilReference(cb,VK_STENCIL_FACE_FRONT_AND_BACK,draw[i].ref);
+        vkCmdPushConstants(cb,m->layout,VK_SHADER_STAGE_VERTEX_BIT,0,
+                           sizeof(transform),transform);
+        vkCmdDrawIndexed(cb,m->index_count,1,0,0,0);
+    }
+    vkCmdBindPipeline(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,m->overlay_pipeline);
+    vkCmdSetStencilReference(cb,VK_STENCIL_FACE_FRONT_AND_BACK,2u);
+    vk_demo_depth_matrix(transform,1.0f,0.0f,0.0f,0.10f);
+    vkCmdPushConstants(cb,m->layout,VK_SHADER_STAGE_VERTEX_BIT,0,
+                       sizeof(transform),transform);
     vkCmdDrawIndexed(cb,m->index_count,1,0,0,0);
 }

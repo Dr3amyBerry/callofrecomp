@@ -11,10 +11,12 @@ typedef struct vk_demo_mesh {
     VkDevice device;
     VkPipelineLayout layout;
     VkPipeline pipeline;
+    VkPipeline overlay_pipeline;
     VkBuffer vertices_indices;
     VkDeviceMemory memory;
     uint32_t index_count;
     int textured;
+    int depth_scene;
     vk_demo_texture texture;
 } vk_demo_mesh;
 
@@ -23,6 +25,7 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *out, VkPhysicalDevice physical,
                             uint32_t width, uint32_t height,
                             AAssetManager *assets,
                             VkQueue queue, uint32_t queue_family,
-                            int textured);
+                            int textured, int depth_scene);
 void vk_demo_mesh_draw(const vk_demo_mesh *mesh, VkCommandBuffer cb);
 void vk_demo_mesh_destroy(vk_demo_mesh *mesh);
+void vk_demo_mesh_draw_depth(const vk_demo_mesh *mesh, VkCommandBuffer cb);

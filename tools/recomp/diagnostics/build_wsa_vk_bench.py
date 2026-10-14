@@ -17,6 +17,7 @@ ROOT=Path(__file__).resolve().parents[3]
 SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_surface_bench.c'
 MESH_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_mesh.c'
 TEXTURE_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_texture.c'
+DEPTH_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_depth.c'
 SHADERS=ROOT/'tools/recomp/diagnostics/shaders'
 PACKAGE='org.rigorcore.vkswapbench'
 
@@ -33,7 +34,7 @@ def latest(root: Path) -> Path:
 def main():
     ap=argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--present',choices=['fifo','immediate'],default='fifo')
-    ap.add_argument('--scene',choices=['clear','mesh','texture'],default='clear',
+    ap.add_argument('--scene',choices=['clear','mesh','texture','depth'],default='clear',
                     help='isolated clear baseline or real indexed Vulkan mesh; not game FPS')
     ap.add_argument('--sdk',type=Path,default=os.environ.get('ANDROID_HOME'))
     args=ap.parse_args()
@@ -72,25 +73,34 @@ def main():
     print('Compiling Vulkan NativeActivity',args.present,args.scene,flush=True)
     srcs=[SOURCE]
     shader_bins=[]
-    if args.scene in ('mesh','texture'):
+    if args.scene in ('mesh','texture','depth'):
         srcs.append(MESH_SOURCE)
         srcs.append(TEXTURE_SOURCE)
+        if args.scene=='depth':
+            srcs.append(DEPTH_SOURCE)
         compiler=ndk/'shader-tools/windows-x86_64/glslc.exe'
         validator=ndk/'shader-tools/windows-x86_64/spirv-val.exe'
         if not compiler.is_file() or not validator.is_file():
             raise RuntimeError('NDK glslc and spirv-val are required for mesh scene')
         for stage in ('vert','frag'):
-            name='wsa_texture.frag' if stage=='frag' and args.scene=='texture' else 'wsa_mesh.'+stage
+            name='wsa_texture.frag' if stage=='frag' and args.scene in ('texture','depth') else 'wsa_mesh.'+stage
             shader=SHADERS/name
             target=dest/(name+'.spv')
             run(compiler,'--target-env=vulkan1.0',shader,'-o',target)
             run(validator,'--target-env','vulkan1.0',target)
             shader_bins.append(target)
+        if args.scene=='depth':
+            overlay_shader=SHADERS/'wsa_overlay.frag'
+            overlay_binary=dest/'wsa_overlay.frag.spv'
+            run(compiler,'--target-env=vulkan1.0',overlay_shader,'-o',overlay_binary)
+            run(validator,'--target-env','vulkan1.0',overlay_binary)
+            shader_bins.append(overlay_binary)
     run(clang,'-O2','-std=c11','-Wall','-Wextra','-Werror',
         '-D_POSIX_C_SOURCE=200809L',
         f'-DVK_BENCH_PREFER_IMMEDIATE={int(args.present=="immediate")}',
-        f'-DVK_BENCH_MESH_SCENE={int(args.scene in ("mesh","texture"))}',
-        f'-DVK_BENCH_TEXTURE_SCENE={int(args.scene=="texture")}',
+        f'-DVK_BENCH_MESH_SCENE={int(args.scene in ("mesh","texture","depth"))}',
+        f'-DVK_BENCH_TEXTURE_SCENE={int(args.scene in ("texture","depth"))}',
+        f'-DVK_BENCH_DEPTH_SCENE={int(args.scene=="depth")}',
         '-shared','-fPIC','-Wl,-z,max-page-size=16384',
         *srcs,'-o',so,'-lvulkan','-landroid','-llog','-pthread')
     aapt=bt/('aapt2.exe' if os.name=='nt' else 'aapt2')

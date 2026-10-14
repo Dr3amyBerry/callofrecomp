@@ -68,6 +68,8 @@ python tools/recomp/diagnostics/summarize_wsa_vk_surface.py --log .local/profile
 - Se verificó de nuevo la **identidad SHA-256** de la biblioteca del juego instalada en WSA frente a la referencia GL4ES original: `403a5bc304b3ec36b43b04a8322c31a212727a8a8ff254e47b70afec2d960cde`. **No se reinstaló, recompiló ni volvió a medir el juego.**
 - Los logs, PNG y APKs experimentales permanecen privados en `.local/profiles` y no se incluyen en este commit.
 
+**Actualización posterior del mismo día:** el prototipo aislado ahora demuestra depth/stencil y blending alfa reales, sin alterar la prueba anterior de texturas. [Hito de profundidad/transparencia](WSA_VULKAN_DEPTH_STENCIL_BLEND_2026-10-14.md). El texto siguiente conserva el plan histórico antes de completar ese bloque.
+
 ## Siguiente desarrollo
 
 **Bloque recomendado:** depth/stencil y blending, para después representar múltiples estados del OpenGL heredado (texturas dinámicas, filtros, depth test, alpha, culling, matrices). Diseñar la traducción en la capa generadora/puente y no editar manualmente cientos de thunks. Habilitar el backend Vulkan para el juego **solo cuando** se preserve visualmente el entrenamiento, menú, HUD, controles y texturas de la referencia GL4ES. Después A/B/A con las mismas condiciones, primero WSA y por último TECNO físico.

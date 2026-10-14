@@ -13,6 +13,9 @@
 #if VK_BENCH_MESH_SCENE
 #include "wsa_vk_mesh.h"
 #endif
+#if VK_BENCH_DEPTH_SCENE
+#include "wsa_vk_depth.h"
+#endif
 #include <android/native_activity.h>
 #include <android/native_window.h>
 #include <android/log.h>
@@ -63,6 +66,10 @@ typedef struct {
     uint32_t count;
     uint32_t width, height;
     VkPresentModeKHR mode;
+#if VK_BENCH_DEPTH_SCENE
+    vk_demo_depth *depth;
+    VkFormat depth_format;
+#endif
 #if VK_BENCH_MESH_SCENE
     vk_demo_mesh mesh;
 #endif
@@ -107,6 +114,10 @@ static void destroy_vulkan(VkBenchVk *v) {
         if(v->fb)for(uint32_t i=0;i<v->count;i++)
             if(v->fb[i])vkDestroyFramebuffer(v->device,v->fb[i],NULL);
         if(v->pool)vkDestroyCommandPool(v->device,v->pool,NULL);
+#if VK_BENCH_DEPTH_SCENE
+        if(v->depth)for(uint32_t i=0;i<v->count;i++)
+            vk_demo_depth_destroy(&v->depth[i]);
+#endif
         if(v->views)for(uint32_t i=0;i<v->count;i++)
             if(v->views[i])vkDestroyImageView(v->device,v->views[i],NULL);
         if(v->renderpass)vkDestroyRenderPass(v->device,v->renderpass,NULL);
@@ -117,6 +128,9 @@ static void destroy_vulkan(VkBenchVk *v) {
     if(v->instance)vkDestroyInstance(v->instance,NULL);
     free(v->images);free(v->views);free(v->fb);free(v->cmds);
     free(v->completed);free(v->image_fences);
+#if VK_BENCH_DEPTH_SCENE
+    free(v->depth);
+#endif
 }
 
 static void *run_vulkan(void *arg) {
@@ -252,6 +266,12 @@ static void *run_vulkan(void *arg) {
     v.fb=calloc(v.count,sizeof(*v.fb));v.cmds=calloc(v.count,sizeof(*v.cmds));
     v.completed=calloc(v.count,sizeof(*v.completed));
     v.image_fences=calloc(v.count,sizeof(*v.image_fences));
+#if VK_BENCH_DEPTH_SCENE
+    v.depth=calloc(v.count,sizeof(*v.depth));
+    CHECK(v.depth,"OOM per-swapchain depth attachments");
+    v.depth_format=vk_demo_depth_format(v.physical);
+    CHECK(v.depth_format!=VK_FORMAT_UNDEFINED,"No supported depth+stencil format");
+#endif
     CHECK(v.images&&v.views&&v.fb&&v.cmds&&v.completed&&v.image_fences,
           "OOM swapchain memory");
     REQUIRE(vkGetSwapchainImagesKHR(v.device,v.swapchain,&v.count,v.images),
@@ -265,17 +285,43 @@ static void *run_vulkan(void *arg) {
     att.initialLayout=VK_IMAGE_LAYOUT_UNDEFINED;
     att.finalLayout=VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     VkAttachmentReference ref={0,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+#if VK_BENCH_DEPTH_SCENE
+    VkAttachmentDescription depth_att={0};
+    depth_att.format=v.depth_format;
+    depth_att.samples=VK_SAMPLE_COUNT_1_BIT;
+    depth_att.loadOp=VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_att.storeOp=VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_att.stencilLoadOp=VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_att.stencilStoreOp=VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_att.initialLayout=VK_IMAGE_LAYOUT_UNDEFINED;
+    depth_att.finalLayout=VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    VkAttachmentDescription attachments[2]={att,depth_att};
+    VkAttachmentReference depth_ref={1,VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
+#endif
     VkSubpassDescription sub={0};
     sub.pipelineBindPoint=VK_PIPELINE_BIND_POINT_GRAPHICS;
     sub.colorAttachmentCount=1;sub.pColorAttachments=&ref;
+#if VK_BENCH_DEPTH_SCENE
+    sub.pDepthStencilAttachment=&depth_ref;
+#endif
     VkSubpassDependency dep={0};
     dep.srcSubpass=VK_SUBPASS_EXTERNAL;dep.dstSubpass=0;
     dep.srcStageMask=VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dep.dstStageMask=VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dep.dstAccessMask=VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+#if VK_BENCH_DEPTH_SCENE
+    dep.srcStageMask|=VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT|
+                      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dep.dstStageMask|=VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT|
+                      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    dep.dstAccessMask|=VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+#endif
     VkRenderPassCreateInfo ri={0};
     ri.sType=VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     ri.attachmentCount=1;ri.pAttachments=&att;
+#if VK_BENCH_DEPTH_SCENE
+    ri.attachmentCount=2;ri.pAttachments=attachments;
+#endif
     ri.subpassCount=1;ri.pSubpasses=&sub;
     ri.dependencyCount=1;ri.pDependencies=&dep;
     REQUIRE(vkCreateRenderPass(v.device,&ri,NULL,&v.renderpass),
@@ -284,10 +330,11 @@ static void *run_vulkan(void *arg) {
 #if VK_BENCH_MESH_SCENE
     REQUIRE(vk_demo_mesh_create(&v.mesh,v.physical,v.device,v.renderpass,
                                 v.width,v.height,ctx->activity->assetManager,
-                                v.queue,v.qfamily,VK_BENCH_TEXTURE_SCENE),
+                                v.queue,v.qfamily,VK_BENCH_TEXTURE_SCENE,
+                                VK_BENCH_DEPTH_SCENE),
             "indexed_mesh_pipeline");
-    INFO("VK_MESH_READY vertices=4 indices=6 draws_per_frame=1 procedural_checker=%d",
-         !VK_BENCH_TEXTURE_SCENE);
+    INFO("VK_MESH_READY vertices=4 indices=6 draws_per_frame=%d procedural_checker=%d",
+         VK_BENCH_DEPTH_SCENE?4:1,!VK_BENCH_TEXTURE_SCENE);
 #if VK_BENCH_TEXTURE_SCENE
     INFO("VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
          "sampler=nearest transfer=staging image_layout=shader_read_only");
@@ -310,9 +357,19 @@ static void *run_vulkan(void *arg) {
         vi.subresourceRange.aspectMask=VK_IMAGE_ASPECT_COLOR_BIT;
         vi.subresourceRange.levelCount=1;vi.subresourceRange.layerCount=1;
         REQUIRE(vkCreateImageView(v.device,&vi,NULL,&v.views[i]),"vkCreateImageView");
+        VkImageView framebuffer_views[2]={v.views[i],VK_NULL_HANDLE};
+#if VK_BENCH_DEPTH_SCENE
+        REQUIRE(vk_demo_depth_create(&v.depth[i],v.physical,v.device,
+                         v.depth_format,v.width,v.height),"vk_demo_depth_create");
+        framebuffer_views[1]=v.depth[i].view;
+#endif
         VkFramebufferCreateInfo fi={0};
         fi.sType=VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fi.renderPass=v.renderpass;fi.attachmentCount=1;fi.pAttachments=&v.views[i];
+        fi.renderPass=v.renderpass;fi.attachmentCount=1;
+        fi.pAttachments=framebuffer_views;
+#if VK_BENCH_DEPTH_SCENE
+        fi.attachmentCount=2;
+#endif
         fi.width=v.width;fi.height=v.height;fi.layers=1;
         REQUIRE(vkCreateFramebuffer(v.device,&fi,NULL,&v.fb[i]),
                 "vkCreateFramebuffer");
@@ -320,18 +377,27 @@ static void *run_vulkan(void *arg) {
         bi.sType=VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         bi.flags=VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
         REQUIRE(vkBeginCommandBuffer(v.cmds[i],&bi),"vkBeginCommandBuffer");
-        VkClearValue clear={0};
-        clear.color.float32[0]=(i%2)?0.02f:0.09f;
-        clear.color.float32[1]=0.26f;
-        clear.color.float32[2]=(i%2)?0.38f:0.55f;
-        clear.color.float32[3]=1.0f;
+        VkClearValue clear[2]={{0},{0}};
+        clear[0].color.float32[0]=(i%2)?0.02f:0.09f;
+        clear[0].color.float32[1]=0.26f;
+        clear[0].color.float32[2]=(i%2)?0.38f:0.55f;
+        clear[0].color.float32[3]=1.0f;
+#if VK_BENCH_DEPTH_SCENE
+        clear[1].depthStencil.depth=1.0f;
+        clear[1].depthStencil.stencil=0;
+#endif
         VkRenderPassBeginInfo begin={0};
         begin.sType=VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         begin.renderPass=v.renderpass;begin.framebuffer=v.fb[i];
         begin.renderArea.extent=(VkExtent2D){v.width,v.height};
-        begin.clearValueCount=1;begin.pClearValues=&clear;
+        begin.clearValueCount=1;begin.pClearValues=clear;
+#if VK_BENCH_DEPTH_SCENE
+        begin.clearValueCount=2;
+#endif
         vkCmdBeginRenderPass(v.cmds[i],&begin,VK_SUBPASS_CONTENTS_INLINE);
-#if VK_BENCH_MESH_SCENE
+#if VK_BENCH_DEPTH_SCENE
+        vk_demo_mesh_draw_depth(&v.mesh,v.cmds[i]);
+#elif VK_BENCH_MESH_SCENE
         vk_demo_mesh_draw(&v.mesh,v.cmds[i]);
 #endif
         vkCmdEndRenderPass(v.cmds[i]);
@@ -351,8 +417,15 @@ static void *run_vulkan(void *arg) {
         fence.flags=VK_FENCE_CREATE_SIGNALED_BIT;
         REQUIRE(vkCreateFence(v.device,&fence,NULL,&v.fences[i]),"vkCreateFence");
     }
+#if VK_BENCH_DEPTH_SCENE
+    INFO("VK_DEPTH_READY format=%d attachments=%u depth_test=less_equal "
+         "depth_write=1 stencil=replace_equal blend=alpha_over draws_per_frame=4",
+         (int)v.depth_format,v.count);
+#endif
     INFO("VK_SCENE name=%s, integration=standalone, gameplay=0",
-#if VK_BENCH_TEXTURE_SCENE
+#if VK_BENCH_DEPTH_SCENE
+        "depth");
+#elif VK_BENCH_TEXTURE_SCENE
         "texture");
 #elif VK_BENCH_MESH_SCENE
         "mesh");
