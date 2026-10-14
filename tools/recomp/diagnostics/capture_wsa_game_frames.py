@@ -20,6 +20,37 @@ from analyze_frame_stats import parse_frames,selected_stats
 
 DEFAULT_SERIAL="127.0.0.1:58526"
 
+from angle_wsa_trial import logcat_verdict
+
+def verify_renderer(serial: str, pid: str, backend: str) -> dict:
+    """Refuse to label a gameplay sample ANGLE without current-process Vulkan evidence."""
+    def setting(key: str) -> str:
+        return android(serial, 'shell', 'settings', 'get', 'global', key).decode('utf-8','replace').strip()
+    debug=setting('angle_debug_package')
+    package=setting('angle_gl_driver_selection_pkgs')
+    values=setting('angle_gl_driver_selection_values')
+    all_angle=setting('angle_gl_driver_all_angle')
+    if backend=='gl4es':
+        if any(x not in ('', 'null') for x in (debug,package,values,all_angle)):
+            raise ValueError('GL4ES reference requires all ANGLE overrides disabled')
+        return {'backend':'gl4es','driver_settings_clear':True,'vulkan_verified':False}
+    if (debug,package,values)!=( 'org.chromium.angle','org.callofrecomp','angle'):
+        raise ValueError('ANGLE is not selected exclusively for CallofRecomp')
+    if all_angle not in ('','null'):
+        raise ValueError('Global ANGLE override is unsafe for comparison')
+    installed=android(serial,'shell','pm','path','org.chromium.angle').decode('utf-8','replace')
+    if 'package:' not in installed:
+        raise ValueError('ANGLE package not installed')
+    epoch=int(android(serial,'shell','date','+%s').decode().strip())
+    log=android(serial,'logcat','-d','-v','epoch','-t','5000').decode('utf-8','replace')
+    evidence=logcat_verdict(log,epoch-600,pid)
+    if not evidence['angle_vulkan_execution_verified']:
+        raise ValueError('ANGLE Vulkan not verified in this game PID')
+    return {'backend':'angle','driver_settings_clear':False,'vulkan_verified':True,
+            'log_evidence':evidence}
+
+
+
 def isolate_fresh_windows(before: str,after: str,last: int):
     """Extract after-only summary windows; fail closed if a log was rotated."""
     if not after.startswith(before):
@@ -47,6 +78,8 @@ def read_log(serial: str)->str:
 def main():
     ap=argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--serial',default=DEFAULT_SERIAL)
+    ap.add_argument('--backend',choices=('gl4es','angle'),default='gl4es',
+                    help='Verify and label the actual EGL/GLES backend; ANGLE requires Vulkan Logcat proof')
     ap.add_argument('--seconds',type=int,default=75)
     ap.add_argument('--last',type=int,default=60)
     ap.add_argument('--out',type=Path,required=True,help='output stem; .log and .json')
@@ -63,20 +96,30 @@ def main():
     if abi!='x86_64':ap.error(f'target must be WSA x86_64, got {abi!r}')
     pid=android(args.serial,'shell','pidof','org.callofrecomp').decode().strip()
     if not pid:ap.error('game is not running')
+    backend_before=verify_renderer(args.serial,pid,args.backend)
     before=read_log(args.serial)
     stamp=datetime.now(timezone.utc).isoformat()
     started=time.monotonic()
     print(f"Collecting {args.seconds}s of real WSA gameplay windows, PID {pid}",
           flush=True)
     time.sleep(args.seconds)
+    after_pid=android(args.serial,'shell','pidof','org.callofrecomp').decode().strip()
+    if pid!=after_pid: raise ValueError('Game PID changed during benchmark; refuse this capture')
+    backend_after=verify_renderer(args.serial,pid,args.backend)
+    if backend_before['backend']!=backend_after['backend']:
+        raise ValueError('Renderer changed during benchmark')
     after=read_log(args.serial)
     elapsed=time.monotonic()-started
     fresh,stats=isolate_fresh_windows(before,after,args.last)
     out_log.write_text(fresh,encoding='utf-8')
     result={
-        'type':'actual CallofRecomp OpenGL/GL4ES GAMEPLAY, WSA x86_64',
-        'stage':('GL4ES gameplay uncapped WSA diagnostic (NOT Vulkan)'
+        'type':'actual CallofRecomp GAMEPLAY, WSA x86_64',
+        'stage':('ANGLE Vulkan gameplay in WSA, experimental' if args.backend=='angle'
+                 else 'GL4ES gameplay uncapped WSA diagnostic (NOT Vulkan)'
                  if args.uncapped_diagnostic else 'GL4ES gameplay baseline/control, NOT Vulkan renderer'),
+        'backend':args.backend,
+        'backend_before':backend_before,
+        'backend_after':backend_after,
         'uncapped_diagnostic':args.uncapped_diagnostic,
         'capture_started_utc':stamp,
         'capture_duration_s':round(elapsed,2),
@@ -88,6 +131,8 @@ def main():
             'FPS percentiles are of ~one-second averages, not raw frames',
             ('WSA diagnostic host 60-FPS cap removed; STILL GL4ES, NOT Vulkan'
              if args.uncapped_diagnostic else
+             'GL4ES→ANGLE/GLES2→Vulkan active ONLY on WSA; still 60-FPS host cap'
+             if args.backend=='angle' else
              'Regular engine host 60-FPS cap is enabled; no Vulkan integration'),
             'WSA is an x86_64 emulator and not a physical ARM64 Android GPU',
             'Manual screenshot and matching scene required for valid A/B/A'
@@ -95,6 +140,6 @@ def main():
     }
     out_json.write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',
                         encoding='utf-8')
-    print(json.dumps(result,ensure_ascii=False,indent=2),flush=True)
+    print(json.dumps(result,ensure_ascii=True,indent=2),flush=True)
 
 if __name__=='__main__':main()

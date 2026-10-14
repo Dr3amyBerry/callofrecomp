@@ -4,6 +4,13 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Resultado de la validación gráfica 3D en WSA y decisión (2026-10-14)
+
+- [x] Ejecutado **A1/B/A2 en la misma partida de Camp Toccoa**. A1 GL4ES 54,75 FPS; B ANGLE/Vulkan 55,15 FPS; A2 GL4ES 55,20 FPS de mediana. El p10 de B (47,6 FPS) fue inferior al de ambas referencias A, sin prueba estadística de regresión concluyente.
+- [x] Verificación del renderer en ambos extremos de B por PID+Logcat Vulkan; screenshot de mundo y HUD compatible visualmente, SSIM 0,995943 frente a GL4ES en región estática. Guardados y APK estables comprobados tras rollback.
+- [x] Herramientas `wsa_save_guard.py`, `capture_wsa_game_frames.py --backend`, `summarize_wsa_driver_ab.py` y tests para reproducibilidad y detección de falsos positivos.
+- [ ] **No adoptar ANGLE**: sin ganancia de FPS demostrable en WSA. Volver a fase CPU ARM64, inspección y equivalencia de `0x0041B8F0` con dispositivo TECNO; evaluar GPU Mali si se habilita. Meta 60 FPS física; **0/5**. [Informe A/B/A](ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md).
+
 ## Próxima etapa de ejecución — WSA 3D reproducible, A/B/A exploratorio (2026-10-14)
 
 - [x] Documentado el [checkpoint integral](PROJECT_STATUS_CHECKPOINT_2026-10-14.md) del port, perfiles ARM64 históricos, Vulkan propio, Zink, build ANGLE, verificaciones WSA, restauración y riesgos.

@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Resultado posterior: A1/B/A2 completo en Camp Toccoa WSA, sin mejora de ANGLE (0/5)
+
+Ensayo controlado de **gameplay 3D** con mismo save/cámara y 60-FPS host cap: **GL4ES A1 54,75**, **ANGLE/Vulkan B 55,15**, **GL4ES A2 55,20** FPS medianos (20 ventanas de ~1 segundo, 30 s/run); p10 respectivamente **50,2 / 47,6 / 54,6** FPS. CPU/frame **17,54 / 17,80 / 17,43 ms**. B solo +0,175 FPS (+0,318 %) frente a la media A, dentro de la variación A1–A2; p10 B inferior. El mismo PID confirmó ANGLE/Vulkan al inicio y al cierre de B. Imagen 3D con SSIM 0,995943 frente a GL4ES, capturas privadas no sincronizadas y no prueba exhaustiva. **Sin mejora demostrada: mantener GL4ES producción y estrategia de fases ARM64 vigente.** APK y saves idénticos tras rollback; el TECNO no estuvo conectado, por tanto **0/5 intentos válidos**. [Reporte completo](ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md).
+
 ## ANGLE: compatibilidad Vulkan confirmada en WSA, todavía sin A/B de gameplay
 
 La fuente oficial ANGLE pinneada (`43140711d13063716fd32a15de829885d0bce469`) fue compilada en GitHub Actions Linux y el APK x86_64 pasó verificaciones de ABI, EGL/GLES, identidad, firma Android y SHA-256. La aplicación real **CallofRecomp** abrió `GameActivity` con el paquete ANGLE experimental y su propio PID reportó **Renderer Vulkan 1.3 AMD Radeon**; el menú original se mostró y no presentó diferencias visuales evidentes frente al menú nativo GL4ES. La APK experimental fue desinstalada y los ajustes revertidos. **No** se comprobó equivalencia 3D, FPS Camp Toccoa ni rendimiento ARM64/Mali. La fase CPU actual conserva prioridad: **no cambiar de renderer ni de estrategia sobre esta sola prueba**, contador **0/5**. [Informe de ejecución real](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md).

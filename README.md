@@ -19,6 +19,7 @@ límite de 60 FPS. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
 · [**ANGLE: descarga verificada y viabilidad GL4ES→Vulkan**](docs/ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md)
+· [**ANGLE: prueba A/B/A real 3D Camp Toccoa (sin ganancia de FPS)**](docs/ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md)
 · [**ANGLE: prueba real del menú del juego sobre Vulkan en WSA**](docs/ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md)
 · [**ANGLE: compilación Android reproducible (solo manual)**](docs/ANGLE_BUILD_PIPELINE_2026-10-14.md)
 · [**Investigación Mesa Zink y requisitos Android/WSA**](docs/MESA_ZINK_FEASIBILITY_2026-10-14.md)

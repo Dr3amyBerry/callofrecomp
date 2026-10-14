@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Ensayo A1/B/A2 real de Camp Toccoa: ANGLE sin ganancia en WSA (0/5)
+
+- [x] WSA x86_64 en **Camp Toccoa, spawn 3D**, guardado idéntico, cámara estática, **Equilibrado** y cap de 60 FPS; tres capturas de ~30 s cada una, 20 ventanas ~1 s analizadas por captura, sin menú/carga.
+- [x] **A1 GL4ES:** 54,75 FPS medianos / 50,2 FPS p10 / 17,54 ms CPU; **B ANGLE→Vulkan:** 55,15 / 47,6 / 17,80; **A2 GL4ES:** 55,20 / 54,6 / 17,43. B apenas +0,175 FPS (**+0,318 %**) frente a la media de ambos controles A; p10 B por debajo de ambos. **No hay mejora de rendimiento demostrada**.
+- [x] Verificado ANGLE+Vulkan antes/después de la captura B mediante **Logcat del mismo PID 10539**, contexto WSA Vulkan 1.3 AMD. Mundo 3D y HUD visibles; captura comparada con GL4ES **SSIM 0,995943** en región de 1.280×540, no certifica toda la campaña.
+- [x] Dos guardados privados respaldados y verificados sin alteración tras A/B/A; WSA nuevamente **sin ANGLE**, configuración driver en `null`, APK A1 de referencia intacta. Herramientas nuevas: guard de saves, `--backend angle` con identidad Vulkan y resumen A/B/A con test de falsos positivos.
+- [ ] Mantener **GL4ES producción** y estrategia CPU actual; próxima fase, `0x0041B8F0` ARM64 con equivalencia y benchmarks físicos al conectar TECNO. **0/5**. [Informe completo](docs/ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md).
+
 ### 2026-10-14 — Punto de control consolidado y continuidad técnica (0/5)
 
 - [x] Estado integral a fecha actual, referencias, arquitectura, ensayos ANGLE/Vulkan, hashes y límites recogidos en [**PROJECT_STATUS_CHECKPOINT_2026-10-14.md**](docs/PROJECT_STATUS_CHECKPOINT_2026-10-14.md).

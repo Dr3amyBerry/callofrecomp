@@ -1,5 +1,7 @@
 # ANGLE Android x86_64 en CallofRecomp: ensayo real WSA (2026-10-14)
 
+**Evolución:** este documento recoge el primer arranque de ANGLE; el ensayo posterior en **mundo 3D con A1/B/A2** está documentado en [ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md](ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md). No se observó una mejora reproducible de FPS.
+
 **Estado comprobado:** ANGLE→Vulkan 1.3 carga dentro del **proceso real de CallofRecomp** en WSA, llega a `GameActivity` y dibuja el menú de Call of Duty. La configuración del driver se restauró íntegramente tras los ensayos. **NO** hay medición A/B/A de FPS, equivalencia cuantitativa de imágenes, ni test de Camp Toccoa 3D. El renderer de referencia sigue siendo **GL4ES nativo**.
 
 ## 1. Build upstream y artefacto (sin redistribuir APK en git)
