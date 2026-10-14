@@ -113,6 +113,15 @@ compatibility is a substantial port—not an immediate FPS switch.
    blanket `-Oz`, `-O2`, Vulkan, VBO2/3, batching or `fast-math`
    switches are justified by the current performance evidence.
 
+## New function-level provenance research
+
+The generator's Ghidra `F` function-entry markers are now preserved in
+optional, private function maps. A real four-module mapping found 378 of
+403 chunks containing multiple function entries. Therefore earlier hotspot
+attribution to chunk 186/187 or another range must not be presented as
+single-function cost. See [function-level performance research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) for exact reproducible mapping,
+safe sample correlation and reference recompilers.
+
 ## Technical references
 
 - GL4ES environment and batching/VBO modes:

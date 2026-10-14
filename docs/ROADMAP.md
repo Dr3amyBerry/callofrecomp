@@ -4,6 +4,16 @@
 
 Initial milestone: boot the Call of Duty 1.5 single-player code path on Android ARM64 using original user-supplied game data externally. Multiplayer and United Offensive remain later milestones.
 
+## Current status snapshot (2026-10-14)
+
+- Exact 1.5 original PE32/DLL fingerprints, SP ABI probes and the portable host: implemented and exercised in local tests.
+- Native ARM64 and WSA x86_64 debug APKs: compiled and signed; WSA menus, training and saves have functional smoke coverage. Full campaign on a real phone remains unverified.
+- Recompiled graphics path: GL4ES/GLES2; original-menu parse repeats after `Hunk_Clear`. Never label it duplicate per-frame rendering or skip lifecycle work without memory analysis.
+- **New diagnostics:** [function-entry/chunk correlation](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) is verified with private original p-code (6,228 mapped entry points). Native per-function CPU attribution and crowded ARM64 scene measurements remain pending.
+- `-O2`, `-Oz`, GL4ES batching and VBO mode 2/3 experiments were neutral/negative in controlled WSA tests; do not enable indiscriminately.
+
+
+
 ## Phase 0 — Immutable baseline
 
 - Fingerprint original binaries with SHA-256.
@@ -11,7 +21,7 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 - Keep original files outside Git.
 - Generate machine-readable PE/PK3 reports so later findings can be reproduced.
 
-**Status:** started.
+**Status:** completed for the verified exact CoD 1.5 SP binary baseline.
 
 ## Phase 1 — Recover module boundaries and ABI
 
@@ -20,7 +30,7 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 - Identify syscall IDs and argument shapes from wrapper stubs.
 - Build a symbol ledger with confidence levels: observed / matched / inferred.
 
-**Status:** started. `dllEntry` is confirmed to store a callback pointer and the modules invoke it with numeric syscall IDs.
+**Status:** core SP ABI mapping verified; detailed names/semantics of some syscall IDs remain unresolved. `dllEntry` stores the engine callback and modules call it by numeric syscall ID.
 
 ## Phase 2 — Static analysis pipeline
 
@@ -60,3 +70,15 @@ Definition of done:
 - Fix endian/alignment/pointer-width assumptions.
 - Optimize renderer/resource loading only after correctness.
 - Add device-specific input/UI polish.
+
+## Phase 7 — Function-level performance proof and measured optimization (active)
+
+- [x] Restore Ghidra original function-entry metadata to an optional, ignored mapping sidecar without changing default compiled behavior.
+- [x] Associate existing guest CPU chunk samples with the exact private maps, without fabricating per-function CPU percentages.
+- [x] Archive references, rejected experiments, repeatable commands and correctness restrictions in [the 2026-10-14 research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
+- [ ] Capture guest function-entry and return activity safely behind opt-in instrumentation and prove a sufficiently low profiler overhead.
+- [ ] Capture **native physical ARM64** CPU/GPU traces from the crowded training scene with controlled camera/save/thermal variables.
+- [ ] Choose a measured hot original function; confirm its final AArch64 code and benchmark one isolated translator/native fast-path change.
+- [ ] Before accepting any replacement, pass independent x86-vs-native differential state tests and same-scene FPS/visual/gameplay A/B.
+
+**Non-goals until evidence exists:** wholesale renderer replacement, disabling menu reloads after `Hunk_Clear`, changing original game logic or promising a universal FPS gain.

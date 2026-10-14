@@ -311,3 +311,20 @@ cannot safely be assigned entirely to UI-module compilation or filesystem
 access. This does not demonstrate duplicate rendering per frame or an
 in-game FPS improvement. The noninstrumented normal WSA APK and save were
 restored.
+
+## Original function-entry mapping and honest hotspot annotation (2026-10-14)
+
+The host CPU sampler reports **recompiled dispatch chunks**, not recovered
+x86 functions. New opt-in diagnostic tools preserve Ghidra `F` entry markers
+in private JSON sidecars and annotate sampled chunk ranges with that context,
+without modifying default Android/desktop runtime code or renderer settings.
+
+Original private p-code header mapping: 599,770 instructions, 403 chunks,
+6,228 exact function entry markers; **378 chunks** have multiple function
+entries. One existing instrumented WSA menu profile resolves 13 distinct
+chunk ranges, but its hottest reported CoDSP chunk contains 28 entries, so
+no single-function CPU claim is justified. These are *structure* measurements,
+not FPS or ARM64 real-device results.
+
+Commands, external references, attribution rules and follow-up experiments:
+[Function-level performance research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).

@@ -371,3 +371,18 @@ not yet attached to the VFS.
 ## Development rule
 
 Analysis output must be reproducible. Do not rename guessed functions as facts: recovered names must record whether they are **observed**, **matched**, or **inferred**. This matters because the final native port will be built from reconstructed behavior rather than copied proprietary source.
+
+## Ghidra original function-entry / chunk mapping (opt-in, 2026-10-14)
+
+For original private `ExportPcode.java` outputs, `tools/recomp/function_map.py`
+can read just `I` and `F` records to produce an ignored JSON entry-to-chunk
+map; use `--parts` to match the generated files. The regular
+`tools/recomp/pcode2c.py` accepts `--function-map-out` if an identical
+diagnostic JSON is desired during a future recompilation. Without this
+option, generated code is unchanged.
+
+Existing `cpu sample: chunk` records from opt-in profiles can be correlated
+with these maps by `tools/recomp/analyze_guest_hotspots.py`. This does
+**not** recover function ownership or measure per-function CPU times.
+Reproduction commands, verified aggregate results, external references and
+remaining research: [2026-10-14 function-level performance report](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).

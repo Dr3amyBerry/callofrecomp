@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Original x86 function-entry diagnostics (research archived)
+
+- [x] Preserved previously discarded Ghidra `F` metadata in an opt-in JSON sidecar for `pcode2c.py`, plus a standalone streaming `I/F` header mapper and a non-attributing existing-CPU-log analyzer. No native rendering, simulation, loader or default generated C behavior changed.
+- [x] Verified original private CoD 1.5 p-code maps: 599,770 instructions / 403 generated dispatch chunks / 6,228 exact matched Ghidra function entries; **378 chunks contain multiple entries**. No raw proprietary data or generated maps in Git.
+- [x] An existing opt-in menu profile had 22 chunk records covering 13 unique chunks; all resolved to one map. Hot CoDSP chunk 207 includes 28 original function entries. Chunk CPU times cannot be attributed to any one function.
+- [x] Added deterministic synthetic tests for mapping, chunk/part assignments, CLI safety, generated-C identity with the optional sidecar, and honest sample annotation. Full verification: **79 Python tests passed (4 skipped)**; **25/25 host CTest passed**. No Android APK was rebuilt in this metadata-only phase.
+- [x] Saved the external project comparison, evidence limitations, reproducible commands and ranked future experiments in [docs/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md](docs/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
+- [ ] Obtain actual guest function-level CPU attribution (not just chunk-level), validate native ARM64 crowded scenes, and only then test differential-equivalent native fast paths. No new FPS claim.
+
 ### 2026-10-14 — PE32 load validation and controlled menu optimization trial
 
 - [x] Hardened the recompiled module loader: validate MZ/PE32 headers, image size, all section source/destination bounds and guest IAT targets **before committing the guest image**. Reject corrupt binaries safely rather than reading/writing unbounded addresses.

@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from pe_inspect import PEFile  # noqa: E402
 from flag_liveness import dead_flag_writes
+from function_map import build_function_map, write_function_map
 
 CHUNK = 1500
 
@@ -345,8 +346,17 @@ def main() -> int:
                     help='diagnostic: omit disjoint RAM/register alias information')
     ap.add_argument('--keep-dead-flags', action='store_true',
                     help='diagnostic: retain flag writes even when provably unobserved')
+    ap.add_argument('--function-map-out', type=Path,
+                    help='optional JSON: original Ghidra function entries to generated chunks; '
+                         'store under ignored recomp_out/')
     args = ap.parse_args()
-    insns, userops, _ = parse(args.pcode)
+    if args.function_map_out:
+        protected = {args.pcode.resolve(), args.pe.resolve(), args.out.resolve()}
+        protected.update(args.out.with_name(f'{args.out.stem}_p{k}.c').resolve()
+                         for k in range(args.parts))
+        if args.function_map_out.resolve() in protected:
+            ap.error('--function-map-out must not overwrite input or generated C files')
+    insns, userops, funcs = parse(args.pcode)
     limits = {'r': 0x2000, 'u': 0x400000}  # must match R[] / U[] in runtime/guest.c
     for _, _, ops in insns:
         for _, o, ins in ops:
@@ -367,6 +377,10 @@ def main() -> int:
             f.write_text(b)
         args.out.write_text(main_src)
         files.append(args.out)
+    if args.function_map_out:
+        mapping = build_function_map([(addr, length) for addr, length, _ in insns],
+                                     funcs, args.pe.name, parts=args.parts, chunk_size=CHUNK)
+        write_function_map(args.function_map_out, mapping)
     print(f'{len(insns)} instructions -> ' + ' '.join(str(f) for f in files))
     if unsupported:
         print('unsupported:', unsupported)
