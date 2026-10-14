@@ -16,6 +16,7 @@ import zipfile
 ROOT=Path(__file__).resolve().parents[3]
 SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_surface_bench.c'
 MESH_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_mesh.c'
+TEXTURE_SOURCE=ROOT/'tools/recomp/diagnostics/wsa_vk_texture.c'
 SHADERS=ROOT/'tools/recomp/diagnostics/shaders'
 PACKAGE='org.rigorcore.vkswapbench'
 
@@ -32,7 +33,7 @@ def latest(root: Path) -> Path:
 def main():
     ap=argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--present',choices=['fifo','immediate'],default='fifo')
-    ap.add_argument('--scene',choices=['clear','mesh'],default='clear',
+    ap.add_argument('--scene',choices=['clear','mesh','texture'],default='clear',
                     help='isolated clear baseline or real indexed Vulkan mesh; not game FPS')
     ap.add_argument('--sdk',type=Path,default=os.environ.get('ANDROID_HOME'))
     args=ap.parse_args()
@@ -42,7 +43,7 @@ def main():
     bt=latest(sdk/'build-tools')
     jar=latest(sdk/'platforms')/'android.jar'
     java=Path(os.environ.get('JAVA_HOME','C:/Program Files/Java/jdk-17'))
-    dest=ROOT/'.local/profiles/wsa_vulkan_ab'/(args.present if args.scene=='clear' else 'mesh-'+args.present)
+    dest=ROOT/'.local/profiles/wsa_vulkan_ab'/(args.present if args.scene=='clear' else args.scene+'-'+args.present)
     dest.mkdir(parents=True,exist_ok=True)
     manifest=dest/'AndroidManifest.xml'
     manifest.write_text("""<?xml version="1.0" encoding="utf-8"?>
@@ -71,22 +72,25 @@ def main():
     print('Compiling Vulkan NativeActivity',args.present,args.scene,flush=True)
     srcs=[SOURCE]
     shader_bins=[]
-    if args.scene=='mesh':
+    if args.scene in ('mesh','texture'):
         srcs.append(MESH_SOURCE)
+        srcs.append(TEXTURE_SOURCE)
         compiler=ndk/'shader-tools/windows-x86_64/glslc.exe'
         validator=ndk/'shader-tools/windows-x86_64/spirv-val.exe'
         if not compiler.is_file() or not validator.is_file():
             raise RuntimeError('NDK glslc and spirv-val are required for mesh scene')
         for stage in ('vert','frag'):
-            shader=SHADERS/('wsa_mesh.'+stage)
-            target=dest/('wsa_mesh.'+stage+'.spv')
+            name='wsa_texture.frag' if stage=='frag' and args.scene=='texture' else 'wsa_mesh.'+stage
+            shader=SHADERS/name
+            target=dest/(name+'.spv')
             run(compiler,'--target-env=vulkan1.0',shader,'-o',target)
             run(validator,'--target-env','vulkan1.0',target)
             shader_bins.append(target)
     run(clang,'-O2','-std=c11','-Wall','-Wextra','-Werror',
         '-D_POSIX_C_SOURCE=200809L',
         f'-DVK_BENCH_PREFER_IMMEDIATE={int(args.present=="immediate")}',
-        f'-DVK_BENCH_MESH_SCENE={int(args.scene=="mesh")}',
+        f'-DVK_BENCH_MESH_SCENE={int(args.scene in ("mesh","texture"))}',
+        f'-DVK_BENCH_TEXTURE_SCENE={int(args.scene=="texture")}',
         '-shared','-fPIC','-Wl,-z,max-page-size=16384',
         *srcs,'-o',so,'-lvulkan','-landroid','-llog','-pthread')
     aapt=bt/('aapt2.exe' if os.name=='nt' else 'aapt2')
@@ -102,7 +106,7 @@ def main():
     keystore=ROOT/'build-android-package/debug.keystore'
     if not keystore.is_file():
         raise RuntimeError('Existing local debug keystore missing; refusing to create one')
-    apk=dest/('wsa-vulkan-'+args.present+('-mesh' if args.scene=='mesh' else '')+'.apk')
+    apk=dest/('wsa-vulkan-'+args.present+('-'+args.scene if args.scene!='clear' else '')+'.apk')
     signer=bt/('apksigner.bat' if os.name=='nt' else 'apksigner')
     run(signer,'sign','--ks',keystore,'--ks-key-alias','androiddebugkey',
         '--ks-pass','pass:android','--key-pass','pass:android','--out',apk,aligned)

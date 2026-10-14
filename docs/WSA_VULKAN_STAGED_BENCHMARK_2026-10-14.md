@@ -31,6 +31,10 @@
 
 Una versión independiente nueva incorpora **shaders de vértices y fragmentos SPIR-V, un buffer de vértices/índices y `vkCmdDrawIndexed`** con una malla de 4 vértices/6 índices y checker procedural. En WSA obtuvo **1.276 frames en 17,013 s; 74,999 FPS** (CPU 1,918 ms/frame), limitado por FIFO 75 Hz. La captura muestra la malla; **no son FPS del juego**. No altera los resultados históricos A1/Vulkan-clear/A2/B1/A3 ni los repite. [Detalles, código y próximos pasos](WSA_VULKAN_INDEXED_MESH_2026-10-14.md).
 
+## Hito adicional: Vulkan con imagen texturizada real
+
+Tras la malla indexada se completó otra prueba aislada en WSA: **64×64 RGBA8 cargado mediante staging buffer a `VkImage` óptima en GPU, `VkImageView`, sampler, descriptor combinado y `sampler2D`**, con 1.277 frames en 17,000 segundos (**75,117 FPS FIFO**, CPU del hilo 1,989 ms/frame). Se confirmó visualmente la textura sobre la malla y se conservó el log y captura como prueba privada. **Sigue sin renderizar la escena real de CallofRecomp y no modifica A1/A2/B1/A3.** [Detalle de implementación](WSA_VULKAN_TEXTURE_2026-10-14.md).
+
 ## Lo que se implementó de verdad
 
 - `tools/recomp/diagnostics/wsa_vk_surface_bench.c`: aplicación `NativeActivity` de Android independiente del juego, crea `VkAndroidSurfaceKHR`, selecciona cola gráfica con soporte de presentación, `VkSwapchainKHR`, imágenes, render pass (clear), framebuffers, comandos, semáforos y fences, ejecuta `vkQueuePresentKHR`, imprime estadísticas a logcat y libera recursos. **No tiene shaders de juego ni puente GL heredado.**

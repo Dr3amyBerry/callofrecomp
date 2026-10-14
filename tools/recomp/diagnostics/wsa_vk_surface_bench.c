@@ -283,9 +283,15 @@ static void *run_vulkan(void *arg) {
 
 #if VK_BENCH_MESH_SCENE
     REQUIRE(vk_demo_mesh_create(&v.mesh,v.physical,v.device,v.renderpass,
-                                v.width,v.height,ctx->activity->assetManager),
+                                v.width,v.height,ctx->activity->assetManager,
+                                v.queue,v.qfamily,VK_BENCH_TEXTURE_SCENE),
             "indexed_mesh_pipeline");
-    INFO("VK_MESH_READY vertices=4 indices=6 draws_per_frame=1 procedural_checker=1");
+    INFO("VK_MESH_READY vertices=4 indices=6 draws_per_frame=1 procedural_checker=%d",
+         !VK_BENCH_TEXTURE_SCENE);
+#if VK_BENCH_TEXTURE_SCENE
+    INFO("VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
+         "sampler=nearest transfer=staging image_layout=shader_read_only");
+#endif
 #endif
     VkCommandPoolCreateInfo pci={0};
     pci.sType=VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -346,7 +352,9 @@ static void *run_vulkan(void *arg) {
         REQUIRE(vkCreateFence(v.device,&fence,NULL,&v.fences[i]),"vkCreateFence");
     }
     INFO("VK_SCENE name=%s, integration=standalone, gameplay=0",
-#if VK_BENCH_MESH_SCENE
+#if VK_BENCH_TEXTURE_SCENE
+        "texture");
+#elif VK_BENCH_MESH_SCENE
         "mesh");
 #else
         "clear");

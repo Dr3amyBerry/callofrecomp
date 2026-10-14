@@ -33,6 +33,38 @@ class WsaVkSurfaceTests(unittest.TestCase):
         self.assertFalse(data['gameplay_fps_comparable'])
         self.assertIn('indexed quad',data['workload'])
 
+    def test_sampled_texture_scene_separate_from_game_and_mesh(self):
+        prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
+                "VK_MESH_READY vertices=4 indices=6 draws_per_frame=1 procedural_checker=0\n"
+                "VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
+                "sampler=nearest transfer=staging image_layout=shader_read_only\n"
+                "VK_SCENE name=texture, integration=standalone, gameplay=0\n"
+                "VK_READY width=1280 height=720 gpu=AMD image_count=5 fifo=2 immediate_available=0 present_mode=2\n")
+        window="VK_WINDOW fps=75.000 frames=75 elapsed=1.000 thread_cpu_ms_per_frame=1.9000\n"
+        result=("VK_RESULT fps=75.000 frames=1275 seconds=17.000 thread_cpu_ms_per_frame=1.90000 "
+                "acquire_wall_ms_per_frame=11.00000 present_wall_ms_per_frame=0.02800 "
+                "present_mode=FIFO resolution=1280x720")
+        parsed=parse_one(prefix+window*16+result)
+        self.assertEqual(parsed['scene'],'texture')
+        self.assertFalse(parsed['gameplay_fps_comparable'])
+        self.assertEqual(parsed['texture']['width'],64)
+        self.assertEqual(parsed['texture']['descriptor_sets'],1)
+        self.assertEqual(parsed['texture']['image_layout'],'shader_read_only')
+        self.assertFalse(parsed['mesh']['procedural_checker'])
+        self.assertIn('sampled VkImage',parsed['workload'])
+
+    def test_texture_missing_descriptor_or_using_procedural_shader_rejected(self):
+        prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
+                "VK_MESH_READY vertices=4 indices=6 draws_per_frame=1 procedural_checker=1\n"
+                "VK_SCENE name=texture, integration=standalone, gameplay=0\n")
+        with self.assertRaisesRegex(ValueError,'VkImage'):
+            parse_one(prefix)
+        prefix=prefix.replace('procedural_checker=1','procedural_checker=0')
+        prefix+=("VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
+                 "sampler=nearest transfer=staging image_layout=shader_read_only\n")
+        with self.assertRaisesRegex(ValueError,'sampled-image'):
+            parse_one(prefix.replace('procedural_checker=0','procedural_checker=1'))
+
     def test_mesh_without_successful_pipeline_must_fail(self):
         text=("VK_INIT NativeActivity created; waiting for Android surface\n"
               "VK_SCENE name=mesh, integration=standalone, gameplay=0\n")

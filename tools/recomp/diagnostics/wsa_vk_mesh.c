@@ -61,24 +61,34 @@ void vk_demo_mesh_destroy(vk_demo_mesh *m) {
     if(m->layout)vkDestroyPipelineLayout(m->device,m->layout,NULL);
     if(m->vertices_indices)vkDestroyBuffer(m->device,m->vertices_indices,NULL);
     if(m->memory)vkFreeMemory(m->device,m->memory,NULL);
+    vk_demo_texture_destroy(&m->texture);
     memset(m,0,sizeof(*m));
 }
 
 VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
                             VkDevice device,VkRenderPass renderpass,
                             uint32_t width,uint32_t height,
-                            AAssetManager *assets) {
+                            AAssetManager *assets,
+                            VkQueue queue,uint32_t queue_family,
+                            int textured) {
     if(!m||!physical||!device||!renderpass||!width||!height)
         return VK_ERROR_INITIALIZATION_FAILED;
     memset(m,0,sizeof(*m));
     m->device=device;
     m->index_count=INDEX_COUNT;
+    m->textured=!!textured;
     VkResult r=VK_ERROR_INITIALIZATION_FAILED;
     VkShaderModule vert=VK_NULL_HANDLE,frag=VK_NULL_HANDLE;
     r=load_shader(device,assets,"wsa_mesh.vert.spv",&vert);
     if(r!=VK_SUCCESS)goto fail;
-    r=load_shader(device,assets,"wsa_mesh.frag.spv",&frag);
+    r=load_shader(device,assets,m->textured ?
+                  "wsa_texture.frag.spv" : "wsa_mesh.frag.spv",&frag);
     if(r!=VK_SUCCESS)goto fail;
+
+    if(m->textured) {
+        r=vk_demo_texture_create(&m->texture,physical,device,queue,queue_family);
+        if(r!=VK_SUCCESS)goto fail;
+    }
 
     VkPushConstantRange transform={0};
     transform.stageFlags=VK_SHADER_STAGE_VERTEX_BIT;
@@ -88,6 +98,10 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
     layout.sType=VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     layout.pushConstantRangeCount=1;
     layout.pPushConstantRanges=&transform;
+    if(m->textured) {
+        layout.setLayoutCount=1;
+        layout.pSetLayouts=&m->texture.layout;
+    }
     r=vkCreatePipelineLayout(device,&layout,NULL,&m->layout);
     if(r!=VK_SUCCESS)goto fail;
 
@@ -213,6 +227,8 @@ void vk_demo_mesh_draw(const vk_demo_mesh *m,VkCommandBuffer cb) {
     VkDeviceSize offset=0;
     const VkDeviceSize index_offset=(sizeof(quad)+3u)&~(VkDeviceSize)3u;
     vkCmdBindPipeline(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,m->pipeline);
+    if(m->textured)vkCmdBindDescriptorSets(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,
+                         m->layout,0,1,&m->texture.descriptor,0,NULL);
     vkCmdBindVertexBuffers(cb,0,1,&m->vertices_indices,&offset);
     vkCmdBindIndexBuffer(cb,m->vertices_indices,index_offset,VK_INDEX_TYPE_UINT16);
     vkCmdPushConstants(cb,m->layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(identity),identity);

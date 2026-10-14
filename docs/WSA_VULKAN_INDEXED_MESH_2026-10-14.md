@@ -61,6 +61,8 @@ python tools/recomp/diagnostics/summarize_wsa_vk_surface.py --log .local/profile
 - WSA ejecutó realmente el prototipo, emitió `VK_MESH_READY` y `VK_RESULT`, y una captura de pantalla evidenció una malla coloreada con cuadros. La app de diagnóstico se detuvo al terminar; no se modificó la APK de CallofRecomp instalada.
 - No se repitieron mediciones históricas de la partida ni la prueba `clear`. No se ha comparado la escena de CoDSP con Vulkan ni se han confirmado 120 FPS.
 
+**Actualización posterior (misma fecha):** la subida y el sampleo de una textura Vulkan RGBA8 real ya funcionan en el prototipo WSA. Ver [hito de textura y medición aislada](WSA_VULKAN_TEXTURE_2026-10-14.md). Los otros bloques de esta lista siguen pendientes.
+
 ## Trabajo pendiente para llevarlo a CallofRecomp
 
 1. Subir y samplear **texturas reales** con `VkImage`, layout transitions, staging buffers y descriptor sets. Validar mipmaps, filtros y formatos.

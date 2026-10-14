@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Parse native WSA Vulkan presentation-probe logs.
 
-Input workload is an isolated Vulkan clear or indexed-mesh swapchain demo,
+Input workload is an isolated Vulkan clear, indexed-mesh or sampled-texture swapchain demo,
 never full CallofRecomp gameplay. Do not claim an in-game FPS improvement.
 """
 from __future__ import annotations
@@ -22,7 +22,8 @@ RESULT = re.compile(
     r"present_wall_ms_per_frame=(\d+(?:\.\d+)?) "
     r"present_mode=(\w+) resolution=(\d+)x(\d+)"
 )
-SCENE = re.compile(r'VK_SCENE name=(clear|mesh), integration=standalone, gameplay=0')
+SCENE = re.compile(r'VK_SCENE name=(clear|mesh|texture), integration=standalone, gameplay=0')
+TEXTURE_READY = re.compile(r'VK_TEXTURE_READY width=(\d+) height=(\d+) mip_levels=(\d+) descriptor_sets=(\d+) sampler=(\w+) transfer=(\w+) image_layout=(\w+)')
 MESH_READY = re.compile(r'VK_MESH_READY vertices=(\d+) indices=(\d+) draws_per_frame=(\d+) procedural_checker=(\d+)')
 READY = re.compile(
     r"VK_READY width=(\d+) height=(\d+) gpu=(.+?) image_count=(\d+) "
@@ -40,10 +41,18 @@ def parse_one(text: str)->dict:
     if len(scenes)>1:raise ValueError('Conflicting scene markers in one session')
     scene=scenes[0] if scenes else 'clear'  # Older clear-only builds have no marker.
     meshes=MESH_READY.findall(latest)
-    if scene=='mesh' and len(meshes)!=1:
-        raise ValueError('Mesh scene missing pipeline/buffer/draw readiness marker')
-    if scene!='mesh' and meshes:
+    if scene in ('mesh','texture') and len(meshes)!=1:
+        raise ValueError('Mesh/texture scene missing pipeline/buffer/draw readiness marker')
+    if scene=='clear' and meshes:
         raise ValueError('Clear scene unexpectedly reports indexed mesh resources')
+    textures=TEXTURE_READY.findall(latest)
+    if scene=='texture' and len(textures)!=1:
+        raise ValueError('Texture scene missing Vulkan VkImage/descriptor readiness marker')
+    if scene!='texture' and textures:
+        raise ValueError('Nontexture scene unexpectedly reports sampled VkImage')
+    if scene=='texture' and (meshes[0][3]!='0' or textures[0][5]!='staging' or
+                             textures[0][6]!='shader_read_only'):
+        raise ValueError('Texture scene has inconsistent sampled-image configuration')
     if len(r)!=1 or len(p)!=1 or len(w)<10:
         raise ValueError(f'Incomplete Vulkan presentation run: result={len(r)} ready={len(p)} windows={len(w)}')
     fps=float(r[0][0])
@@ -58,13 +67,22 @@ def parse_one(text: str)->dict:
     return {
         'type':'Standalone Vulkan Android '+scene+' benchmark, NOT CallofRecomp',
         'scene':scene,
-        'workload':('indexed quad (4 vertices, 6 indices), vertex+fragment SPIR-V, '+
-                    'procedural checker; no game assets/simulation/HUD' if scene=='mesh' else
+        'workload':('indexed quad with sampled VkImage RGBA8, staging copy, descriptor/sampler and shaders; no game assets/simulation/HUD'
+                    if scene=='texture' else
+                    'indexed quad (4 vertices, 6 indices), vertex+fragment SPIR-V, procedural checker; no game assets/simulation/HUD'
+                    if scene=='mesh' else
                     'single solid-color render pass, no geometry/textures/shaders/game logic/HUD'),
         'mesh':({'vertices':int(meshes[0][0]),'indices':int(meshes[0][1]),
                  'draws_per_frame':int(meshes[0][2]),
                  'procedural_checker':bool(int(meshes[0][3]))}
-                if scene=='mesh' else None),
+                if scene in ('mesh','texture') else None),
+        'texture':({'width':int(textures[0][0]),'height':int(textures[0][1]),
+                    'mip_levels':int(textures[0][2]),
+                    'descriptor_sets':int(textures[0][3]),
+                    'sampler':textures[0][4],
+                    'transfer':textures[0][5],
+                    'image_layout':textures[0][6]}
+                   if scene=='texture' else None),
         'wsa_only':True,
         'gameplay_fps_comparable':False,
         'gpu_name':p[0][2],

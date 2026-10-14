@@ -5,9 +5,18 @@
 > **Rule:** this file must be updated whenever a meaningful phase starts, completes, changes direction, discovers a blocker, or requires a new external tool.
 
 **Last updated:** 2026-10-14
-**Primary branch:** `main`  
-**Primary target:** Call of Duty 1.5 single-player  
+**Primary branch:** `main`
+**Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
+
+### 2026-10-14 — Vulkan experimental: VkImage texturizada, sampler y descriptor probados (0/5)
+
+- [x] `--scene texture` en APK Vulkan independiente de WSA: **64×64 RGBA8** generado por la CPU, `VkBuffer` de staging, memoria HOST_VISIBLE+HOST_COHERENT, `vkCmdCopyBufferToImage` sobre imagen DEVICE_LOCAL, layout transitions hasta SHADER_READ_ONLY_OPTIMAL.
+- [x] Pipeline optativo con `VkImageView`, `VkSampler` nearest, `VkDescriptorSetLayout`, pool/set combinado y `sampler2D` en fragment shader. La captura física WSA muestra cuadros **sampleados de la textura** sobre la malla indexada.
+- [x] **1.277 frames / 17,000 s = 75,117 FPS FIFO**, **1,989 ms CPU del hilo/frame**, resolución 1280×720. Son FPS del prototipo aislado, **no** de CallofRecomp ni mejora demostrada de FPS.
+- [x] Marcadores `VK_TEXTURE_READY` y pruebas del parser para distinguir `clear`, `mesh` y `texture`; datos privados en `.local/profiles/wsa_vulkan_ab/texture-fifo`. APK original del juego verificada por SHA-256 sin cambios.
+- [x] Pruebas del bloque: **129 Python (4 omitidas), 31/31 CTest** y syntax check ARM64 sin errores. Referencia GL4ES instalada verificada por SHA-256 byte a byte, sin repetir benchmarks del juego.
+- [ ] Depth/stencil, blending, texturas múltiples y estados fixed-function, integración a renderer del juego y A/B/A real pendientes. [Informe técnico](docs/WSA_VULKAN_TEXTURE_2026-10-14.md). Estrategia vigente, **0/5 intentos**.
 
 ### 2026-10-14 — Vulkan experimental: primera geometría indexada con shaders SPIR-V (0/5)
 
@@ -980,7 +989,7 @@ See [`analysis/filesystem_vfs_phase.md`](analysis/filesystem_vfs_phase.md).
 - Added `Vfs::open_stream` with persistent `ReadStream` cursors for loose files, ZIP-stored members and raw-DEFLATE PK3 members. Input is refilled in fixed **32 KiB** blocks instead of allocating the complete uncompressed member.
 - The existing `Vfs::read_file` API remains unchanged for compatibility. The new stream validates ZIP headers/names, bounds and CRC/declared lengths upon reaching EOF; failed integrity checks remain latched for the lifetime of the cursor.
 - Updated `ReadOnlyHostAdapter` to retain one streaming cursor per opaque handle instead of an entire decompressed file. The guest VM bridge continues to stage requested bytes atomically before copying them into guest memory.
-- Synthetic tests cover partial reads, EOF, empty files, loose files, CRC failures and >150 KiB DEFLATE data spanning multiple input/output refills. The optional original-PK3 test now compares streamed bytes **byte-for-byte** against the previously verified eager reader for a multiplayer menu and a Spanish localized menu. Local AddressSanitizer/UndefinedBehaviorSanitizer checks of the synthetic VFS suite passed. 
+- Synthetic tests cover partial reads, EOF, empty files, loose files, CRC failures and >150 KiB DEFLATE data spanning multiple input/output refills. The optional original-PK3 test now compares streamed bytes **byte-for-byte** against the previously verified eager reader for a multiplayer menu and a Spanish localized menu. Local AddressSanitizer/UndefinedBehaviorSanitizer checks of the synthetic VFS suite passed.
 - **Limitations:** seeking is not yet implemented; ZIP CRC cannot be known until the stream is fully consumed. Loose-file opens remain vulnerable to a path-replacement race between path canonicalization and opening on filesystems modified concurrently; Android sandbox hardening is still needed. The VFS searchpath order remains provisional.
 - No original binaries or archives are included in commits.
 
