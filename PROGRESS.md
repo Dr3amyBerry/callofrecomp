@@ -13,7 +13,7 @@
 
 - [x] Añadidos script Linux fijado al commit oficial ANGLE `43140711d13063716fd32a15de829885d0bce469`, `gclient sync` con dependencias Android, build `x64` con Vulkan, SHA-256 y manifiesto de procedencia.
 - [x] Nuevo workflow GitHub Actions **solo manual** (`workflow_dispatch`), con permisos `contents:read`, sin activación al publicar commits; los runners gratuitos pueden carecer de recursos. Se añadió comprobador offline `verify_angle_apk.py` que exige identidad de paquete, firma Android, archivos ELF x86_64 y digest cuando se facilita.
-- [ ] **No se ejecutó todavía la compilación Linux**: no hay `AngleLibraries.apk` real, no se instalaron APK/driver, no hubo ensayo ANGLE→Vulkan ni comparación FPS. [Procedimiento reproducible](docs/ANGLE_BUILD_PIPELINE_2026-10-14.md). Prioridad oficial TECNO CPU/GPU intacta, **0/5**.
+- [ ] **Primera compilación Linux en GitHub Actions iniciada**: [run #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796), resultado todavía pendiente. No existe APK validada todavía, no se instalaron APK/driver en WSA, no hubo ensayo ANGLE→Vulkan ni comparación FPS. [Procedimiento reproducible](docs/ANGLE_BUILD_PIPELINE_2026-10-14.md). Prioridad oficial TECNO CPU/GPU intacta, **0/5**.
 
 ### 2026-10-14 — ANGLE oficial descargado; GLES2→Vulkan investigado sin modificar WSA (0/5)
 

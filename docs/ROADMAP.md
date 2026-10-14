@@ -9,7 +9,7 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 - [x] `tools/recomp/diagnostics/build_angle_android_linux.sh`: descarga oficial fijada, dependencias Chromium sincronizadas y compilación de `AngleLibraries.apk` x86_64/Vulkan bajo Linux; queda como receta, no se ha ejecutado.
 - [x] Workflow `angle-manual-build.yml`: **ejecución manual exclusivamente**, sin push automático, permisos mínimos, artefacto APK y comprobante de procedencia. El disco/tiempo disponible en runners estándar no está garantizado.
 - [x] `verify_angle_apk.py`: comprobación local de SHA-256, cabecera ELF x86_64 de EGL/GLESv2, package name mediante aapt y verificación de firma mediante apksigner. Validez de firma no equivale a firma oficial Google.
-- [ ] Obtener binario compilado de forma real y ejecutar inspección estricta; posteriormente ensayo por aplicación en WSA con rollback y Logcat Vulkan, seguido de A/B/A. **0/5**. [Documentación](ANGLE_BUILD_PIPELINE_2026-10-14.md).
+- [ ] Obtener binario compilado de forma real y ejecutar inspección estricta: [primer workflow Linux en marcha, run #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796), sin resultado final todavía. Posteriormente ensayo por aplicación en WSA con rollback y Logcat Vulkan, seguido de A/B/A. **0/5**. [Documentación](ANGLE_BUILD_PIPELINE_2026-10-14.md).
 
 ## Evaluación ANGLE GLES2→Vulkan y preparación de prueba por aplicación (2026-10-14)
 

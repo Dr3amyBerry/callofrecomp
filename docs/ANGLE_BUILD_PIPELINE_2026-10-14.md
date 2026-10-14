@@ -1,6 +1,6 @@
 # ANGLE: compilación Linux reproducible y aislada (2026-10-14)
 
-**Estado:** infraestructura de compilación preparada, NO resultado de compilación. Continúa el bloqueo de no tener un Linux local en el equipo Windows; aún no se ha generado ni instalado un APK ANGLE. No se ha medido el juego con ANGLE ni se ha modificado la APK estable.
+**Estado:** infraestructura de compilación preparada y primera ejecución GitHub Actions **iniciada** ([run #38591658796](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38591658796)), todavía SIN resultado final de compilación ni APK comprobada. Continúa la ausencia de Linux local en Windows; ANGLE no está instalado en WSA. No se ha medido el juego con ANGLE ni se ha modificado la APK estable.
 
 ## Propósito
 
@@ -10,7 +10,7 @@ Evitar instalar una distribución Linux o herramientas Chromium en Windows/WSA h
 
 - Opción aislada con Linux propio (requiere espacio libre considerable y herramientas/dependencias apt):
   `ANGLE_INSTALL_BUILD_DEPS=1 bash tools/recomp/diagnostics/build_angle_android_linux.sh /ruta/temporal/angle-android-work`
-- Opción GitHub Actions **manual**, sin ejecutar automáticamente con commits: pestaña Actions → *ANGLE Android x86_64 manual experiment* → *Run workflow*. El workflow solo se activa por `workflow_dispatch`, sin acceso a secretos ni paquetes del juego, con un timeout de 240 minutos y artefactos de 7 días. La capacidad de disco de los runners estándar y el tiempo de build no se han demostrado suficientes; podría fallar por recursos. No se ha activado este workflow.
+- Opción GitHub Actions **manual**, sin ejecutar automáticamente con commits: pestaña Actions → *ANGLE Android x86_64 manual experiment* → *Run workflow*. El workflow solo se activa por `workflow_dispatch`, sin acceso a secretos ni paquetes del juego, con un timeout de 240 minutos y artefactos de 7 días. La capacidad de disco de los runners estándar y el tiempo de build no se han demostrado suficientes; podría fallar por recursos. La primera ejecución está en curso, sin resultado final.
 - Salida esperada: `angle/out/Android/apks/AngleLibraries.apk` con `AngleLibraries.apk.sha256` y `ANGLE_PROVENANCE.txt`. No se descarga un APK aleatorio ni se trata un checksum autogenerado como firma del fabricante.
 
 ## Verificación independiente del artefacto
