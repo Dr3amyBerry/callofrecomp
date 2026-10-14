@@ -16,6 +16,8 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--gl-time-profile', proc.stdout)
         self.assertIn('--render-o2', proc.stdout)
         self.assertIn('--hot-x87-transform', proc.stdout)
+        self.assertIn('--fast-copy32', proc.stdout)
+        self.assertIn('--visibility-o2', proc.stdout)
 
 if __name__ == '__main__':
     unittest.main()

@@ -15,6 +15,15 @@ Initial milestone: boot the Call of Duty 1.5 single-player code path on Android 
 
 
 
+## TECNO ARM64: copy32 y visibilidad -O2 (sin nuevo aumento de FPS)
+
+- [x] Especialización privada de la copia `0x0042B0A0`: **17.000 diferenciales completos en ARM64 y 249.371 bloques** equivalentes a la traducción p-code; A/B/A de FPS **25,45 / 25,10 / 25,30** (referencia/candidato/referencia). Sin ganancia. Flag **OFF por defecto**.
+- [x] Compilar solo `codsp_recomp_p8.c` con `-O2 -ffp-contract=off`: A/B/A **25,30 / 25,50 / 25,45**. Diferencia de solo 0,05 FPS frente a la repetición; no es mejora aceptada. Flag **OFF por defecto**.
+- [x] Se mantienen el avance x87 (+19,58 % frente a la versión inicial), la APK de referencia en el teléfono y la visión panorámica/HUD ya corregidos.
+- [ ] Próxima intervención: optimización semánticamente equivalente *dentro* de geometría/colisiones (`0x0041B8F0`, `0x004196F0`) o visibilidad (`0x004Dxxxx`), con pruebas completas de estado + nuevo A/B/A. **60 FPS sostenidos pendientes.**
+
+[Ver resultados detallados de ambos ensayos](ARM64_PERF_EXPERIMENTS_2026-10-14.md).
+
 ## Health bar and circular objective stars (corrected on TECNO)
 
 - [x] Scale all Health script children (cross, backdrop, fill) together,

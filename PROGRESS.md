@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player  
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Rendimiento: dos experimentos ARM64 descartados tras A/B/A
+
+- [x] Restaurada la investigación del perfil físico: CoDSP `0x0042B0A0` (copia; 152 muestras) y visibilidad `0x004D8280`, `0x004D94C0`, `0x004D8420`, `0x004D6BC0` (587 muestras combinadas, no tiempos exactos).
+- [x] Ruta de copia32 **optativa OFF por defecto** (`--fast-copy32`); prueba de equivalencia en el TECNO de **17.000 llamadas completas, 249.371 bloques** frente al p-code, estado total de registros/banderas/RAM/PC idéntico. A/B/A estable: **25,45 → 25,10 → 25,30 FPS** (A1/B/A2); **no mejoró** el juego.
+- [x] Compilación selectiva `-O2 -ffp-contract=off` para CoDSP `p8`, con `--visibility-o2` **OFF por defecto**. A/B/A estable: **25,30 → 25,50 → 25,45 FPS** (A1/B/A2). La diferencia de +0,05 FPS frente a A2 **no es significativa**.
+- [x] Ambos ensayos usaron el mismo guardado de training en TECNO CK6n/Equilibrado, 40 ventanas estables por corrida, sin perfilador intrusivo; APK experimental firmada y datos privados preservados. **96 pruebas Python (4 omitidas), 28/28 CTest**.
+- [x] Restaurada la APK x87 de referencia en el teléfono; la configuración normal queda con copy32 OFF y visibilidad -O2 OFF, **conservando x87 optativo que demostró +19,58 % y todas las reparaciones panorámicas/HUD**.
+- [ ] Sigue siendo obligatorio conseguir **60 FPS sostenidos en el spawn**. Próximo paso de trabajo: estudiar subcálculos dentro de geometría `0x0041B8F0`/ `0x004196F0` y visibilidad `0x004Dxxxx`, probar equivalencia de estado y FPS A/B/A, sin retocar calidad.
+- Investigación, comandos y resultados: [experimentos ARM64 posteriores a x87](docs/ARM64_PERF_EXPERIMENTS_2026-10-14.md).
+
 ### 2026-10-14 — Barra de salud y estrellas circulares sin deformación
 
 - [x] La salud en `ui/hud.menu` seguía con las medidas virtuales 4:3: cruz 12×12, fondo 130×12 y relleno 128×10. `HudWidescreen.patchHealth` aplica el factor horizontal común **0,60** (TECNO 1280×576), conserva el 100 % del avance de salud, altura y esquina derecha (borde original x=631). Menús modificados/no reconocidos se dejan intactos.

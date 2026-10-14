@@ -83,6 +83,31 @@ if(CODRECOMP_HOT_X87_FASTPATH)
   set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND PROPERTY
     COMPILE_OPTIONS "-ffp-contract=off")
 endif()
+# Opt-in targeted compiler experiment for the original 1.5 0x004Dxxxx
+# frustum/visibility traversal group. All four hottest visibility functions
+# reside in CoDSP generated partition p8. Preserve strict FP expression
+# ordering while testing the compiler optimizer; no global -O2 or fast-math.
+option(CODRECOMP_VISIBILITY_O2 "Use -O2 for CoDSP visibility partition p8 only" OFF)
+if(CODRECOMP_VISIBILITY_O2)
+  set(visibility_part "${RECOMP_SOURCE_DIR}/codsp_recomp_p8.c")
+  if(NOT EXISTS "${visibility_part}")
+    message(FATAL_ERROR "Required experimental CoDSP visibility part p8 missing")
+  endif()
+  set_property(SOURCE "${visibility_part}" APPEND PROPERTY COMPILE_OPTIONS
+    "-O2;-ffp-contract=off")
+endif()
+# Opt-in CoDSP 1.5 32-byte MOV-loop specialization. The default build
+# follows the original generated MOV instructions unchanged; only the
+# ignored CoDSP generated p1 translation unit sees the compile definition.
+option(CODRECOMP_CODSP_COPY32_FASTPATH "Experimental CoDSP 1.5 guarded copy32 loop" OFF)
+if(CODRECOMP_CODSP_COPY32_FASTPATH)
+  set(copy_part "${RECOMP_SOURCE_DIR}/codsp_recomp_p1.c")
+  if(NOT EXISTS "${copy_part}")
+    message(FATAL_ERROR "Required private CoDSP p1 copy source missing")
+  endif()
+  set_property(SOURCE "${copy_part}" APPEND PROPERTY
+    COMPILE_DEFINITIONS CODRECOMP_CODSP_COPY32_FASTPATH)
+endif()
 target_compile_options(main PRIVATE -O1 -Wno-unused-function)
 target_link_libraries(main PRIVATE SDL2 GL log android m dl)
 target_link_libraries(GL m dl)

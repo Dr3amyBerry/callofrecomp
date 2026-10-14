@@ -29,6 +29,10 @@ change alters objective scripts or simulation timing. Automated budget tests and
 build/regression checks do not establish performance or presentation on a real
 phone; manual checks remain with the user in flash mode.
 
+## October 14: two failed ARM64 performance experiments
+
+Two opt-in experiments were checked on the physical TECNO CK6n in the **same training spawn** after the confirmed native x87 improvement (+19.58% FPS). A full p-code-equivalent 32-byte copy implementation at CoDSP `0x0042B0A0` passed **17,000** complete ARM64 differential calls but gave median A/B/A **25.45 / 25.10 / 25.30 FPS**. Selective `-O2 -ffp-contract=off` on the CoDSP visibility partition p8 gave **25.30 / 25.50 / 25.45 FPS**. These are **NOT new FPS improvements**. `--fast-copy32` and `--visibility-o2` both remain **OFF by default**, with reference APK restored on the phone. The 60-FPS training-spawn target remains unmet. Full methodology, private log filenames and next priorities: [ARM64 experiments report](ARM64_PERF_EXPERIMENTS_2026-10-14.md).
+
 ## October 14: HUD aspect corrections are not FPS optimizations
 
 On the TECNO CK6n, the launcher keeps 1280×576 aspect 2.2222 and

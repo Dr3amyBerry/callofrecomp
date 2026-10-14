@@ -49,6 +49,10 @@ def main():
                         help="experiment: compile CoDSP renderer partitions p10 and p11 with -O2")
     parser.add_argument("--hot-x87-transform", action="store_true",
                         help="experiment: native CoDSP 1.5 vector transform; default OFF")
+    parser.add_argument("--fast-copy32", action="store_true",
+                        help="experiment: accelerate CoDSP 1.5 32-byte copy loop; default OFF")
+    parser.add_argument("--visibility-o2", action="store_true",
+                        help="experiment: compile only CoDSP visibility p8 with -O2; default OFF")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
     if not args.sdk or not args.java:
@@ -69,6 +73,11 @@ def main():
     exe = ".exe" if os.name == "nt" else ""
     batch = ".bat" if os.name == "nt" else ""
     if not args.package_only:
+        if args.fast_copy32:
+            # Recompilation output is private/ignored; fail closed if exact
+            # original CoDSP 1.5 generated labels are missing.
+            run(sys.executable, root / 'tools/recomp/patch_codsp_copy32.py',
+                root / 'recomp_out/codsp_recomp_p1.c')
         for name, (url, revision) in DEPENDENCIES.items():
             path = deps / name
             if not path.exists():
@@ -89,6 +98,8 @@ def main():
             f"-DCODRECOMP_GL_TIMING={'ON' if args.gl_time_profile else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
+            f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",
+            f"-DCODRECOMP_VISIBILITY_O2={'ON' if args.visibility_o2 else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")
         run("cmake", "--build", native, "--parallel", args.jobs)
     classes, dex = package / "classes", package / "dex"

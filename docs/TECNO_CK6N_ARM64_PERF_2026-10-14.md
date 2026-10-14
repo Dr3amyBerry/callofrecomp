@@ -202,6 +202,10 @@ No publicar datos privados ni originales comerciales.
 el resultado comparativo demostrado sigue siendo 25,65 FPS frente
 a 21,45 FPS (+19,58 %) en la misma vista.
 
+## Seguimiento: dos experimentos ARM64 sin mejora (14 de octubre)
+
+Después de arreglar la brújula y la salud se completaron dos comparaciones A/B/A adicionales, siempre con x87 activado y el mismo guardado en el TECNO. Copia de 32 bytes en `0x0042B0A0`: **25,45 / 25,10 / 25,30 FPS**; visibilidad p8 compilada a `-O2`: **25,30 / 25,50 / 25,45 FPS** (A1/B/A2). Las opciones están **desactivadas por defecto**, no se acepta ninguna como mejora de FPS. Las **96 pruebas Python (4 omisiones)** y **28/28 CTest** pasaron, así como 17.000 diferenciales ARM64 de la copia; consultar la [investigación y próximos pasos](ARM64_PERF_EXPERIMENTS_2026-10-14.md). Se restauró la APK x87 de referencia en el TECNO. Meta final **60 FPS sostenidos en spawn: pendiente**.
+
 ## Cómo repetir y continuar
 
 La herramienta pública de comparación sin conexión es
