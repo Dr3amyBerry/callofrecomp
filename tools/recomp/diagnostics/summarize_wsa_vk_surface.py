@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Parse native WSA Vulkan presentation-probe logs.
 
-Input workload is an isolated Vulkan clear, mesh, texture, or depth/stencil+blend demo,
+Input workload is an isolated Vulkan clear, mesh, texture, alpha-test, or depth/stencil+blend demo,
 never full CallofRecomp gameplay. Do not claim an in-game FPS improvement.
 """
 from __future__ import annotations
@@ -22,7 +22,8 @@ RESULT = re.compile(
     r"present_wall_ms_per_frame=(\d+(?:\.\d+)?) "
     r"present_mode=(\w+) resolution=(\d+)x(\d+)"
 )
-SCENE = re.compile(r'VK_SCENE name=(clear|mesh|texture|depth), integration=standalone, gameplay=0')
+SCENE = re.compile(r'VK_SCENE name=(clear|mesh|texture|depth|alpha), integration=standalone, gameplay=0')
+ALPHA_READY = re.compile(r'VK_ALPHA_READY env_modes=(\w+) alpha_func=(\w+) alpha_ref=([0-9.]+) alpha_source=(\w+) draws_per_frame=(\d+)')
 DEPTH_READY = re.compile(r'VK_DEPTH_READY format=(\d+) attachments=(\d+) depth_test=(\w+) depth_write=(\d+) stencil=(\w+) blend=(\w+) draws_per_frame=(\d+)')
 TEXTURE_READY = re.compile(r'VK_TEXTURE_READY width=(\d+) height=(\d+) mip_levels=(\d+) descriptor_sets=(\d+) sampler=(\w+) transfer=(\w+) image_layout=(\w+)')
 MESH_READY = re.compile(r'VK_MESH_READY vertices=(\d+) indices=(\d+) draws_per_frame=(\d+) procedural_checker=(\d+)')
@@ -42,16 +43,16 @@ def parse_one(text: str)->dict:
     if len(scenes)>1:raise ValueError('Conflicting scene markers in one session')
     scene=scenes[0] if scenes else 'clear'  # Older clear-only builds have no marker.
     meshes=MESH_READY.findall(latest)
-    if scene in ('mesh','texture','depth') and len(meshes)!=1:
+    if scene in ('mesh','texture','depth','alpha') and len(meshes)!=1:
         raise ValueError('Mesh/texture scene missing pipeline/buffer/draw readiness marker')
     if scene=='clear' and meshes:
         raise ValueError('Clear scene unexpectedly reports indexed mesh resources')
     textures=TEXTURE_READY.findall(latest)
-    if scene in ('texture','depth') and len(textures)!=1:
+    if scene in ('texture','depth','alpha') and len(textures)!=1:
         raise ValueError('Texture scene missing Vulkan VkImage/descriptor readiness marker')
-    if scene not in ('texture','depth') and textures:
+    if scene not in ('texture','depth','alpha') and textures:
         raise ValueError('Nontexture scene unexpectedly reports sampled VkImage')
-    if scene in ('texture','depth') and (meshes[0][3]!='0' or textures[0][5]!='staging' or
+    if scene in ('texture','depth','alpha') and (meshes[0][3]!='0' or textures[0][5]!='staging' or
                              textures[0][6]!='shader_read_only'):
         raise ValueError('Texture scene has inconsistent sampled-image configuration')
     depths=DEPTH_READY.findall(latest)
@@ -64,6 +65,18 @@ def parse_one(text: str)->dict:
                            depths[0][4]!='replace_equal' or depths[0][5]!='alpha_over' or
                            depths[0][6]!='4'):
         raise ValueError('Depth scene has inconsistent depth/stencil/blend configuration')
+    alphas=ALPHA_READY.findall(latest)
+    if scene=='alpha' and len(alphas)!=1:
+        raise ValueError('Alpha scene missing texture-env/fragment-discard readiness marker')
+    if scene!='alpha' and alphas:
+        raise ValueError('Non-alpha scene unexpectedly reports fragment-discard resources')
+    if scene=='alpha' and (meshes[0][2]!='2' or
+                           alphas[0][0]!='modulate_replace' or
+                           alphas[0][1]!='greater' or
+                           float(alphas[0][2])!=0.5 or
+                           alphas[0][3]!='rgba8_texture' or
+                           alphas[0][4]!='2'):
+        raise ValueError('Alpha scene has inconsistent env-mode or alpha-discard configuration')
     if len(r)!=1 or len(p)!=1 or len(w)<10:
         raise ValueError(f'Incomplete Vulkan presentation run: result={len(r)} ready={len(p)} windows={len(w)}')
     fps=float(r[0][0])
@@ -78,7 +91,9 @@ def parse_one(text: str)->dict:
     return {
         'type':'Standalone Vulkan Android '+scene+' benchmark, NOT CallofRecomp',
         'scene':scene,
-        'workload':('four indexed textured draws, independent per-swapchain depth/stencil, occlusion, stencil-clipped alpha blend; no game assets/simulation/HUD'
+        'workload':('two textured indexed draws comparing MODULATE vs REPLACE with fragment alpha-test discard; no gameplay/HUD/assets'
+                    if scene=='alpha' else
+                    'four indexed textured draws, independent per-swapchain depth/stencil, occlusion, stencil-clipped alpha blend; no game assets/simulation/HUD'
                     if scene=='depth' else
                     'indexed quad with sampled VkImage RGBA8, staging copy, descriptor/sampler and shaders; no game assets/simulation/HUD'
                     if scene=='texture' else
@@ -88,14 +103,14 @@ def parse_one(text: str)->dict:
         'mesh':({'vertices':int(meshes[0][0]),'indices':int(meshes[0][1]),
                  'draws_per_frame':int(meshes[0][2]),
                  'procedural_checker':bool(int(meshes[0][3]))}
-                if scene in ('mesh','texture','depth') else None),
+                if scene in ('mesh','texture','depth','alpha') else None),
         'texture':({'width':int(textures[0][0]),'height':int(textures[0][1]),
                     'mip_levels':int(textures[0][2]),
                     'descriptor_sets':int(textures[0][3]),
                     'sampler':textures[0][4],
                     'transfer':textures[0][5],
                     'image_layout':textures[0][6]}
-                   if scene in ('texture','depth') else None),
+                   if scene in ('texture','depth','alpha') else None),
         'depth':({'format':int(depths[0][0]),
                   'per_swapchain_attachments':int(depths[0][1]),
                   'depth_test':depths[0][2],
@@ -104,6 +119,12 @@ def parse_one(text: str)->dict:
                   'blend':depths[0][5],
                   'draws_per_frame':int(depths[0][6])}
                  if scene=='depth' else None),
+        'alpha_test':({'env_modes':alphas[0][0],
+                       'alpha_func':alphas[0][1],
+                       'reference':float(alphas[0][2]),
+                       'source':alphas[0][3],
+                       'draws_per_frame':int(alphas[0][4])}
+                      if scene=='alpha' else None),
         'wsa_only':True,
         'gameplay_fps_comparable':False,
         'gpu_name':p[0][2],

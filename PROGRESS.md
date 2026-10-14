@@ -9,6 +9,17 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — TexEnv MODULATE/REPLACE y descarte alfa Vulkan (0/5)
+
+- [x] Modelo tipado GL registra `glTexEnv[i/f/iv/fv]` en su **unidad activa**, con modos GL_MODULATE (por defecto) y GL_REPLACE; DECAL, BLEND, ADD y COMBINE continúan en **fail-closed** sin shader equivalente.
+- [x] `gen_gl.py` incorpora los cuatro hooks de estado `glTexEnv*` sin editar manualmente 486 wrappers ni sustituir OpenGL/GL4ES en la APK normal.
+- [x] Nuevo prototipo Vulkan independiente WSA `--scene alpha` dibuja **2 quads indexados** usando una textura RGBA8 con píxeles alfa 0/255 y un fragment shader de `discard` para `GL_GREATER` con umbral 0.5.
+- [x] Validación visual WSA: gradientes a la izquierda con MODULATE, colores amarillos originales a la derecha con REPLACE, huecos transparentes en ambos. **1.276 frames / 17,004 s = 75,043 FPS**, CPU del hilo **1,99041 ms/frame**, FIFO 75 Hz: **no representa FPS del juego**.
+- [x] Tests de estados y generador, 11 tests de parser de escena Vulkan, sintaxis NDK ARM64, compilación de APKs prototipo texture/depth anteriores. **138 tests Python (4 omitidas), 32/32 CTest** aprobadas.
+- [x] Registro anterior de gameplay y datos A1/A2/B1/A3 conservados sin repetir; APK A1 original instalada y SHA-256 verificado.
+- [ ] Quedan otros modos TexEnv, multitextura/combiners, uploads/samplers del juego, matrices y traducción completa de draw calls. [Informe de avance](docs/WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md). Contador **0/5** sin cambios.
+
+- [x] Cierre: compilaciones x86_64 del juego con captura **ON** y normal **OFF** verificadas, final `CODRECOMP_GL_VK_STATE_CAPTURE=OFF` en cache; APK original WSA intacta por hash SHA-256.
 ### 2026-10-14 — Puente tipado OpenGL → Vulkan: captura de estados del juego real (0/5)
 
 - [x] Modelo `gl_vk_state` para depth, blending, stencil, culling, alpha test, matrices column-major y unidades de textura; rechazo explícito de enums/estados sin equivalencia.

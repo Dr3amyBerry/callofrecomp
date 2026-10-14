@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Hito de compatibilidad TexEnv y alpha test (sin A/B del juego)
+
+El prototipo WSA implementa ahora `glTexEnv` MODULATE/REPLACE por unidad y un shader con descarte de fragmentos por prueba alfa; la captura de la escena muestra dos quads con texturas/colores correctos y huecos por alfa. **75,043 FPS FIFO** del prototipo independiente **NO equivalen al juego completo ni demuestran aceleración de CallofRecomp**. Captura del juego anterior (164 snapshots) no se repitió; el registro continúa advirtiendo estados sin traducir. [Informe](WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md). Estrategia y contador 0/5 intactos.
+
 ## Diagnóstico GL→Vulkan del juego real, sin intento de optimización
 
 Un observador optativo generado por `gen_gl.py` rastreó la partida GL4ES de WSA, entre menú y entrenamiento. El análisis de **164 muestras** encontró **0 estados declarados equivalentes en el subconjunto traducido** y máscara `0x19`: capacidades no traducidas, estado de texturas y API GL heredada. El traductor genera estructuras Vulkan válidas para depth/stencil, blending y culling, pero **no** es un renderer completo. El log es una captura de compatibilidad, no permite medir FPS nuevos ni atribuir aceleración a Vulkan. Se restauró la APK original exacta; el contador sigue en **0/5**. [Documentación y siguiente cobertura](GL_VK_STATE_BRIDGE_2026-10-14.md).

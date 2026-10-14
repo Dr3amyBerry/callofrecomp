@@ -65,6 +65,44 @@ class WsaVkSurfaceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'sampled-image'):
             parse_one(prefix.replace('procedural_checker=0','procedural_checker=1'))
 
+    def test_alpha_discard_and_texenv_distinct_from_game(self):
+        prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
+                "VK_MESH_READY vertices=4 indices=6 draws_per_frame=2 procedural_checker=0\n"
+                "VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
+                "sampler=nearest transfer=staging image_layout=shader_read_only\n"
+                "VK_ALPHA_READY env_modes=modulate_replace alpha_func=greater alpha_ref=0.500 "
+                "alpha_source=rgba8_texture draws_per_frame=2\n"
+                "VK_SCENE name=alpha, integration=standalone, gameplay=0\n"
+                "VK_READY width=1280 height=720 gpu=AMD image_count=5 fifo=2 "
+                "immediate_available=0 present_mode=2\n")
+        window="VK_WINDOW fps=75.000 frames=75 elapsed=1.000 thread_cpu_ms_per_frame=2.0500\n"
+        result=("VK_RESULT fps=75.000 frames=1275 seconds=17.000 "
+                "thread_cpu_ms_per_frame=2.05000 acquire_wall_ms_per_frame=11.00000 "
+                "present_wall_ms_per_frame=0.02500 present_mode=FIFO resolution=1280x720")
+        data=parse_one(prefix+window*16+result)
+        self.assertEqual(data["scene"],"alpha")
+        self.assertFalse(data["gameplay_fps_comparable"])
+        self.assertEqual(data["alpha_test"]["env_modes"],"modulate_replace")
+        self.assertEqual(data["alpha_test"]["reference"],0.5)
+        self.assertEqual(data["alpha_test"]["draws_per_frame"],2)
+        self.assertIsNone(data["depth"])
+        self.assertIn("MODULATE",data["workload"])
+
+    def test_alpha_without_shader_or_wrong_draw_count_rejected(self):
+        prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
+                "VK_MESH_READY vertices=4 indices=6 draws_per_frame=2 procedural_checker=0\n"
+                "VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
+                "sampler=nearest transfer=staging image_layout=shader_read_only\n"
+                "VK_SCENE name=alpha, integration=standalone, gameplay=0\n")
+        with self.assertRaisesRegex(ValueError,"fragment-discard"):
+            parse_one(prefix)
+        marker=("VK_ALPHA_READY env_modes=modulate_replace alpha_func=greater "
+                "alpha_ref=0.500 alpha_source=rgba8_texture draws_per_frame=2\n")
+        with self.assertRaisesRegex(ValueError,"inconsistent env-mode"):
+            parse_one(prefix+marker.replace("draws_per_frame=2","draws_per_frame=1"))
+        with self.assertRaisesRegex(ValueError,"Non-alpha"):
+            parse_one(prefix.replace("name=alpha","name=texture")+marker)
+
     def test_depth_stencil_alpha_blend_scene_has_distinct_identity(self):
         prefix=("VK_INIT NativeActivity created; waiting for Android surface\n"
                 "VK_MESH_READY vertices=4 indices=6 draws_per_frame=4 procedural_checker=0\n"

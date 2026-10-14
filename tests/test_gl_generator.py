@@ -30,6 +30,9 @@ COMMANDS = {
     'glMultMatrixf': [('void *', 'matrix')],
     'glStencilFunc': [('GLenum', 'func'), ('GLint', 'ref'), ('GLuint', 'mask')],
     'glTexEnvi': [('GLenum', 'target'), ('GLenum', 'pname'), ('GLint', 'param')],
+    'glTexEnvf': [('GLenum','target'),('GLenum','pname'),('GLfloat','param')],
+    'glTexEnviv': [('GLenum','target'),('GLenum','pname'),('void *','param')],
+    'glTexEnvfv': [('GLenum','target'),('GLenum','pname'),('void *','param')],
     'glAlphaFunc': [('GLenum', 'func'), ('GLfloat', 'ref')],
     'glTranslatef': [('GLfloat', 'x'), ('GLfloat', 'y'), ('GLfloat', 'z')],
 
@@ -76,6 +79,10 @@ class GLGenerationTest(unittest.TestCase):
             self.assertIn('GLVK_OP_LOAD_MATRIX_F, 0, 0, 0, GP(ARG(esp, 0))',s)
             self.assertIn('GLVK_OP_STENCIL_FUNC, ARG(esp, 0), ARG(esp, 1), ARG(esp, 2)',s)
             self.assertIn('GLVK_OP_UNSUPPORTED_STATE',s)
+            self.assertIn('GLVK_OP_TEX_ENV_I, ARG(esp, 0), ARG(esp, 1), ARG(esp, 2)',s)
+            self.assertIn('GLVK_OP_TEX_ENV_F, ARG(esp, 0), ARG(esp, 1), ARG(esp, 2)',s)
+            self.assertIn('GLVK_OP_TEX_ENV_IV, ARG(esp, 0), ARG(esp, 1), 0, GP(ARG(esp, 2))',s)
+            self.assertIn('GLVK_OP_TEX_ENV_FV, ARG(esp, 0), ARG(esp, 1), 0, GP(ARG(esp, 2))',s)
             self.assertIn('GLVK_LEGACY_TEXTURE_STATE',s)
             self.assertIn('GLVK_LEGACY_MATRIX_TRANSFORM',s)
             self.assertIn('GLVK_OP_ALPHA_FUNC, ARG(esp, 0), ARG(esp, 1)',s)

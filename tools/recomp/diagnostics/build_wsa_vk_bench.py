@@ -36,7 +36,7 @@ def latest(root: Path) -> Path:
 def main():
     ap=argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--present',choices=['fifo','immediate'],default='fifo')
-    ap.add_argument('--scene',choices=['clear','mesh','texture','depth'],default='clear',
+    ap.add_argument('--scene',choices=['clear','mesh','texture','depth','alpha'],default='clear',
                     help='isolated clear baseline or real indexed Vulkan mesh; not game FPS')
     ap.add_argument('--sdk',type=Path,default=os.environ.get('ANDROID_HOME'))
     args=ap.parse_args()
@@ -75,17 +75,21 @@ def main():
     print('Compiling Vulkan NativeActivity',args.present,args.scene,flush=True)
     srcs=[SOURCE]
     shader_bins=[]
-    if args.scene in ('mesh','texture','depth'):
+    if args.scene in ('mesh','texture','depth','alpha'):
         srcs.append(MESH_SOURCE)
         srcs.append(TEXTURE_SOURCE)
         if args.scene=='depth':
             srcs.extend([DEPTH_SOURCE,GL_STATE_SOURCE,GL_STATE_MAP_SOURCE])
+        elif args.scene=='alpha':
+            srcs.append(GL_STATE_SOURCE)
         compiler=ndk/'shader-tools/windows-x86_64/glslc.exe'
         validator=ndk/'shader-tools/windows-x86_64/spirv-val.exe'
         if not compiler.is_file() or not validator.is_file():
             raise RuntimeError('NDK glslc and spirv-val are required for mesh scene')
         for stage in ('vert','frag'):
-            name='wsa_texture.frag' if stage=='frag' and args.scene in ('texture','depth') else 'wsa_mesh.'+stage
+            name=('wsa_alpha.frag' if stage=='frag' and args.scene=='alpha' else
+                  'wsa_texture.frag' if stage=='frag' and args.scene in ('texture','depth') else
+                  'wsa_mesh.'+stage)
             shader=SHADERS/name
             target=dest/(name+'.spv')
             run(compiler,'--target-env=vulkan1.0',shader,'-o',target)
@@ -100,9 +104,10 @@ def main():
     run(clang,'-O2','-std=c11','-Wall','-Wextra','-Werror',
         '-D_POSIX_C_SOURCE=200809L',
         f'-DVK_BENCH_PREFER_IMMEDIATE={int(args.present=="immediate")}',
-        f'-DVK_BENCH_MESH_SCENE={int(args.scene in ("mesh","texture","depth"))}',
-        f'-DVK_BENCH_TEXTURE_SCENE={int(args.scene in ("texture","depth"))}',
+        f'-DVK_BENCH_MESH_SCENE={int(args.scene in ("mesh","texture","depth","alpha"))}',
+        f'-DVK_BENCH_TEXTURE_SCENE={int(args.scene in ("texture","depth","alpha"))}',
         f'-DVK_BENCH_DEPTH_SCENE={int(args.scene=="depth")}',
+        f'-DVK_BENCH_ALPHA_SCENE={int(args.scene=="alpha")}',
         '-shared','-fPIC','-Wl,-z,max-page-size=16384',
         *srcs,'-o',so,'-lvulkan','-landroid','-llog','-pthread')
     aapt=bt/('aapt2.exe' if os.name=='nt' else 'aapt2')

@@ -3818,7 +3818,7 @@ static uint32_t t_glTexEnvf(uint32_t esp) {
     const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexEnvf((int)ARG(esp, 0), (int)ARG(esp, 1), F32(ARG(esp, 2)));
     GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_TEXTURE_STATE, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_TEX_ENV_F, ARG(esp, 0), ARG(esp, 1), ARG(esp, 2), NULL);
     return 0;
 }
 
@@ -3830,7 +3830,7 @@ static uint32_t t_glTexEnvfv(uint32_t esp) {
     const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexEnvfv((int)ARG(esp, 0), (int)ARG(esp, 1), GP(ARG(esp, 2)));
     GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_TEXTURE_STATE, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_TEX_ENV_FV, ARG(esp, 0), ARG(esp, 1), 0, GP(ARG(esp, 2)));
     return 0;
 }
 
@@ -3842,7 +3842,7 @@ static uint32_t t_glTexEnvi(uint32_t esp) {
     const uint64_t gl_start_ns = GL_TIME_START();
     p_glTexEnvi((int)ARG(esp, 0), (int)ARG(esp, 1), (int)ARG(esp, 2));
     GL_TIME_END(GL_TIME_RENDER_STATE, gl_start_ns);
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_TEXTURE_STATE, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_TEX_ENV_I, ARG(esp, 0), ARG(esp, 1), ARG(esp, 2), NULL);
     return 0;
 }
 
@@ -3852,7 +3852,7 @@ static uint32_t t_glTexEnviv(uint32_t esp) {
     (void)esp;
     if (!p_glTexEnviv) gl_missing("glTexEnviv");
     p_glTexEnviv((int)ARG(esp, 0), (int)ARG(esp, 1), GP(ARG(esp, 2)));
-    GL_VK_OBSERVE(GLVK_OP_UNSUPPORTED_STATE, GLVK_LEGACY_TEXTURE_STATE, 0, 0, NULL);
+    GL_VK_OBSERVE(GLVK_OP_TEX_ENV_IV, ARG(esp, 0), ARG(esp, 1), 0, GP(ARG(esp, 2)));
     return 0;
 }
 

@@ -55,7 +55,7 @@ static VkResult allocate_for_image(VkPhysicalDevice physical,VkDevice device,
     return vkAllocateMemory(device,&ai,NULL,memory);
 }
 
-static void checker_pixels(uint8_t *bytes) {
+static void checker_pixels(uint8_t *bytes,int alpha_scene) {
     for(uint32_t y=0;y<VK_DEMO_TEX_SIZE;y++){
         for(uint32_t x=0;x<VK_DEMO_TEX_SIZE;x++){
             uint32_t offset=(y*VK_DEMO_TEX_SIZE+x)*4u;
@@ -63,7 +63,7 @@ static void checker_pixels(uint8_t *bytes) {
             bytes[offset+0]=(uint8_t)(light?245:33);
             bytes[offset+1]=(uint8_t)(light?232:46);
             bytes[offset+2]=(uint8_t)(light?30:210);
-            bytes[offset+3]=255;
+            bytes[offset+3]=(uint8_t)(alpha_scene ? (light?255:0) : 255);
         }
     }
 }
@@ -81,7 +81,7 @@ void vk_demo_texture_destroy(vk_demo_texture *t) {
 
 VkResult vk_demo_texture_create(vk_demo_texture *t,
                                 VkPhysicalDevice physical,VkDevice device,
-                                VkQueue queue,uint32_t queue_family) {
+                                VkQueue queue,uint32_t queue_family,int alpha_scene) {
     if(!t||!physical||!device||!queue)return VK_ERROR_INITIALIZATION_FAILED;
     memset(t,0,sizeof(*t));
     t->device=device;
@@ -112,7 +112,7 @@ VkResult vk_demo_texture_create(vk_demo_texture *t,
     void* mapped=NULL;
     r=vkMapMemory(device,staging_mem,0,size,0,&mapped);
     if(r!=VK_SUCCESS)goto fail;
-    checker_pixels(mapped);
+    checker_pixels(mapped,alpha_scene);
     vkUnmapMemory(device,staging_mem);
 
     VkImageCreateInfo image={0};

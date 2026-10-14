@@ -135,10 +135,53 @@ static void test_fail_closed(void){
     assert(!gl_vk_state_apply(&s,GLVK_OP_ACTIVE_TEXTURE,GLVK_TEXTURE0+6,0,0,NULL));
     assert(s.unsupported_flags&GLVK_UNSUPPORTED_TEXTURE);
 }
+
+static void test_texture_environment_modes_and_fail_closed(void) {
+    gl_vk_state state;
+    gl_vk_state_reset(&state);
+    assert(state.texture[0].env_mode==GLVK_MODULATE);
+    op(&state,GLVK_OP_TEX_ENV_I,GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,
+       GLVK_REPLACE,NULL);
+    assert(state.texture[0].env_mode==GLVK_REPLACE);
+    op(&state,GLVK_OP_ACTIVE_TEXTURE,GLVK_TEXTURE0+1,0,0,NULL);
+    op(&state,GLVK_OP_TEX_ENV_I,GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,
+       GLVK_MODULATE,NULL);
+    assert(state.texture[0].env_mode==GLVK_REPLACE);
+    assert(state.texture[1].env_mode==GLVK_MODULATE);
+    float mode_f=(float)GLVK_REPLACE;
+    uint32_t bits;
+    memcpy(&bits,&mode_f,sizeof(bits));
+    op(&state,GLVK_OP_TEX_ENV_F,GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,bits,NULL);
+    assert(state.texture[1].env_mode==GLVK_REPLACE);
+    mode_f=(float)GLVK_MODULATE;
+    op(&state,GLVK_OP_TEX_ENV_FV,GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,0,&mode_f);
+    assert(state.texture[1].env_mode==GLVK_MODULATE);
+    int32_t mode_i=GLVK_REPLACE;
+    op(&state,GLVK_OP_TEX_ENV_IV,GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,0,&mode_i);
+    assert(state.texture[1].env_mode==GLVK_REPLACE);
+    assert(gl_vk_state_pipeline_ready(&state));
+
+    /* 0x2101 is GL_DECAL: this scene has no shader equivalent yet. */
+    assert(!gl_vk_state_apply(&state,GLVK_OP_TEX_ENV_I,
+             GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,0x2101,NULL));
+    assert(state.texture[1].env_mode==GLVK_REPLACE);
+    assert(state.unsupported_flags&GLVK_UNSUPPORTED_LEGACY);
+    assert(!gl_vk_state_pipeline_ready(&state));
+    gl_vk_state_reset(&state);
+    assert(!gl_vk_state_apply(&state,GLVK_OP_TEX_ENV_I,
+             GLVK_TEXTURE_ENV,0x2201,GLVK_MODULATE,NULL));
+    assert(state.unsupported_flags&GLVK_UNSUPPORTED_LEGACY);
+    gl_vk_state_reset(&state);
+    assert(!gl_vk_state_apply(&state,GLVK_OP_TEX_ENV_FV,
+             GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,0,NULL));
+    assert(state.unsupported_flags&GLVK_UNSUPPORTED_PTR);
+}
+
 int main(void) {
     test_defaults_and_depth_stencil_blend();
     test_column_major_matrices_and_stacks();
     test_texture_units_are_separate();
+    test_texture_environment_modes_and_fail_closed();
     test_fail_closed();
     puts("GL state observer smoke: depth/stencil/blend/matrix/texture unit/fail-closed PASS");
     return 0;

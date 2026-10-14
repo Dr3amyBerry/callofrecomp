@@ -132,6 +132,10 @@ VK_CAPTURE = {
     'glCullFace': ('GLVK_OP_CULL_FACE', 'ARG(esp, 0)', '0', '0', 'NULL'),
     'glFrontFace': ('GLVK_OP_FRONT_FACE', 'ARG(esp, 0)', '0', '0', 'NULL'),
     'glAlphaFunc': ('GLVK_OP_ALPHA_FUNC', 'ARG(esp, 0)', 'ARG(esp, 1)', '0', 'NULL'),
+    'glTexEnvi': ('GLVK_OP_TEX_ENV_I', 'ARG(esp, 0)', 'ARG(esp, 1)', 'ARG(esp, 2)', 'NULL'),
+    'glTexEnvf': ('GLVK_OP_TEX_ENV_F', 'ARG(esp, 0)', 'ARG(esp, 1)', 'ARG(esp, 2)', 'NULL'),
+    'glTexEnviv': ('GLVK_OP_TEX_ENV_IV', 'ARG(esp, 0)', 'ARG(esp, 1)', '0', 'GP(ARG(esp, 2))'),
+    'glTexEnvfv': ('GLVK_OP_TEX_ENV_FV', 'ARG(esp, 0)', 'ARG(esp, 1)', '0', 'GP(ARG(esp, 2))'),
     'glActiveTexture': ('GLVK_OP_ACTIVE_TEXTURE', 'ARG(esp, 0)', '0', '0', 'NULL'),
     'glActiveTextureARB': ('GLVK_OP_ACTIVE_TEXTURE', 'ARG(esp, 0)', '0', '0', 'NULL'),
     'glBindTexture': ('GLVK_OP_BIND_TEXTURE', 'ARG(esp, 0)', 'ARG(esp, 1)', '0', 'NULL'),
@@ -149,7 +153,6 @@ VK_CAPTURE = {
 # Observing these does not permit assuming equivalent shaders or texture
 # samplers in the Vulkan prototype.
 VK_UNSUPPORTED = {
-    'glTexEnvi', 'glTexEnvf', 'glTexEnvfv', 'glTexEnviv',
     'glTexParameteri', 'glTexParameterf', 'glTexParameterfv', 'glTexParameteriv',
     'glTexImage2D', 'glTexSubImage2D',
     'glLightfv', 'glLightf', 'glMaterialfv', 'glMaterialf',

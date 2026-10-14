@@ -55,6 +55,8 @@ Después se detuvo el juego y se reinstaló **la APK exacta de referencia A1**, 
 - Finalmente `python tools/recomp/build_android.py --abi x86_64` construyó nuevamente la variante normal **sin captura**. El dispositivo quedó con la **APK original A1**, distinta y verificada por hash, y no se realizaron nuevas mediciones.
 - El histograma de familias recién instrumentado está disponible solo para ejecuciones futuras; el log histórico mantiene `legacy_family_totals_last=null` en el resumen y no puede desglosarse retroactivamente.
 
+**Actualización posterior:** los cuatro wrappers `glTexEnv[i/f/iv/fv]` ya registran un subconjunto limitado (MODULATE/REPLACE) y un shader Vulkan experimental ya ejerce `GL_GREATER` con `discard`. Las familias y modos pendientes se mantienen sin equivalencia y los 164 snapshots anteriores siguen siendo una observación del estado previo. [Nuevo hito de texturas/alfa](WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md).
+
 ## Qué falta exactamente
 
 1. **Identificar qué funciones reales explican el mayor volumen de flags** mediante histograma por familias en una captura futura; no asumir que todas las llamadas contadas son costosas.

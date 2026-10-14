@@ -331,10 +331,11 @@ static void *run_vulkan(void *arg) {
     REQUIRE(vk_demo_mesh_create(&v.mesh,v.physical,v.device,v.renderpass,
                                 v.width,v.height,ctx->activity->assetManager,
                                 v.queue,v.qfamily,VK_BENCH_TEXTURE_SCENE,
-                                VK_BENCH_DEPTH_SCENE),
+                                VK_BENCH_DEPTH_SCENE,VK_BENCH_ALPHA_SCENE),
             "indexed_mesh_pipeline");
     INFO("VK_MESH_READY vertices=4 indices=6 draws_per_frame=%d procedural_checker=%d",
-         VK_BENCH_DEPTH_SCENE?4:1,!VK_BENCH_TEXTURE_SCENE);
+         VK_BENCH_DEPTH_SCENE?4:VK_BENCH_ALPHA_SCENE?2:1,
+         !VK_BENCH_TEXTURE_SCENE);
 #if VK_BENCH_TEXTURE_SCENE
     INFO("VK_TEXTURE_READY width=64 height=64 mip_levels=1 descriptor_sets=1 "
          "sampler=nearest transfer=staging image_layout=shader_read_only");
@@ -395,7 +396,9 @@ static void *run_vulkan(void *arg) {
         begin.clearValueCount=2;
 #endif
         vkCmdBeginRenderPass(v.cmds[i],&begin,VK_SUBPASS_CONTENTS_INLINE);
-#if VK_BENCH_DEPTH_SCENE
+#if VK_BENCH_ALPHA_SCENE
+        vk_demo_mesh_draw_alpha(&v.mesh,v.cmds[i]);
+#elif VK_BENCH_DEPTH_SCENE
         vk_demo_mesh_draw_depth(&v.mesh,v.cmds[i]);
 #elif VK_BENCH_MESH_SCENE
         vk_demo_mesh_draw(&v.mesh,v.cmds[i]);
@@ -422,8 +425,14 @@ static void *run_vulkan(void *arg) {
          "depth_write=1 stencil=replace_equal blend=alpha_over draws_per_frame=4",
          (int)v.depth_format,v.count);
 #endif
+#if VK_BENCH_ALPHA_SCENE
+    INFO("VK_ALPHA_READY env_modes=modulate_replace alpha_func=greater "
+         "alpha_ref=0.500 alpha_source=rgba8_texture draws_per_frame=2");
+#endif
     INFO("VK_SCENE name=%s, integration=standalone, gameplay=0",
-#if VK_BENCH_DEPTH_SCENE
+#if VK_BENCH_ALPHA_SCENE
+        "alpha");
+#elif VK_BENCH_DEPTH_SCENE
         "depth");
 #elif VK_BENCH_TEXTURE_SCENE
         "texture");

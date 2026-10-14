@@ -66,8 +66,10 @@ void gl_vk_state_reset(gl_vk_state *s) {
     s->matrix_mode=GLVK_MODELVIEW;
     identity(s->modelview.current);
     identity(s->projection.current);
-    for(unsigned i=0;i<GLVK_MAX_TEXTURE_UNITS;i++)
+    for(unsigned i=0;i<GLVK_MAX_TEXTURE_UNITS;i++){
         identity(s->texture[i].texture_matrix.current);
+        s->texture[i].env_mode=GLVK_MODULATE;
+    }
 }
 static int apply_cap(gl_vk_state *s,uint32_t cap,uint8_t enabled) {
     switch(cap) {
@@ -84,6 +86,19 @@ static int apply_cap(gl_vk_state *s,uint32_t cap,uint8_t enabled) {
             return 1;
         default:return invalid(s,GLVK_UNSUPPORTED_CAP);
     }
+}
+/* Fixed-function GL texture environment is per texture *unit*, not per
+ * texture object. Other modes (DECAL, BLEND, COMBINE, ADD) still fail closed
+ * until equivalent Vulkan fragment shaders are implemented. */
+static int tex_env_mode(gl_vk_state *s,uint32_t target,uint32_t pname,uint32_t mode) {
+    if(target!=GLVK_TEXTURE_ENV||pname!=GLVK_TEXTURE_ENV_MODE)
+        return invalid(s,GLVK_UNSUPPORTED_LEGACY);
+    if(s->active_texture>=GLVK_MAX_TEXTURE_UNITS)
+        return invalid(s,GLVK_UNSUPPORTED_TEXTURE);
+    if(mode!=GLVK_MODULATE&&mode!=GLVK_REPLACE)
+        return invalid(s,GLVK_UNSUPPORTED_LEGACY);
+    s->texture[s->active_texture].env_mode=mode;
+    return 1;
 }
 static int use_matrix(gl_vk_state *s,const float *incoming,int multiply) {
     gl_vk_matrix *m=current_matrix(s);
@@ -150,6 +165,34 @@ int gl_vk_state_apply(gl_vk_state *s,gl_vk_opcode op,
                 /* OpenGL alpha reference is clamped to [0,1]. */
                 s->alpha_ref=value<0.f?0.f:(value>1.f?1.f:value);
             }
+            break;
+        }
+        case GLVK_OP_TEX_ENV_I:
+            result=tex_env_mode(s,a,b,c);break;
+        case GLVK_OP_TEX_ENV_F: {
+            float value;
+            memcpy(&value,&c,sizeof(value));
+            if(!isfinite(value)||value<0.f||value>65535.f||
+               (float)(uint32_t)value!=value)
+                result=invalid(s,GLVK_UNSUPPORTED_LEGACY);
+            else result=tex_env_mode(s,a,b,(uint32_t)value);
+            break;
+        }
+        case GLVK_OP_TEX_ENV_IV: {
+            if(!pointer){result=invalid(s,GLVK_UNSUPPORTED_PTR);break;}
+            int32_t value;
+            memcpy(&value,pointer,sizeof(value));
+            result=tex_env_mode(s,a,b,(uint32_t)value);
+            break;
+        }
+        case GLVK_OP_TEX_ENV_FV: {
+            if(!pointer){result=invalid(s,GLVK_UNSUPPORTED_PTR);break;}
+            float value;
+            memcpy(&value,pointer,sizeof(value));
+            if(!isfinite(value)||value<0.f||value>65535.f||
+               (float)(uint32_t)value!=value)
+                result=invalid(s,GLVK_UNSUPPORTED_LEGACY);
+            else result=tex_env_mode(s,a,b,(uint32_t)value);
             break;
         }
         case GLVK_OP_ACTIVE_TEXTURE:

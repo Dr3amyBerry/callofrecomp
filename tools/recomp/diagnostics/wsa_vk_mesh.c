@@ -6,6 +6,8 @@
 #include "wsa_vk_mesh.h"
 #if VK_BENCH_DEPTH_SCENE
 #include "wsa_vk_gl_state_map.h"
+#elif VK_BENCH_ALPHA_SCENE
+#include "../runtime/gl_vk_state.h"
 #endif
 #include <android/asset_manager.h>
 #include <stddef.h>
@@ -74,22 +76,24 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
                             uint32_t width,uint32_t height,
                             AAssetManager *assets,
                             VkQueue queue,uint32_t queue_family,
-                            int textured,int depth_scene) {
+                            int textured,int depth_scene,int alpha_scene) {
     if(!m||!physical||!device||!renderpass||!width||!height||
-       (depth_scene&&!textured))
+       (depth_scene&&!textured)||(alpha_scene&&!textured)||
+       (depth_scene&&alpha_scene))
         return VK_ERROR_INITIALIZATION_FAILED;
     memset(m,0,sizeof(*m));
     m->device=device;
     m->index_count=INDEX_COUNT;
     m->textured=!!textured;
     m->depth_scene=!!depth_scene;
+    m->alpha_scene=!!alpha_scene;
     VkResult r=VK_ERROR_INITIALIZATION_FAILED;
     VkShaderModule vert=VK_NULL_HANDLE,frag=VK_NULL_HANDLE;
     VkShaderModule overlay=VK_NULL_HANDLE;
     r=load_shader(device,assets,"wsa_mesh.vert.spv",&vert);
     if(r!=VK_SUCCESS)goto fail;
-    r=load_shader(device,assets,m->textured ?
-                  "wsa_texture.frag.spv" : "wsa_mesh.frag.spv",&frag);
+    r=load_shader(device,assets,m->alpha_scene ? "wsa_alpha.frag.spv" :
+                  m->textured ? "wsa_texture.frag.spv" : "wsa_mesh.frag.spv",&frag);
     if(r!=VK_SUCCESS)goto fail;
     if(m->depth_scene) {
         r=load_shader(device,assets,"wsa_overlay.frag.spv",&overlay);
@@ -97,14 +101,17 @@ VkResult vk_demo_mesh_create(vk_demo_mesh *m,VkPhysicalDevice physical,
     }
 
     if(m->textured) {
-        r=vk_demo_texture_create(&m->texture,physical,device,queue,queue_family);
+        r=vk_demo_texture_create(&m->texture,physical,device,queue,queue_family,
+                                 m->alpha_scene);
         if(r!=VK_SUCCESS)goto fail;
     }
 
     VkPushConstantRange transform={0};
-    transform.stageFlags=VK_SHADER_STAGE_VERTEX_BIT;
+    transform.stageFlags=m->alpha_scene ?
+        (VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT) :
+        VK_SHADER_STAGE_VERTEX_BIT;
     transform.offset=0;
-    transform.size=sizeof(float)*16;
+    transform.size=sizeof(float)*(m->alpha_scene?20:16);
     VkPipelineLayoutCreateInfo layout={0};
     layout.sType=VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     layout.pushConstantRangeCount=1;
@@ -351,3 +358,53 @@ void vk_demo_mesh_draw_depth(const vk_demo_mesh *m,VkCommandBuffer cb) {
                        sizeof(transform),transform);
     vkCmdDrawIndexed(cb,m->index_count,1,0,0,0);
 }
+
+#if VK_BENCH_ALPHA_SCENE
+/* Two draws from the same RGBA8 texture: left GL_MODULATE, right GL_REPLACE.
+ * Dark texels carry alpha=0 and must be discarded by GL_GREATER, ref=0.5.
+ * Changes to the guest's GL state are simulated using the SAME typed model
+ * as gen_gl.py's observer; the real game is never diverted to this backend.
+ */
+void vk_demo_mesh_draw_alpha(const vk_demo_mesh *m,VkCommandBuffer cb) {
+    if(!m||!m->alpha_scene||!m->pipeline)return;
+    VkDeviceSize offset=0;
+    const VkDeviceSize index_offset=(sizeof(quad)+3u)&~(VkDeviceSize)3u;
+    vkCmdBindPipeline(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,m->pipeline);
+    vkCmdBindVertexBuffers(cb,0,1,&m->vertices_indices,&offset);
+    vkCmdBindIndexBuffer(cb,m->vertices_indices,index_offset,VK_INDEX_TYPE_UINT16);
+    vkCmdBindDescriptorSets(cb,VK_PIPELINE_BIND_POINT_GRAPHICS,m->layout,0,1,
+                            &m->texture.descriptor,0,NULL);
+    gl_vk_state state;
+    gl_vk_state_reset(&state);
+    uint32_t ref_bits=0x3f000000u; /* 0.5f, GLclampf guest ABI bits */
+    if(!gl_vk_state_apply(&state,GLVK_OP_ENABLE,GLVK_ALPHA_TEST,0,0,NULL)||
+       !gl_vk_state_apply(&state,GLVK_OP_ALPHA_FUNC,GLVK_GREATER,ref_bits,0,NULL)||
+       !gl_vk_state_apply(&state,GLVK_OP_ENABLE,GLVK_TEXTURE_2D,0,0,NULL))
+        return;
+    struct { float matrix[16]; float params[4]; } pc;
+    for(unsigned side=0;side<2;side++) {
+        const uint32_t env=side?GLVK_REPLACE:GLVK_MODULATE;
+        if(!gl_vk_state_apply(&state,GLVK_OP_TEX_ENV_I,
+                GLVK_TEXTURE_ENV,GLVK_TEXTURE_ENV_MODE,env,NULL))return;
+        if(state.unsupported_flags)return;
+        memset(&pc,0,sizeof(pc));
+        pc.matrix[0]=0.57f;
+        pc.matrix[5]=0.87f;
+        pc.matrix[10]=1.0f;
+        pc.matrix[12]=side?0.47f:-0.47f;
+        pc.matrix[15]=1.0f;
+        pc.params[0]=state.texture[0].env_mode==GLVK_REPLACE?1.0f:0.0f;
+        pc.params[1]=state.alpha_ref;
+        pc.params[2]=(float)state.alpha_func;
+        pc.params[3]=(float)state.enabled_alpha;
+        vkCmdPushConstants(cb,m->layout,
+                           VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,
+                           0,sizeof(pc),&pc);
+        vkCmdDrawIndexed(cb,m->index_count,1,0,0,0);
+    }
+}
+#else
+void vk_demo_mesh_draw_alpha(const vk_demo_mesh *m,VkCommandBuffer cb){
+    (void)m; (void)cb;
+}
+#endif

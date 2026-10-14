@@ -18,5 +18,6 @@ typedef struct vk_demo_texture {
 
 VkResult vk_demo_texture_create(vk_demo_texture *texture,
                                 VkPhysicalDevice physical, VkDevice device,
-                                VkQueue queue, uint32_t queue_family);
+                                VkQueue queue, uint32_t queue_family,
+                                int alpha_scene);
 void vk_demo_texture_destroy(vk_demo_texture *texture);
