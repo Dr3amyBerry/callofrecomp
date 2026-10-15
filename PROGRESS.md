@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 11: clasificación del solapamiento `memcpy` / `rd` / `wr`, OFFLINE
+
+- [x] Reutilizados exclusivamente **dos perfiles Simpleperf ya archivados** de CoDSP p4, con 1.017/889 muestras nativas; recuperadas exactamente **974/840 muestras** a PC original, sin una nueva ejecución en TECNO ni en WSA.
+- [x] Conteos inclusivos `memcpy` **409/353**, `rd` **233/204**, `wr` **154/123**; **todos los samples atribuidos a `rd`/`wr` tienen un marco `memcpy` más interno**. Eliminar el doble cómputo antes de priorizar costes; las clasificaciones de pila no equivalen a ciclos exclusivos ni a FPS.
+- [x] Nuevo auditor puro con tres pruebas sintéticas aprobadas y suite completa **260 Python (4 omitidas, 0 fallidas)**; el extractor y las capturas de CPU permanecen privados. [Informe de fase 11](docs/CPU_PHASE11_P4_INLINE_OVERLAP_OFFLINE_2026-10-14.md).
+- [ ] Próxima fase: inspeccionar ensamblado ARM64 y producir un candidato verificable de ahorro de cargas/copias de estado `rd`/`wr` manteniendo semántica original; **ningún cambio de producción habilitado**, 60 FPS pendientes.
+
 ### 2026-10-14 — Fase 10: TECNO A/B/A físico de p4 x87 perfilado, NO aprobado
 
 - [x] Ensayo con el TECNO CK6n (Camp Toccoa, Equilibrado, cámara estática): 55 s de juego por pasada y últimas 40 ventanas estables. Referencia **A1 26,00 FPS / 37,100 ms CPU**; candidata **B2 26,05 FPS / 36,980 ms CPU**; retorno **A2 25,90 FPS / 37,145 ms CPU**. B frente al promedio A: **+0,10 FPS (~0,39 %) y -0,1425 ms CPU (~0,38 %)**, sin mejora causal demostrada. P10 por ventanas, NO p10 de frames individuales.

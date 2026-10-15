@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 11 offline: evitar doble cómputo de `rd`/`wr`/ `memcpy` en Simpleperf
+
+Con el A/B/A de fase 10 cerrado, se reusaron dos perfiles históricos de chunks CoDSP p4 (**1.017/889 muestras; 974/840 atribuidas a PC guest**). La clase **más interna** de marcos DWARF fue `memcpy` en **409/353 muestras (~42 % de las atribuidas)**; `f2d` en **352/309**; `d2f` en **102/96**. Las muestras inclusivas de `rd` (**233/204**) y `wr` (**154/123**) están **enteramente solapadas con `memcpy`**; no son costes independientes para sumar. *Marco interno* NO equivale a tiempo exclusivo ni FPS: solo guía una auditoría futura del ensamblado, cargas/almacenamientos y equivalencia del estado completo. No se tocó la APK ni el TECNO. [Informe y pruebas](CPU_PHASE11_P4_INLINE_OVERLAP_OFFLINE_2026-10-14.md).
+
 ## Fase 10 TECNO: A/B/A físico de la candidata x87 p4 perfilada (DESCARTADA)
 
 Se cerró el experimento que las fases 8 y 9 dejaban pendiente de medición física. Mismo TECNO CK6n, Camp Toccoa, Equilibrado, **2400 × 1080** y cámara estática. **A1 26,00 FPS / 37,100 ms CPU**, **B2 26,05 FPS / 36,980 ms CPU**, **A2 25,90 FPS / 37,145 ms CPU** (medianas de las últimas 40 ventanas de 55 segundos por ejecución). B vs. media A: **+0,10 FPS (+0,39 %) / −0,1425 ms CPU (−0,38 %)**: variación insuficiente para atribuir una mejora real a p4 x87. Las ventanas no son fotogramas independientes; B1 no cargó por temporización de la navegación y no tiene FPS válidos. Solo cambia `libmain.so` entre las dos APK experimentales; las capturas del gameplay permanecen prácticamente iguales, no idénticas píxel a píxel.
