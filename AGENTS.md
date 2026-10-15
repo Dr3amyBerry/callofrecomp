@@ -79,3 +79,5 @@ Conservar TODA mejora positiva pequena como experimento rastreable; no descartar
 - Usar `tools/recomp/diagnostics/android_perf_environment.py` para observar temperatura HAL y relojes CPU en el TECNO sin modificar governors, afinidad ni potencia. El monitor tambien puede alterar el rendimiento y su overhead debe controlarse en mejoras inferiores al 1%.
 - Esperar gameplay estable por logs antes de capturar 40 ventanas. No hacer decenas de fotos. Fallar cerrado si la escena deriva.
 - Registrar pruebas en `docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md`. El atajo x87 double impreciso permanece BLOQUEADO.
+- Usar la referencia estable de la misma APK (p. ej. R3/R4) y `--expected-baseline-fps` del auditor para RECHAZAR A1/A2 aunque hayan sido temporalmente estables si el escenario es notoriamente mas lento. Esta guarda no se aplica a B.
+- La solicitud remota de cancelacion no demuestra que una instalacion se haya detenido: comprobar estado final del proceso, SHA256 APK y hashes de partidas; restaurar original verificado sin desinstalar ni borrar datos.

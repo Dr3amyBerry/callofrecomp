@@ -79,3 +79,12 @@ una mejora de renderer o de dispatch en ARM64 a la vez. **Nunca** integrar
 `--hot-x87-transform`: continúa bloqueado por divergencia con el x86
 original. Conservar código experimental positivo hasta disponer de evidencia
 de estabilidad, precisión y ventaja repetida.
+
+
+## Protección adicional: referencia externa a igual carga de trabajo
+
+La estabilidad temporal NO demuestra que dos corridas hayan reproducido exactamente la misma carga. En una repetición experimental posterior de copias x87, A1 llegó a calentamiento estable de ~16,85 FPS, pero la referencia R3/R4 previamente aceptada era 21,675 FPS, con la misma APK 0.2.4, calidad y recorrido previsto. Esa diferencia requiere rechazo de la referencia; no se publicaron deltas A/B.
+
+El auditor añadió las opciones `--expected-baseline-fps` y `--max-baseline-deviation-pct` (7 % por defecto). Solo A1/A2 deben aproximarse a una referencia externa validada; B1/B2 pueden superar libremente ese valor. Esta comprobación es una guarda adicional, NO prueba automática de identidad de escena/cámara. Las variaciones anómalas siguen siendo inconclusas y deberán investigarse.
+
+El ensayo se detuvo. La solicitud remota de cancelación tardó en hacerse efectiva y B alcanzó a instalarse: el operador detuvo exclusivamente el runner de esa sesión y restauró inmediatamente la 0.2.4 original mediante instalación conservando datos. Se verificaron el SHA256 exacto de la APK `fb8647c34dfe8fd269c0902f34edcc4c0844b18c6aa13ff6006232678da25f70` y el del save `efbc68e54fabc79946dfd3a9d188e5f6ba284b1aad99130bbe2726eb637f64f8`. Nunca considerar `cancel_requested` como restauración final; comprobar estado real del dispositivo.

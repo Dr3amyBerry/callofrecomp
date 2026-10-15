@@ -132,5 +132,41 @@ class StableFrameGateTests(unittest.TestCase):
             self.assertIn("File exists", second.stderr)
 
 
+    def test_stable_but_wrong_scene_baseline_is_rejected(self):
+        r = capture_gate(make_log(fps=16.85, cpu=56.0),
+                         reference_fps=21.675,
+                         max_reference_deviation_pct=7.0)
+        self.assertFalse(r["stable"])
+        self.assertEqual(r["reason_codes"], ["reference_mismatch"])
+        self.assertLess(r["reference_delta_pct"], -20)
+
+    def test_matching_external_reference_is_accepted(self):
+        r = capture_gate(make_log(fps=21.70, cpu=44.25),
+                         reference_fps=21.675,
+                         max_reference_deviation_pct=7.0)
+        self.assertTrue(r["stable"])
+        self.assertAlmostEqual(r["reference_delta_pct"], 0.1153, places=3)
+
+    def test_reference_guard_only_applies_to_a_not_b(self):
+        logs = {
+            "A1": make_log(fps=16.85, cpu=55.0),
+            "B1": make_log(fps=26.0, cpu=36.0),
+            "A2": make_log(fps=21.70, cpu=44.25),
+            "B2": make_log(fps=26.3, cpu=35.5),
+        }
+        r = analyze_abab(logs, expected_baseline_fps=21.675,
+                         max_baseline_deviation_pct=7.0)
+        self.assertEqual(r["status"], "inconclusive_unstable_measurement")
+        self.assertEqual(r["invalid_stages"], ["A1"])
+        self.assertNotIn("reference_mismatch", r["stage_stability"]["B1"]["reason_codes"])
+        self.assertTrue(r["stage_stability"]["B1"]["stable"])
+
+    def test_external_reference_parameters_are_validated(self):
+        with self.assertRaises(ValueError):
+            capture_gate(make_log(),reference_fps=0)
+        with self.assertRaises(ValueError):
+            capture_gate(make_log(),reference_fps=22,max_reference_deviation_pct=0)
+
+
 if __name__ == "__main__":
     unittest.main()

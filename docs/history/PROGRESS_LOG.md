@@ -1,6 +1,7 @@
 # Project Progress
 
 ### 2026-10-15 — Auditor de estabilidad TECNO y ruido entre replicas
+- Evaluacion adicional: A1 x87 llego a ~16,85 FPS estable, pero no coincidia con referencia R3/R4 = 21,675; ensayo abortado, runner detenido y 0.2.4/save restaurados por SHA. Se anadio guarda de baseline externa, con cuatro pruebas nuevas y sin cambiar el motor.
 - Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código.
 - Se detectaron 3/4 pasadas estables tanto en el A/B historico de copias x87 como en el de estado local ARM64, por lo que ambas ganancias siguen como senales no concluyentes. Se conserva toda la evidencia privada y no se habilitan flags por defecto.
 - Nuevas herramientas canonicas de FPS y telemetria termica: [informe](../performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md).

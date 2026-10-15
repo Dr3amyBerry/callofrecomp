@@ -37,12 +37,18 @@ def capture_gate(text: str, *, last: int = 40, edge: int = 8,
                  max_edge_drift_pct: float = 5.0,
                  max_half_drift_pct: float = 5.0,
                  max_p10_gap_pct: float = 12.0,
-                 min_warmup: int = 10) -> dict:
+                 min_warmup: int = 10,
+                 reference_fps: float | None = None,
+                 max_reference_deviation_pct: float = 7.0) -> dict:
     if last < 16 or last % 2 or edge < 3 or edge * 2 > last or min_warmup < 0:
         raise ValueError("Invalid stability window or warmup lengths")
     for x in (max_edge_drift_pct, max_half_drift_pct, max_p10_gap_pct):
         if not 0 < x <= 100:
             raise ValueError("Invalid percentage gate")
+    if reference_fps is not None and reference_fps <= 0:
+        raise ValueError("External reference FPS must be positive")
+    if not 0 < max_reference_deviation_pct <= 100:
+        raise ValueError("Invalid reference deviation tolerance")
     all_frames = parse_frames(text)
     if len(all_frames) < last + min_warmup:
         return {"stable": False, "reason_codes": ["insufficient_warmup_or_windows"],
@@ -62,6 +68,10 @@ def capture_gate(text: str, *, last: int = 40, edge: int = 8,
     half_drift = percent_change(late_half, early_half)
     p10_gap = 100.0 * (1.0 - summary["p10_window_fps"] / summary["median_fps"])
     fails = []
+    reference_delta_pct = (None if reference_fps is None else
+                           percent_change(summary["median_fps"], reference_fps))
+    if reference_delta_pct is not None and abs(reference_delta_pct) > max_reference_deviation_pct:
+        fails.append("reference_mismatch")
     if abs(edge_drift) > max_edge_drift_pct:
         fails.append("edge_drift")
     if abs(half_drift) > max_half_drift_pct:
@@ -86,18 +96,26 @@ def capture_gate(text: str, *, last: int = 40, edge: int = 8,
         "half_late_fps": late_half,
         "half_drift_pct": round(half_drift, 4),
         "p10_gap_pct": round(p10_gap, 4),
+        "reference_fps": reference_fps,
+        "reference_delta_pct": (round(reference_delta_pct, 4)
+                                if reference_delta_pct is not None else None),
     }
 
 
 def analyze_abab(captures: dict[str, str], *, last: int = 40,
                  max_repeat_drift_pct: float = 5.0,
+                 expected_baseline_fps: float | None = None,
+                 max_baseline_deviation_pct: float = 7.0,
                  **gate_options) -> dict:
     if set(captures) != set(LABELS):
         raise ValueError("Expected exactly A1, B1, A2, B2 log texts")
     if not 0 < max_repeat_drift_pct <= 100:
         raise ValueError("Invalid repeat tolerance")
-    stages = {label: capture_gate(captures[label], last=last, **gate_options)
-              for label in LABELS}
+    stages = {label: capture_gate(
+        captures[label], last=last,
+        reference_fps=expected_baseline_fps if label.startswith("A") else None,
+        max_reference_deviation_pct=max_baseline_deviation_pct,
+        **gate_options) for label in LABELS}
     result = {
         "status": "inconclusive_unstable_measurement",
         "stage_stability": stages,
@@ -151,6 +169,9 @@ def main(argv=None) -> int:
     ap.add_argument("--max-half-drift-pct", type=float, default=5.0)
     ap.add_argument("--max-p10-gap-pct", type=float, default=12.0)
     ap.add_argument("--max-repeat-drift-pct", type=float, default=5.0)
+    ap.add_argument("--expected-baseline-fps", type=float,
+                    help="Independent stable median of same baseline APK; apply to A only")
+    ap.add_argument("--max-baseline-deviation-pct", type=float, default=7.0)
     ap.add_argument("--out", type=Path, help="optional NEW report JSON; never overwrite")
     args = ap.parse_args(argv)
     try:
@@ -160,7 +181,9 @@ def main(argv=None) -> int:
                               max_edge_drift_pct=args.max_edge_drift_pct,
                               max_half_drift_pct=args.max_half_drift_pct,
                               max_p10_gap_pct=args.max_p10_gap_pct,
-                              max_repeat_drift_pct=args.max_repeat_drift_pct)
+                              max_repeat_drift_pct=args.max_repeat_drift_pct,
+                              expected_baseline_fps=args.expected_baseline_fps,
+                              max_baseline_deviation_pct=args.max_baseline_deviation_pct)
         encoded = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
         if args.out is not None:
             if args.out.suffix.lower() != ".json":
