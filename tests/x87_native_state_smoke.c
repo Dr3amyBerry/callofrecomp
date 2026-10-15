@@ -21,22 +21,40 @@ int main(void) {
     /* Export must preserve all unrelated register bytes, including slot padding. */
     x87_native_state_to_registers(regs,&state);
     CHECK(!memcmp(regs,copy,sizeof regs));
+    x87_native_state expected=state,metadata_before=state;
+    uint32_t guest_pc=0x12345678,guest_operand=0x87654321;
+    uint16_t guest_opcode=0x015e,guest_cs=0x33,guest_ds=0x3b;
+    memcpy(expected.bytes+12,&guest_pc,4);memcpy(expected.bytes+20,&guest_operand,4);
+    memcpy(expected.bytes+18,&guest_opcode,2);memcpy(expected.bytes+16,&guest_cs,2);
+    memcpy(expected.bytes+24,&guest_ds,2);
+    CHECK(x87_native_state_set_memory_metadata(&state,guest_pc,guest_operand,guest_opcode,guest_cs,guest_ds));
+    CHECK(!memcmp(&state,&expected,sizeof state));
+    CHECK(!x87_native_state_set_memory_metadata(&state,0,0,0x0800,0,0));
+    CHECK(!memcmp(&state,&expected,sizeof state));
+    state=metadata_before;
     /* A round trip is byte-exact for all mapped fields with distinct source data. */
     memset(regs+0x10a0,0,16);
     for(unsigned i=0;i<8;i++) memset(regs+0x1100+16*i,0,10);
     x87_native_state_to_registers(regs,&state);
     CHECK(!memcmp(regs,copy,sizeof regs));
-    for(unsigned top=0;top<8;top++) for(unsigned pattern=0;pattern<2;pattern++) {
+    for(unsigned top=0;top<8;top++) for(unsigned pattern=0;pattern<3;pattern++) {
         memset(&state,0,sizeof state);
         put16(state.bytes,0x037f);put16(state.bytes+4,(uint16_t)((top<<11)|0x35));
         uint16_t tags=0;
         for(unsigned i=0;i<8;i++) {
             unsigned tag=pattern?i%4:3;
-            tags |= tag << (2*((top+i)%8));
             uint64_t sig=UINT64_C(0x8000000000000000)+((uint64_t)i<<59);
             uint16_t exponent=0x3fff;
             if(tag==1) {sig=0;exponent=0;}
             if(tag==2) {sig=UINT64_C(0xc000000000000001);exponent=0x7fff;}
+            if(pattern==2) {
+                static const uint64_t bits[8]={UINT64_C(0x8000000000000000),1,
+                    UINT64_C(0x8000000000000000),UINT64_C(0xc000000000000001),
+                    UINT64_C(0x8000000000000001),1,UINT64_C(0x8000000000000000),0};
+                static const uint16_t exponents[8]={0,0x3fff,0x7fff,0x7fff,0x7fff,0,0x3fff,0};
+                sig=bits[i];exponent=exponents[i];tag=i==6?0:i==7?1:2;
+            }
+            tags |= tag << (2*((top+i)%8));
             memcpy(state.bytes+28+i*10,&sig,8);put16(state.bytes+36+i*10,exponent);
         }
         put16(state.bytes+8,tags);
@@ -46,6 +64,20 @@ int main(void) {
         CHECK(get16(output.bytes+4)==get16(state.bytes+4));
         CHECK(get16(output.bytes+8)==get16(state.bytes+8));
         CHECK(!memcmp(output.bytes+28,state.bytes+28,80));
+        unsigned char host_image[512] __attribute__((aligned(16)));
+        unsigned char signal_image[512] __attribute__((aligned(16)));
+        x87_native_state hardware_reference;
+        __asm__ volatile("fxsave64 %[host]; fninit; frstor %[input]; fxsave64 %[signal]; fnsave %[reference]; fxrstor64 %[host]"
+            : [host] "=m"(host_image),[signal] "=m"(signal_image),[reference] "=m"(hardware_reference)
+            : [input] "m"(state)
+            : "memory","st","st(1)","st(2)","st(3)","st(4)","st(5)","st(6)","st(7)");
+        x87_native_state decoded=metadata_before,decoded_expected=metadata_before;
+        memcpy(decoded_expected.bytes,hardware_reference.bytes,2);
+        memcpy(decoded_expected.bytes+4,hardware_reference.bytes+4,2);
+        memcpy(decoded_expected.bytes+8,hardware_reference.bytes+8,2);
+        memcpy(decoded_expected.bytes+28,hardware_reference.bytes+28,80);
+        x87_native_state_read_fxsave64_arithmetic(&decoded,signal_image);
+        CHECK(!memcmp(&decoded,&decoded_expected,sizeof decoded));
         CHECK(x87_native_state_roundtrip(&output,&output));
         CHECK(get16(output.bytes+8)==tags);
         CHECK(!memcmp(output.bytes+28,state.bytes+28,80));

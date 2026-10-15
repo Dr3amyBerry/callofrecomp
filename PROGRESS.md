@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Metadatos, alias y captura precisa de faltas x87
+
+- Adaptador público: metadatos guest explícitos tras una instrucción de memoria completada y lectura del estado aritmético desde FXSAVE64 de señal, con reconstrucción de tags físicos por TOP. Pruebas contra FNSAVE nativo, 24 patrones de pila y preservación de todos los demás campos.
+- **22.344 casos de alias/metadatos** sin diferencias de RAM, CW/SW/tags, ocho slots y metadatos frente al original i686, repetidos en Windows x64 y WSA.
+- **540 pares de faltas reales**, uno por cada 45 instrucciones con memoria × 12 controles. Contexto x86 y señal WSA coinciden en PC/RAM/metadatos/FPU. Confirmado que los 1.080 registros corresponden al objetivo elegido; WSA ejecutó el decodificador público.
+- Matriz final Windows/WSA O0/O2/O3 **6/6**. No hay reanudación del acceso, RET por pila ni integración en runtime/APK todavía; no se afirma mejora FPS. [Alcance y siguiente integración](docs/WSA120_NATIVE_X87_STATE_2026-10-15.md#continuación-metadatos-alias-y-fallos-reales).
+- Regresión final **37/37 CTest**, 68,05 s. Estado actual consolidado para evitar repetir como pendientes las pruebas ya resueltas en laboratorio.
+
 ### 2026-10-15 — Adaptador de estado x87 y oráculo CPU de 32 bits
 
 - Implementado `x87_native_state.h`: entorno de 108 bytes, mapeo R medido, selectores explícitos, tag completo/TOP/ocho slots binary80 y preservación de bytes ajenos. Sigue fuera del juego.

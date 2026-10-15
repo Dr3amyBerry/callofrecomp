@@ -79,8 +79,11 @@ estrictos en Windows y WSA, **O0/O2/O3 (12 ejecuciones)**. Regresión final:
 
 ## Próxima integración
 
-Normalizar metadatos a PC/dirección/opcode guest, verificar alias y accesos en
-orden, y diseñar recuperación precisa de fallos antes de habilitar una región.
+La continuación descrita abajo ya contrasta metadatos, alias y captura de
+fallos para esta región. Falta conectar la región generada y su mapa de PC al
+runtime real, materializar R desde la señal antes de reportar el fallo y probar
+el retorno virtual por la pila, incluidos sus fallos. La reanudación de una
+falta de página y las excepciones guest sin máscara no están certificadas.
 Medir el coste completo de ese contrato. Una ruta que solo pase buffers válidos
 no satisface la misión. Después se requiere APK y A/B/A/B con Alta y la misma
 partida, además de las escenas exigentes y validación prolongada pendientes.
@@ -91,3 +94,55 @@ Evidencia privada bajo `.local/profiles/wsa120_20261015/`:
 `native_{math_matrix_v2,state_matrix_v1}/summary.json` y
 `native_state_all_ctest.log`. Scripts: `audit_native_full_fpu.py`,
 `run_full_fpu_wsa.py`, `benchmark_full_fpu.py`, `run_state_validation.py`.
+
+## Continuación: metadatos, alias y fallos reales
+
+Se añadieron dos operaciones al adaptador público, todavía fuera del juego:
+
+- `x87_native_state_set_memory_metadata`: PC, dirección efectiva, opcode de
+  11 bits y selectores guest explícitos para instrucciones x87 de memoria
+  que actualizan esos campos. Solo después de completar la instrucción;
+  no sirve para FLDCW/FNSTCW/FRSTOR ni operaciones exclusivamente de registro.
+  Opcode fuera de rango: rechazo sin cambios. Conserva el resto del estado.
+- `x87_native_state_read_fxsave64_arithmetic`: lee CW/SW y los ocho slots de
+  un FXSAVE64/contexto de señal válido; reconstruye el tag físico completo
+  desde TOP, FTW abreviado y bits binary80. Conserva metadatos para que el
+  llamador los reubique por separado. Prueba independiente contra FNSAVE:
+  ocho TOP × tres patrones con ceros, normales, subnormales, pseudo-denormales,
+  unnormals, Inf, NaN y slots vacíos. Se conserva también el dato residual vacío.
+
+**Alias/metadatos:** 1.596 vectores × 14 distribuciones = **22.344 casos**,
+con solapamientos de matriz/posición/dirección/salidas, salidas entre sí y
+punteros sin alineación. Se comparó toda la RAM de 128 bytes del caso, CW/SW,
+tags, ocho slots y FIP/FDP/FOP/CS/DS: **cero diferencias**, tanto Windows x64
+como WSA frente al original nativo i686. El original verificó sus metadatos
+host observados antes de reubicarlos; el candidato usa el helper público.
+Selectores guest suministrados explícitamente; bytes reservados excluidos.
+
+**Faltas reales de página:** se ejecutó un prefijo válido y se protegió la
+página justo antes de cada una de las **45 instrucciones x87 con memoria**,
+usando single-step. 12 controles de precisión/redondeo: **540 pares** de
+capturas Windows x86/WSA. Se verificó por separado que los **1.080 registros**
+capturados señalan exactamente la instrucción elegida. PC de fallo, RAM,
+metadatos y estado FPU: **cero diferencias**. WSA usa el decodificador público
+de FXSAVE64, no una copia distinta del algoritmo.
+
+Windows entrega su CONTEXT al handler de acceso inválido; WSA entrega el
+ucontext de SIGSEGV. Los procesos de prueba guardan la captura y terminan;
+**no reanudan el acceso fallido**. Esta prueba usa operandos en páginas
+disjuntas, sin accesos partidos entre páginas y con excepciones enmascaradas;
+no cubre el RET ni demuestra aún la recuperación dentro del runtime del juego.
+No se instaló APK nueva ni se tocaron partidas o ajustes gráficos.
+
+Rojo previo a cada API ausente y verde posterior. Matriz final de estado y
+metadatos Windows/WSA O0/O2/O3: **6/6 ejecuciones** con avisos estrictos.
+Revisión pública sin hallazgos bloqueantes; mejorada la prueba para cambiar
+ambos selectores en vez de escribir los valores que ya tenía el estado.
+La revisión no auditó los scripts propietarios privados.
+Regresión final tras ambas APIs: **37/37 CTest**, 68,05 s.
+
+Evidencia adicional privada: `alias_metadata_v1/summary.json`,
+`page_fault_native_v3/summary.json` (originales y validación de objetivo),
+`page_fault_native_v4/summary.json` (WSA con decodificador público),
+`native_metadata_matrix_v2/summary.json`. Scripts:
+`audit_alias_metadata.py`, `audit_real_page_faults.py`, `verify_fault_targets.py`.

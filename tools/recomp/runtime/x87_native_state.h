@@ -8,6 +8,55 @@
 // logical ST0..ST7 as eight 10-byte values. Unlike FXSAVE, tags are not abridged.
 typedef struct { uint8_t bytes[108]; } x87_native_state;
 
+// Read arithmetic/stack state from a valid 512-byte FXSAVE64 image (including
+// an OS signal frame). Its FTW is abridged and PHYSICAL; register slots are
+// LOGICAL. Reconstruct nonempty classes from binary80 bits using saved TOP.
+// Metadata is deliberately retained: native FIP/FDP/FOP and selectors need
+// independent relocation/decoding before they can describe a guest instruction.
+static inline void x87_native_state_read_fxsave64_arithmetic(
+        x87_native_state *state,const uint8_t *image) {
+    x87_native_state result=*state;
+    uint16_t sw;memcpy(&sw,image+2,2);
+    const unsigned top=(sw>>11)&7;
+    uint16_t tags=0;
+    memcpy(result.bytes,image,2);memcpy(result.bytes+4,image+2,2);
+    for(unsigned i=0;i<8;i++) {
+        const uint8_t *slot=image+32+16*i;
+        const unsigned physical=(top+i)&7;
+        unsigned tag=3;
+        if(image[4]&(1u<<physical)) {
+            uint64_t significand;uint16_t se;
+            memcpy(&significand,slot,8);memcpy(&se,slot+8,2);
+            const unsigned exponent=se&0x7fff;
+            tag=(!exponent&&!significand)?1:
+                (exponent&&exponent!=0x7fff&&(significand>>63))?0:2;
+        }
+        tags|=(uint16_t)(tag<<(2*physical));
+        memcpy(result.bytes+28+10*i,slot,10);
+    }
+    memcpy(result.bytes+8,&tags,2);
+    *state=result;
+}
+
+// Replace HOST metadata after a successfully completed guest x87 arithmetic,
+// load or store memory instruction that updates FIP/FDP/FOP. Not for environment
+// or control instructions such as FLDCW/FNSTCW/FRSTOR.
+// The caller supplies the original instruction's 11-bit x87 opcode, guest PC,
+// effective operand address and selectors. Never call before a faulting access
+// completes. Register-only instructions have different FDP/DS behavior and must
+// not use this helper. Arithmetic state and other fields remain untouched.
+static inline int x87_native_state_set_memory_metadata(x87_native_state *state,
+        uint32_t guest_pc,uint32_t guest_operand,uint16_t guest_opcode,
+        uint16_t code_selector,uint16_t data_selector) {
+    if(guest_opcode>0x07ff) return 0;
+    memcpy(state->bytes+12,&guest_pc,4);
+    memcpy(state->bytes+16,&code_selector,2);
+    memcpy(state->bytes+18,&guest_opcode,2);
+    memcpy(state->bytes+20,&guest_operand,4);
+    memcpy(state->bytes+24,&data_selector,2);
+    return 1;
+}
+
 // Proven against the project's generated FRSTOR field loads. Selectors do not
 // have mapped R fields here: callers MUST supply the actual guest selectors.
 // This serialization does not prove that the current lowering maintains the
@@ -44,8 +93,8 @@ static inline void x87_native_state_to_registers(uint8_t *regs,
 
 // Diagnostic native import/export only. No guest instruction is executed.
 // Reserved bytes are hardware-defined; do not compare entire images blindly.
-// This does NOT normalize native FIP/FDP/FOP to guest addresses/opcodes after
-// arithmetic, handle memory faults, or implement unmasked guest exceptions.
+// This does NOT by itself normalize native metadata after arithmetic, handle
+// memory faults, or implement unmasked guest exceptions.
 static inline int x87_native_state_roundtrip(const x87_native_state *input,
         x87_native_state *output) {
 #if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))

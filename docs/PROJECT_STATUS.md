@@ -9,25 +9,18 @@
 en la misma escena con Alta; no hay ahorro CPU demostrado por retirarlos.
 La pantalla virtual sigue en 75 Hz. El perfil exacto prioriza conversión/copia
 x87 y la transformación `0x005061B0`. Su helper antiguo queda **BLOQUEADO**
-por diferencias float32 frente al x86 original (commit `5ebe4cd`). El siguiente
-bloque debe preservar binary80. GPU time y sesiones complejas/prolongadas
+por diferencias float32 frente al x86 original (commit `5ebe4cd`). Se desarrolla
+una ruta nativa binary80. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
 **CI del código actual:** `d68e164`, [run 38737576358 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38737576358).
-Componente binary80 nativo aislado y probado en Windows/WSA O0/O2/O3;
-37/37 CTest finales. Sigue fuera del juego hasta resolver el contrato guest
-y medir una APK integrada. [Detalle y siguiente bloque](superpowers/plans/2026-10-15-wsa-native-binary80.md).
-
-**Continuación local:** [adaptador de estado y oráculo nativo x86](WSA120_NATIVE_X87_STATE_2026-10-15.md),
-1.596 casos de RAM/CW/SW/tags/ocho slots sin diferencias también en WSA;
-37/37 CTest. Metadatos y fallos siguen pendientes; sin integración ni FPS nuevos.
-
-**Prototipo posterior, sin integración:** x87 explícito en WSA coincide en
-1.476 casos de salida/status con Windows nativo y restaura el entorno x87
-comprobado. Unicorn coincide en salidas, pero omite flags observados en nativo.
-Faltan contratos de estado guest, alias, fallos y excepciones antes de integrar;
-no se declara mejora FPS. Detalle en el informe enlazado arriba.
+**Desarrollo x87 aislado:** [estado, metadatos, alias y faltas reales](WSA120_NATIVE_X87_STATE_2026-10-15.md#continuación-metadatos-alias-y-fallos-reales).
+22.344 casos de alias/metadatos y 540 pares de faltas sin diferencias CPU
+x86/WSA en los campos contrastados. Componentes O0/O2/O3 aprobados en ambas
+plataformas; regresión final 37/37 CTest. Falta conectar la región y la captura
+al runtime, probar el RET y medir una APK integrada. La reanudación del fallo
+y las excepciones guest sin máscara no están certificadas. No hay FPS nuevos.
 
 **Corte:** 2026-10-15. **Código revisado:** `bda83a6532b7cbf6489740f42830eb9f55fdff98` (fase 15). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
 
