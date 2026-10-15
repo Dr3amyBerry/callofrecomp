@@ -16,6 +16,7 @@
 - **540 pares de faltas reales**, uno por cada 45 instrucciones con memoria × 12 controles. Contexto x86 y señal WSA coinciden en PC/RAM/metadatos/FPU. Confirmado que los 1.080 registros corresponden al objetivo elegido; WSA ejecutó el decodificador público.
 - Matriz final Windows/WSA O0/O2/O3 **6/6**. No hay reanudación del acceso, RET por pila ni integración en runtime/APK todavía; no se afirma mejora FPS. [Alcance y siguiente integración](docs/WSA120_NATIVE_X87_STATE_2026-10-15.md#continuación-metadatos-alias-y-fallos-reales).
 - Regresión final **37/37 CTest**, 68,05 s. Estado actual consolidado para evitar repetir como pendientes las pruebas ya resueltas en laboratorio.
+- Código `b0256db`, [CI 38741645925 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38741645925).
 
 ### 2026-10-15 — Adaptador de estado x87 y oráculo CPU de 32 bits
 

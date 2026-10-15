@@ -14,7 +14,7 @@ una ruta nativa binary80. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
-**CI del código actual:** `d68e164`, [run 38737576358 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38737576358).
+**CI del código actual:** `b0256db`, [run 38741645925 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38741645925).
 **Desarrollo x87 aislado:** [estado, metadatos, alias y faltas reales](WSA120_NATIVE_X87_STATE_2026-10-15.md#continuación-metadatos-alias-y-fallos-reales).
 22.344 casos de alias/metadatos y 540 pares de faltas sin diferencias CPU
 x86/WSA en los campos contrastados. Componentes O0/O2/O3 aprobados en ambas

@@ -97,6 +97,8 @@ Evidencia privada bajo `.local/profiles/wsa120_20261015/`:
 
 ## Continuación: metadatos, alias y fallos reales
 
+Código `b0256db`; [CI 38741645925 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38741645925).
+
 Se añadieron dos operaciones al adaptador público, todavía fuera del juego:
 
 - `x87_native_state_set_memory_metadata`: PC, dirección efectiva, opcode de
