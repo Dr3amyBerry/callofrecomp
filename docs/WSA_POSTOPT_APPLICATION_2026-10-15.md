@@ -102,6 +102,8 @@ el estado host y los metadatos de 64 bits, además del estado guest completo.
 
 ## Estado de entrega
 
+Código `bb9d200`, [CI 38780053644 aprobada](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38780053644). Regresión Python local completa aprobada y prueba de fixture ELF ejecutada por CI Linux.
+
 Guardados protegidos verificados de nuevo sin cambios. Revisión independiente
 del enlace sin bloqueos de corrección/ABI. La APK normal B, con el conjunto
 acumulativo y enlace local, queda instalada; los diagnósticos no quedan activos.

@@ -15,6 +15,7 @@
 - A/B/A/B sobre la acumulativa, x87 activo en ambas: mejora pequeña de FPS/CPU en ambas parejas. [Tabla y límites](docs/WSA_POSTOPT_APPLICATION_2026-10-15.md).
 - Nueva agregación GL ponderada por frames y medición diagnóstica de Draw/índices/buffers; no se implementan cachés sin invalidación demostrada. Desambiguadas las muestras del postámbulo x87.
 - APK normal candidata restaurada, contadores GL retirados y guardados intactos. 120 FPS sostenidos sigue abierto.
+- Código `bb9d200`, [CI 38780053644 aprobada](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38780053644).
 
 ### 2026-10-15 — APK B actual: perfil reproducible del CPU y GL4ES; sin cambios de código
 
