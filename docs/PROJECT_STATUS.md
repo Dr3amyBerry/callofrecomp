@@ -47,7 +47,15 @@ La raíz de `.local/profiles/` tenía **948 archivos sueltos**, incluidos 553 sc
 
 Se agregaron [reglas de sesión y reutilización](guides/LOCAL_ARTIFACTS.md), un índice local consultable sin búsquedas recursivas y capturadores reutilizables sin serial ADB fijo. El análisis de similitud inspeccionó **734 scripts Python** sin errores AST, detectó un par idéntico y varios pares similares que preservan variantes A/B, ELF, entradas y condiciones. Validación: **6/6 pruebas unitarias**, **120 Markdown sin enlaces locales rotos**, compilación sintáctica y `git diff --check` correctos. No se ha ejecutado una captura real de dispositivo ni un benchmark nuevo; **no son mediciones FPS**. TECNO ARM64 sigue en espera de nueva validación física, no obsoleto.
 
-## Auditoría completa de scripts y archivo seguro — 2026-10-15
+## Segunda tanda de archivo de scripts — 2026-10-15
+
+Se archivaron **100 scripts adicionales** (64 CFG14, 36 fases CPU). Hay **200 scripts históricos archivados** con dos manifiestos SHA256 independientes y **353 scripts Python sueltos** en `.local/profiles/`. No se borraron datos, ni se modificaron APK, saves o perfiles WSA/TECNO activos.
+
+El nuevo preflight versionado `tools/audit_private_script_refs.py` revisó **453 scripts y 1.560 fuentes de código y documentación**, incluidos scripts archivados y carpetas anidadas. Encontró 145 candidatos; excluyó referencias nominales, importaciones de módulos hermanos, `__file__`, archivos recientes y scripts con sintaxis inválida. Los catálogos JSON no se tratan como consumidores de código. Se archivaron los primeros 100 elegibles con el argumento `--batch-id 2`, un manifiesto nuevo y comprobación SHA256.
+
+`tools/verify_local_artifacts.py --save` verificó **200/200 scripts**, **33/33 PNG** y **7/7 builds** históricos, sin archivos privados registrados en Git. Conserva la advertencia de un script CFG14 antiguo con sintaxis incorrecta. Es una auditoría organizativa, no una mejora de FPS; las metas WSA 120 y TECNO 60 siguen independientes.
+
+## Primera tanda de auditoría de scripts — 2026-10-15
 
 Se verificaron **626 scripts Python privados** entre la raíz, perfiles anidados y archivos históricos: **625 con sintaxis válida y uno de parche CFG14 con error identificado** (conservado, no ejecutado). Se archivó una **tanda de 100 scripts** antes sueltos: 57 CFG14, 34 CPU, 7 ajustes puntuales y 2 capturadores TECNO obsoletos *como herramientas*, no sus perfiles de rendimiento. La raíz pasó de 553 a **453 scripts Python**. [Protocolo y restauración](guides/LOCAL_ARTIFACTS.md).
 

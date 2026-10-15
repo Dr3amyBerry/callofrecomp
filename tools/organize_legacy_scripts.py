@@ -47,16 +47,37 @@ def label(name: str) -> str:
     return "misc"
 
 
-def proposed(limit: int, now: float | None = None) -> list[dict]:
+def manifest_for(batch_id: int) -> Path:
+    """Batch one retains its original filename for backward compatibility."""
+    if not 1 <= batch_id <= 999:
+        raise ValueError("batch_id must be 1..999")
+    return (MANIFEST if batch_id == 1 else
+            CATALOG / f"archived_legacy_scripts_2026-10-15_batch{batch_id:02d}.json")
+
+
+def proposed(limit: int, now: float | None = None, batch_id: int = 1) -> list[dict]:
     if not (1 <= limit <= 150):
         raise ValueError("Batch size must be between 1 and 150")
     now = time.time() if now is None else now
-    audit = json.loads(PREFLIGHT.read_text(encoding="utf8"))
-    deep = json.loads(DEEP.read_text(encoding="utf8"))
-    metadata = {x["path"]: x for x in audit["scripts"]}
-    eligible = {path for path, _ in deep["candidates"]}
-    refs = deep["references"]
-    nested_refs = json.loads(NESTED.read_text(encoding="utf8"))
+    if batch_id == 1:
+        audit = json.loads(PREFLIGHT.read_text(encoding="utf8"))
+        deep = json.loads(DEEP.read_text(encoding="utf8"))
+        metadata = {x["path"]: x for x in audit["scripts"]}
+        eligible = {path for path, _ in deep["candidates"]}
+        refs = deep["references"]
+        nested_refs = json.loads(NESTED.read_text(encoding="utf8"))
+    else:
+        audit_path = CATALOG / f"script_preflight_batch{batch_id:02d}.json"
+        audit = json.loads(audit_path.read_text(encoding="utf8"))
+        if audit.get("batch_id") != batch_id or audit.get("schema") != 2:
+            raise ValueError("Mismatched script audit batch/schema")
+        if abs(now - audit["scanned_epoch"]) > 3600:
+            raise ValueError("Preflight older than one hour; re-run audit before archiving")
+        metadata = {x["path"]: x for x in audit["scripts"]}
+        eligible = {item["path"] for item in audit["candidates"]}
+        refs = {Path(x["path"]).name: x.get("references", [])
+                for x in audit["scripts"]}
+        nested_refs = {}
     ordered = sorted(eligible, key=lambda p: (
         0 if Path(p).name in {"tecno_live_screenshot.py", "tecno_screen_small.py"} else 1,
         Path(p).name
@@ -95,16 +116,19 @@ def proposed(limit: int, now: float | None = None) -> list[dict]:
     return out
 
 
-def apply(moves: list[dict]) -> None:
-    if MANIFEST.exists():
+def apply(moves: list[dict], manifest: Path | None = None) -> None:
+    manifest = MANIFEST if manifest is None else manifest
+    if not moves:
+        raise ValueError("Refusing empty archive batch")
+    if manifest.exists():
         raise RuntimeError("Manifest exists; use --restore or explicitly review it, never overwrite")
     # Validate all before moving any source.
     for item in moves:
         src, dst = ROOT / item["old"], ROOT / item["new"]
         if dst.exists() or src.stat().st_mtime_ns != item["mtime_ns"] or digest(src) != item["sha256"]:
             raise RuntimeError("Evidence changed during preflight: " + item["old"])
-    MANIFEST.parent.mkdir(parents=True, exist_ok=True)
-    MANIFEST.write_text(json.dumps({"schema": 1, "created_utc": datetime.now(timezone.utc).isoformat(),
+    manifest.parent.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(json.dumps({"schema": 1, "created_utc": datetime.now(timezone.utc).isoformat(),
                                     "description": "Conservative historical scripts; see tools/organize_legacy_scripts.py",
                                     "moves": moves}, ensure_ascii=False, indent=2), encoding="utf8")
     moved = 0
@@ -115,11 +139,12 @@ def apply(moves: list[dict]) -> None:
         if digest(dst) != item["sha256"]:
             raise RuntimeError("Moved file hash changed: " + item["new"])
         moved += 1
-    print(json.dumps({"archived": moved, "manifest": MANIFEST.relative_to(ROOT).as_posix()}))
+    print(json.dumps({"archived": moved, "manifest": manifest.relative_to(ROOT).as_posix()}))
 
 
-def restore() -> None:
-    moves = json.loads(MANIFEST.read_text(encoding="utf8"))["moves"]
+def restore(manifest: Path | None = None) -> None:
+    manifest = MANIFEST if manifest is None else manifest
+    moves = json.loads(manifest.read_text(encoding="utf8"))["moves"]
     restored = 0
     for item in moves:
         src, dst = ROOT / item["old"], ROOT / item["new"]
@@ -141,16 +166,19 @@ def main(argv=None):
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--restore", action="store_true")
     parser.add_argument("--batch-size", type=int, default=100)
+    parser.add_argument("--batch-id", type=int, default=1,
+                        help="1=original manifest; 2+=new independent archive batch")
     args = parser.parse_args(argv)
     try:
         if args.apply and args.restore:
             raise ValueError("Choose either --apply or --restore")
+        manifest = manifest_for(args.batch_id)
         if args.restore:
-            restore()
+            restore(manifest)
             return 0
-        moves = proposed(args.batch_size)
+        moves = proposed(args.batch_size, batch_id=args.batch_id)
         if args.apply:
-            apply(moves)
+            apply(moves, manifest)
         else:
             counts = {}
             for item in moves:

@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Segunda tanda: 100 scripts históricos adicionales
+
+- Preflight versionado: 453 scripts sueltos y 1.560 fuentes inspeccionados sin ejecutar scripts experimentales; 145 candidatos conservadores tras excluir referencias, imports hermanos, rutas `__file__`, sintaxis inválida y cambios recientes.
+- Otros 100 scripts archivados: 64 CFG14 y 36 CPU. Dos manifiestos SHA256 separados; **200 scripts históricos**, **353 sueltos**.
+- Verificación multi-manifiesto: **200/200 SHA256 de scripts**, **33/33 capturas** y **7/7 builds**; 0 archivos privados en Git. Sin cambios en APK, motor, saves ni perfiles activos.
+
 ### 2026-10-15 — Primera tanda de scripts históricos archivada y auditada
 
 - Se analizaron dependencias y sintaxis antes de mover archivos. Preflight de 580 scripts (579 válidos), revisión de referencias directas/anidadas, imports locales y `__file__`, y ampliación del verificador a 626 scripts privados, de los que **625 parsean correctamente**. Un parche CFG14 inválido queda intacto y declarado.

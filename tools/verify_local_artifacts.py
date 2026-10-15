@@ -132,6 +132,26 @@ def verify_scripts() -> tuple[dict, list[str]]:
             "archived_scripts": len(list((PROFILES / "history" / "scripts").rglob("*.py")))}, []
 
 
+def script_manifest_paths() -> list[Path]:
+    """Every immutable private script-archive batch, oldest first."""
+    return sorted(CATALOG.glob("archived_legacy_scripts_2026-10-15*.json"))
+
+
+def verify_script_archives() -> tuple[dict, list[str]]:
+    batches = {}
+    errors = []
+    total = verified = 0
+    for manifest in script_manifest_paths():
+        result, problems = verify_move_manifest(manifest, "moves")
+        batches[manifest.name] = result
+        total += result["count"]
+        verified += result.get("verified", 0)
+        errors.extend(problems)
+    return {"status": "absent" if not batches else
+            ("complete" if not errors else "incomplete"),
+            "count": total, "verified": verified, "batches": batches}, errors
+
+
 def verify_index() -> tuple[dict, list[str]]:
     path = CATALOG / "profiles_index.json"
     if not path.exists():
@@ -139,8 +159,7 @@ def verify_index() -> tuple[dict, list[str]]:
     doc = json.loads(path.read_text(encoding="utf8"))
     paths = {x["path"] for x in doc["files"]}
     errors = []
-    archive = CATALOG / "archived_legacy_scripts_2026-10-15.json"
-    if archive.exists():
+    for archive in script_manifest_paths():
         for item in json.loads(archive.read_text(encoding="utf8"))["moves"]:
             if item["new"] not in paths:
                 errors.append("Archived script missing from index: " + item["new"])
@@ -165,7 +184,7 @@ def report() -> dict:
     checked = {}
     errors = []
     for label, func in (
-        ("historic_scripts", lambda: verify_move_manifest(CATALOG / "archived_legacy_scripts_2026-10-15.json", "moves")),
+        ("historic_scripts", verify_script_archives),
         ("historic_screenshots", lambda: verify_move_manifest(CATALOG / "archived_loose_captures_2026-10-15.json", "entries")),
         ("historic_builds", lambda: verify_move_manifest(CATALOG / "archived_builds_2026-10-15.json", "moves")),
         ("session_layout", verify_runs),

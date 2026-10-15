@@ -68,7 +68,26 @@ Solo si el comportamiento está bien definido, probarlo con entradas sintéticas
 
 **Señal de final de sesión:** registrar en `reports/` el propósito, fuentes, IDs, comando ejecutado, resultado de pruebas, archivos generados y qué quedó pendiente. Evitar declarar que una captura/medición existe si no se verificó el archivo.
 
-## Tanda verificada de reorganización de scripts (2026-10-15)
+## Segunda tanda verificada — 2026-10-15
+
+Se archivaron **100 scripts Python más** (64 CFG14 y 36 fases CPU), sumando **200 scripts históricos** y dejando **353 sueltos**. La primera tanda y la segunda tienen manifiestos SHA256 independientes; no se borran ni se sobrescriben.
+
+El preflight nuevo, `tools/audit_private_script_refs.py`, revisa referencias desde herramientas, documentos, perfiles activos y los 100 scripts ya archivados. En esta tanda examinó **453 scripts y 1.560 fuentes**, identificando **145 candidatos** antes de elegir 100; excluye referencias textuales, imports locales, rutas relativas a `__file__`, sintaxis inválida y archivos recientes. Omite catálogos JSON al computar consumidores para evitar falsos positivos.
+
+```powershell
+python tools/audit_private_script_refs.py --batch-id 2 --write
+python tools/organize_legacy_scripts.py --batch-id 2 --batch-size 100
+# Este paso ya fue ejecutado. NO repetirlo si existe el manifiesto:
+python tools/organize_legacy_scripts.py --batch-id 2 --batch-size 100 --apply
+python tools/local_workspace.py refresh
+python tools/verify_local_artifacts.py --save
+# Para restaurar únicamente el segundo lote:
+python tools/organize_legacy_scripts.py --batch-id 2 --restore
+```
+
+Manifiestos privados: `.local/catalog/archived_legacy_scripts_2026-10-15.json` (tanda 1) y `.local/catalog/archived_legacy_scripts_2026-10-15_batch02.json` (tanda 2). El verificador revisa ambos y sus **200 SHA256**. Para otra tanda, elegir otro ID y generar un nuevo preflight. Un análisis estático no garantiza descubrir rutas dinámicas.
+
+## Primera tanda verificada (2026-10-15)
 
 **Resultado real y reversible:** se archivaron **100 scripts Python antiguos** de la raíz de perfiles sin ejecutar ninguno. Procedimiento: preflight de 580 scripts privados → análisis de dependencias en docs/tools/tests/perfiles y carpetas anidadas → exclusión de `__file__` e importaciones locales → lote con SHA256 y sin escritura reciente → movimiento con manifiesto → verificador completo. Quedaron **453 scripts Python sueltos** en vez de 553; el historial se organiza así:
 
@@ -93,4 +112,4 @@ ctest --test-dir build --output-on-failure
 
 El verificador guarda `.local/catalog/verification_report.json` y controla tamaños/SHA archivados, índice, carpetas por sesión y privacidad de Git. Preflight inicial de **580 scripts**: **579 válidos**. La verificación extendida de carpetas WSA/TECNO y catálogo inspecciona **626 scripts: 625 AST válidos y uno histórico con sintaxis inválida**, `.local/profiles/phase14d_fix_cmake_winpaths.py`. Se conserva sin ejecutarlo ni alterarlo. Un error en un script viejo no implica que la APK o el motor fallen. **Suite comprobada:** 412 pruebas Python (6 omitidas) y 38/38 CTest tras corregir los imports de tres tests nuevos. La auditoría no se equipara a una compilación/medición nueva en un dispositivo.
 
-**Límite:** un análisis estático no garantiza descubrir rutas construidas dinámicamente. No mover arbitrariamente los 453 scripts restantes; tratar cada tanda como una operación reversible con evidencias.
+**Límite:** un análisis estático no garantiza descubrir rutas construidas dinámicamente. No mover arbitrariamente los 353 scripts ahora restantes; tratar cada tanda como una operación reversible con evidencias.
