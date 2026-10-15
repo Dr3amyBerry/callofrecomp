@@ -24,6 +24,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--x87-normal-f2d', proc.stdout)
         self.assertIn('--x87-normal-f2d-p4', proc.stdout)
         self.assertIn('--x87-normal-f2d-p4-selective', proc.stdout)
+        self.assertIn('--x87-normal-f2d-p4-profiled', proc.stdout)
         self.assertIn('--dispatch-last-cache', proc.stdout)
         self.assertIn('--x87-fcom-fastpath', proc.stdout)
 
@@ -57,6 +58,22 @@ class ProfileBuildFlagsTest(unittest.TestCase):
                                         text=True, capture_output=True)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(phrase, result.stderr)
+
+    def test_sample_guided_p4_flags_are_constrained(self):
+        for argv, error in [
+            (['--x87-normal-f2d-p4-profiled'], 'requires --x87-normal-f2d'),
+            (['--abi','x86_64','--x87-normal-f2d',
+              '--x87-normal-f2d-p4-profiled'], 'ARM64-only'),
+            (['--x87-normal-f2d','--x87-normal-f2d-p4-selective',
+              '--x87-normal-f2d-p4-profiled'], 'mutually exclusive'),
+            (['--x87-normal-f2d','--x87-normal-f2d-p4',
+              '--x87-normal-f2d-p4-profiled'], 'mutually exclusive'),
+        ]:
+            with self.subTest(args=argv):
+                result = subprocess.run([sys.executable, str(BUILDER), *argv],
+                                        capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(error, result.stderr)
 
     def test_wsa_uncap_is_rejected_for_arm64(self):
         proc = subprocess.run(

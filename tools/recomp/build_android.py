@@ -65,6 +65,8 @@ def main():
                         help="ARM64-only experiment: extend exact x87 conversion to hot CoDSP p4, OFF")
     parser.add_argument("--x87-normal-f2d-p4-selective", action="store_true",
                         help="ARM64 experiment: x87 fast conversion only in four sampled p4 function bodies, OFF")
+    parser.add_argument("--x87-normal-f2d-p4-profiled", action="store_true",
+                        help="ARM64 experiment: only 277 x87 sites at 124 historically sampled CoDSP p4 guest PCs, OFF")
     parser.add_argument("--dispatch-last-cache", action="store_true",
                         help="experiment: per-guest-run last-chunk dispatch hint; default OFF")
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
@@ -81,8 +83,13 @@ def main():
         parser.error("--x87-normal-f2d-p4-selective is ARM64-only")
     if args.x87_normal_f2d_p4_selective and not args.x87_normal_f2d:
         parser.error("--x87-normal-f2d-p4-selective requires --x87-normal-f2d")
-    if args.x87_normal_f2d_p4 and args.x87_normal_f2d_p4_selective:
-        parser.error("select either full p4 or selective p4 conversion, not both")
+    if args.x87_normal_f2d_p4_profiled and args.abi != "arm64-v8a":
+        parser.error("--x87-normal-f2d-p4-profiled is ARM64-only")
+    if args.x87_normal_f2d_p4_profiled and not args.x87_normal_f2d:
+        parser.error("--x87-normal-f2d-p4-profiled requires --x87-normal-f2d")
+    if sum((args.x87_normal_f2d_p4, args.x87_normal_f2d_p4_selective,
+            args.x87_normal_f2d_p4_profiled)) > 1:
+        parser.error("p4 x87 options are mutually exclusive (not both)")
     if not args.sdk or not args.java:
         parser.error("Set ANDROID_HOME and JAVA_HOME, or pass --sdk and --java")
     root = Path(__file__).resolve().parents[2]
@@ -101,18 +108,24 @@ def main():
     exe = ".exe" if os.name == "nt" else ""
     batch = ".bat" if os.name == "nt" else ""
     if not args.package_only:
-        # Restore a previous exact selective patch before normal builds,
-        # without pinning *all* normal builds to one proprietary game hash.
-        # Unexpected patched files still fail closed inside the patcher;
-        # unrelated generated CoDSP versions remain untouched.
+        # Restore exact previous p4 patches before switching between the
+        # 520-site and sampled 277-site profiles. Unknown modified game C
+        # fails closed; ordinary builds of unrelated sources are untouched.
         p4_source = root / 'recomp_out/codsp_recomp_p4.c'
-        if (args.x87_normal_f2d_p4_selective or
-                (p4_source.is_file() and
-                 b'CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE' in p4_source.read_bytes())):
-            run(sys.executable,
-                root / 'tools/recomp/patch_codsp_p4_f2d_selective.py',
-                p4_source, root / 'recomp_out/codsp.pcode',
-                '--apply' if args.x87_normal_f2d_p4_selective else '--restore')
+        patch_script = root / 'tools/recomp/patch_codsp_p4_f2d_selective.py'
+        p4_bytes = p4_source.read_bytes() if p4_source.is_file() else b''
+        if b'CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE' in p4_bytes:
+            run(sys.executable, patch_script, p4_source,
+                root / 'recomp_out/codsp.pcode', '--restore')
+        elif b'CODRECOMP_X87_NORMAL_F2D_P4_PROFILED' in p4_bytes:
+            run(sys.executable, patch_script, p4_source,
+                root / 'recomp_out/codsp.pcode', '--restore', '--profiled')
+        if args.x87_normal_f2d_p4_selective or args.x87_normal_f2d_p4_profiled:
+            cmd = [sys.executable, patch_script, p4_source,
+                   root / 'recomp_out/codsp.pcode', '--apply']
+            if args.x87_normal_f2d_p4_profiled:
+                cmd.append('--profiled')
+            run(*cmd)
         if args.fast_copy32:
             # Recompilation output is private/ignored; fail closed if exact
             # original CoDSP 1.5 generated labels are missing.
@@ -154,6 +167,7 @@ def main():
             f"-DCODRECOMP_X87_NORMAL_F2D={'ON' if args.x87_normal_f2d else 'OFF'}",
             f"-DCODRECOMP_X87_NORMAL_F2D_P4={'ON' if args.x87_normal_f2d_p4 else 'OFF'}",
             f"-DCODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE={'ON' if args.x87_normal_f2d_p4_selective else 'OFF'}",
+            f"-DCODRECOMP_X87_NORMAL_F2D_P4_PROFILED={'ON' if args.x87_normal_f2d_p4_profiled else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_LAST_CACHE={'ON' if args.dispatch_last_cache else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")

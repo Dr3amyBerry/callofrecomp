@@ -238,6 +238,39 @@ if(CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE)
   set_property(SOURCE "${p4_source}" APPEND PROPERTY COMPILE_DEFINITIONS
     CODRECOMP_X87_NORMAL_F2D CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE)
 endif()
+# Two-session profile-guided refinement of the opt-in CoDSP p4 conversion:
+# 124 original PCs with >=2 attributed x87 f2d samples, 277 static call
+# sites. This is NOT validated Android gameplay performance.
+option(CODRECOMP_X87_NORMAL_F2D_P4_PROFILED
+  "EXPERIMENT: inline exact x87 conversion at 277 sampled p4 sites" OFF)
+if(CODRECOMP_X87_NORMAL_F2D_P4_PROFILED)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "Profiled p4 x87 conversion is ARM64-only")
+  endif()
+  if(NOT CODRECOMP_X87_NORMAL_F2D OR
+     CODRECOMP_X87_NORMAL_F2D_P4 OR
+     CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE)
+    message(FATAL_ERROR
+      "Profiled p4 requires base x87 converter; excludes full/selective p4")
+  endif()
+  set(p4_source "${RECOMP_SOURCE_DIR}/codsp_recomp_p4.c")
+  set(pcode_source "${RECOMP_SOURCE_DIR}/codsp.pcode")
+  if(NOT EXISTS "${p4_source}" OR NOT EXISTS "${pcode_source}")
+    message(FATAL_ERROR "Profiled p4 requires private CoDSP 1.5 C and p-code")
+  endif()
+  file(SHA256 "${pcode_source}" pcode_sha256)
+  if(NOT pcode_sha256 STREQUAL
+      "36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e")
+    message(FATAL_ERROR "Profiled p4 refuses unknown original CoDSP p-code")
+  endif()
+  file(SHA256 "${p4_source}" p4_source_sha256)
+  if(NOT p4_source_sha256 STREQUAL
+      "9b3d27670850fcdad26b7318374e7614102650e5d03825c4b28843e6be444b90")
+    message(FATAL_ERROR "Profiled p4 refuses unverified generated guest C")
+  endif()
+  set_property(SOURCE "${p4_source}" APPEND PROPERTY COMPILE_DEFINITIONS
+    CODRECOMP_X87_NORMAL_F2D CODRECOMP_X87_NORMAL_F2D_P4_PROFILED)
+endif()
 # CPU sample-guided, full-status and one-pop x87 compare optimization.
 # Only source-verified CoDSP 1.5 p1/p8 p-code shapes; normal APK unchanged.
 option(CODRECOMP_X87_FCOM_FASTPATH "Experimental full x87 FCOM+pop on verified CoDSP p1/p8 blocks" OFF)

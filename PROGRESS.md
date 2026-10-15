@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 8: 124 PCs x87 observados en dos perfiles; SOLO OFFLINE (0/5)
+
+- [x] Se correlacionaron **dos** perfiles históricos Simpleperf/ELF de Build ID idéntico, recuperando marcos inline DWARF (en vez de solo el primer marco `memcpy`/`f2d`), la línea C externa y el PC x86 original. Muestras `p4` examinadas: **1.017/889**; con PC guest recuperado: **974/840**. Dentro de las cuatro funciones originales calientes se localizaron **240/218 muestras** atribuibles a conversiones `f2d(rd(...),10)` (458 combinadas).
+- [x] Selección reproducible: de 190 PCs observados, los **124 PCs con ≥2 muestras combinadas** representan **392/458 muestras (85,6 %)** de conversiones del subconjunto histórico, sin que las instrucciones ausentes se consideren frías. Manifiesto público **solo de identificadores numéricos**, ningún dato del juego.
+- [x] `tools/recomp/patch_codsp_p4_f2d_selective.py --profiled`: guarda original/restauración por SHA-256; aplica fast path inline únicamente a **277 conversiones C** de los 124 PCs; conserva la selección alternativa de 520 sitios de fase 7. Nuevo `--x87-normal-f2d-p4-profiled` ARM64 OFF por defecto y mutuamente excluyente con p4 completo/selectivo; constructor restaura ambas variantes antes de una build normal.
+- [x] Oráculo diferencial **22 instrucciones FLOAT reales de cuatro funciones** bajo Clang `-O1/-O2`: **44.000 estados R/RAM/PC completos** idénticos, incluyendo valores especiales x87. No prueba las 277 conversiones exhaustivamente ni sustituye a una CPU x86 independiente.
+- [x] Compilada APK ARM64 perfilada sin instalar. `libmain.so` `.text`: A **42.339.912**, fase 6 **42.551.344**, fase 7 **42.374.108**, fase 8 **42.359.988 bytes**. Fase 8 aumenta `.text` **+20.076** vs A, pero evita **14.120 bytes** vs fase 7 y **191.356 bytes (~90,5 %)** del crecimiento de fase 6; tres chunks nativos modificados. **No hay prueba ni afirmación de ganancia FPS.**
+- [x] Suite final **253 pruebas Python (4 omitidas) y 34/34 CTest**, y verificación por SHA-256 de fuente C p4, `libmain.so` ELF y biblioteca empaquetada **idénticas a A**, flags experimentales p4/dispatch OFF. [Informe](docs/CPU_PHASE8_P4_PROFILE_GUIDED_X87_OFFLINE_2026-10-14.md). TECNO sin uso, 60 FPS pendientes.
+
 ### 2026-10-14 — Fase 7: conversión x87 SOLO en 520 sitios calientes de p4, OFFLINE (0/5)
 
 - [x] Nuevos parche/reversor privados por hash `tools/recomp/patch_codsp_p4_f2d_selective.py`, `--apply/--restore/--analyze`: **520 conversiones `f2d(rd(...),10)` en 276 etiquetas PC x86** de cuatro funciones calientes recuperadas (517 muestras en un perfil histórico, **no 517 conversiones dinámicas**). El resto de p4 sigue en el convertidor anterior.

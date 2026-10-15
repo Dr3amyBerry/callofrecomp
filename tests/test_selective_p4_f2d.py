@@ -67,6 +67,51 @@ class P4SelectiveTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             p4.patch_text(SOURCE.replace('#include "recomp_rt.h"', '#include "wrong.h"'), True)
 
+    def test_profiled_pc_set_exact_and_reversible(self):
+        # One historically observed PC and an adjacent eligible-but-not-
+        # observed guest PC: only the first may receive the fast conversion.
+        import codsp_p4_profiled_pcs
+        self.assertEqual(len(codsp_p4_profiled_pcs.PROFILED_GUEST_PCS), 124)
+        picked = min(codsp_p4_profiled_pcs.PROFILED_GUEST_PCS)
+        unpicked = 0x475d80
+        self.assertNotIn(unpicked, codsp_p4_profiled_pcs.PROFILED_GUEST_PCS)
+        source = (
+            '#include "recomp_rt.h"\n'
+            f'L_{picked:x}:\n f2d(rd(R+0x1100,10),10);\n'
+            f'L_{unpicked:x}:\n f2d(rd(R+0x1110,10),10);\n')
+        fast, number, labels = p4.patch_text(source, True, profiled=True)
+        self.assertEqual((number, labels), (1, 1))
+        self.assertIn('CODRECOMP_X87_NORMAL_F2D_P4_PROFILED', fast)
+        self.assertIn('codsp_x87_normal_f2d(rd(R+0x1100,10),10)', fast)
+        self.assertIn('f2d(rd(R+0x1110,10),10)', fast)
+        restored, removed, touched = p4.patch_text(fast, False, profiled=True)
+        self.assertEqual((removed, touched), (1, 1))
+        self.assertEqual(restored, source)
+        with self.assertRaises(ValueError):
+            p4.patch_text(fast, False, profiled=False)
+
+    def test_profiled_mutate_hash_idempotence_and_rejects_other_mode(self):
+        import codsp_p4_profiled_pcs
+        pc = min(codsp_p4_profiled_pcs.PROFILED_GUEST_PCS)
+        source = '#include "recomp_rt.h"\nL_%x:\n f2d(rd(R,10),10);\n' % pc
+        fast, n, _ = p4.patch_text(source, True, profiled=True)
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / 'private.c'
+            pcfile = Path(directory) / 'private.pcode'
+            file.write_bytes(source.encode())
+            pcfile.write_bytes(b'synthetic')
+            with mock.patch.object(p4, 'ORIGINAL_SHA256', p4.digest(source.encode())), \
+                 mock.patch.object(p4, 'PROFILED_PATCHED_SHA256', p4.digest(fast.encode())), \
+                 mock.patch.object(p4, 'PROFILED_EXPECTED_REPLACEMENTS', n), \
+                 mock.patch.object(p4, 'PCODE_SHA256', p4.digest(b'synthetic')):
+                p4.mutate(file, pcfile, apply=True, profiled=True)
+                self.assertEqual(file.read_bytes(), fast.encode())
+                p4.mutate(file, pcfile, apply=True, profiled=True)
+                with self.assertRaises(ValueError):
+                    p4.mutate(file, pcfile, apply=False, profiled=False)
+                p4.mutate(file, pcfile, apply=False, profiled=True)
+                self.assertEqual(file.read_bytes(), source.encode())
+
     def test_mutate_enforces_hashes_idempotence_and_atomic_restore(self):
         original = SOURCE.encode('utf-8')
         candidate, n, _ = p4.patch_text(SOURCE, True)

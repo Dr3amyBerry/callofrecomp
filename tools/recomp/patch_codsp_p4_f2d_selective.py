@@ -13,6 +13,7 @@ import hashlib
 import os
 from pathlib import Path
 import re
+from codsp_p4_profiled_pcs import PROFILED_GUEST_PCS
 
 ORIGINAL_SHA256 = "ee9156183cc0410bf0641592f93d3d0efa4febc906cc014969ddb30d95a196d3"
 PCODE_SHA256 = "36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e"
@@ -42,6 +43,13 @@ LABEL = re.compile(r"(?m)^L_([0-9a-fA-F]+):[ \t]*(?:\r?\n)")
 SLOW_CALL = re.compile(r"(?<![A-Za-z_0-9])f2d\(rd\([^()\r\n]*\),10\)")
 FAST_CALL = re.compile(r"(?<![A-Za-z_0-9])codsp_x87_normal_f2d\(rd\([^()\r\n]*\),10\)")
 EXPECTED_REPLACEMENTS = 520  # original CoDSP 1.5, five exact body intervals
+PROFILED_PATCHED_SHA256 = "9b3d27670850fcdad26b7318374e7614102650e5d03825c4b28843e6be444b90"
+PROFILED_EXPECTED_REPLACEMENTS = 277  # 124 profiled PCs, two historical captures
+PROFILED_HEADER_GUARD = HEADER_GUARD.replace(
+    "CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE",
+    "CODRECOMP_X87_NORMAL_F2D_P4_PROFILED",
+)
+
 
 
 def digest(data: bytes) -> str:
@@ -52,7 +60,7 @@ def is_hot(pc: int) -> bool:
     return any(start <= pc < end for start, end in HOT_RANGES)
 
 
-def convert_blocks(source: str, to_fast: bool) -> tuple[str, int, int]:
+def convert_blocks(source: str, to_fast: bool, *, profiled: bool = False) -> tuple[str, int, int]:
     """Pure PC-local conversion; never substitutes generated guest control flow."""
     matches = list(LABEL.finditer(source))
     if not matches:
@@ -69,7 +77,7 @@ def convert_blocks(source: str, to_fast: bool) -> tuple[str, int, int]:
         seen.add(pc)
         end = matches[i+1].start() if i+1 < len(matches) else len(source)
         block = source[match.end():end]
-        if is_hot(pc):
+        if (pc in PROFILED_GUEST_PCS if profiled else is_hot(pc)):
             changed, n = old.subn(lambda m: m.group(0).replace(
                 "f2d(" if to_fast else "codsp_x87_normal_f2d(", new+"(", 1), block)
             if n:
@@ -80,9 +88,9 @@ def convert_blocks(source: str, to_fast: bool) -> tuple[str, int, int]:
     return "".join(chunks), count, modified_labels
 
 
-def inject_guard(text: str, to_fast: bool) -> str:
+def inject_guard(text: str, to_fast: bool, *, profiled: bool = False) -> str:
     line_end = "\r\n" if "\r\n" in text[:400] else "\n"
-    header = HEADER_GUARD.replace("\n", line_end)
+    header = (PROFILED_HEADER_GUARD if profiled else HEADER_GUARD).replace("\n", line_end)
     anchor = INCLUDE + line_end
     if to_fast:
         if text.count(anchor) != 1 or header in text:
@@ -93,35 +101,38 @@ def inject_guard(text: str, to_fast: bool) -> str:
     return text.replace(anchor + header, anchor, 1)
 
 
-def patch_text(text: str, to_fast: bool) -> tuple[str, int, int]:
+def patch_text(text: str, to_fast: bool, *, profiled: bool = False) -> tuple[str, int, int]:
     # Rewriting label-local f2d does not touch .text/.rodata or branch labels.
-    modified, count, labels = convert_blocks(text, to_fast)
-    modified = inject_guard(modified, to_fast)
+    modified, count, labels = convert_blocks(text, to_fast, profiled=profiled)
+    modified = inject_guard(modified, to_fast, profiled=profiled)
     return modified, count, labels
 
 
-def mutate(source: Path, pcode: Path, *, apply: bool, analyze: bool = False) -> None:
+def mutate(source: Path, pcode: Path, *, apply: bool, analyze: bool = False,
+           profiled: bool = False) -> None:
     if not source.is_file() or not pcode.is_file():
         raise ValueError("CoDSP p4 generated source and p-code are required")
     if digest(pcode.read_bytes()) != PCODE_SHA256:
         raise ValueError("Unrecognized CoDSP 1.5 p-code; refusing private source rewrite")
     raw = source.read_bytes()
     sha = digest(raw)
-    required_sha = ORIGINAL_SHA256 if apply else PATCHED_SHA256
-    already_sha = PATCHED_SHA256 if apply else ORIGINAL_SHA256
+    target_sha = PROFILED_PATCHED_SHA256 if profiled else PATCHED_SHA256
+    expected_count = PROFILED_EXPECTED_REPLACEMENTS if profiled else EXPECTED_REPLACEMENTS
+    required_sha = ORIGINAL_SHA256 if apply else target_sha
+    already_sha = target_sha if apply else ORIGINAL_SHA256
     if sha == already_sha and not analyze:
         print("Selective p4: already in requested state, SHA-256", sha)
         return
     if sha != required_sha:
         raise ValueError("Unrecognized p4 generated source SHA-256: " + sha)
     text = raw.decode("utf-8")
-    modified, n, n_labels = patch_text(text, apply)
+    modified, n, n_labels = patch_text(text, apply, profiled=profiled)
     out = modified.encode("utf-8")
     output_sha = digest(out)
     if apply:
-        if not n or n != EXPECTED_REPLACEMENTS and not analyze:
+        if not n or (n != expected_count and not analyze):
             raise ValueError(f"Unexpected selective conversion count: {n}")
-        if not analyze and output_sha != PATCHED_SHA256:
+        if not analyze and output_sha != target_sha:
             raise ValueError("Changed selective patch layout; no write performed")
     elif output_sha != ORIGINAL_SHA256:
         raise ValueError("Selective restore failed to reproduce original generated source")
@@ -141,7 +152,8 @@ def mutate(source: Path, pcode: Path, *, apply: bool, analyze: bool = False) -> 
     finally:
         if temp.exists():
             temp.unlink()
-    print("Selective p4", "applied" if apply else "restored",
+    print("Selective p4", "profiled" if profiled else "body-wide",
+          "applied" if apply else "restored",
           "SHA-256", output_sha, "conversion_sites", n, "labels", n_labels)
 
 
@@ -154,9 +166,11 @@ def main() -> None:
     opts.add_argument("--restore", action="store_true")
     opts.add_argument("--analyze", action="store_true",
                       help="offline dry-run of the original-to-candidate rewrite")
+    ap.add_argument("--profiled", action="store_true",
+                    help="use the fixed two-session 2+-sample hot-PC set; OFF unless requested")
     args = ap.parse_args()
     mutate(args.source, args.pcode, apply=args.apply or args.analyze,
-           analyze=args.analyze)
+           analyze=args.analyze, profiled=args.profiled)
 
 
 if __name__ == "__main__":
