@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Viabilidad x87 nativa comprobada en WSA
+
+- Prototipo privado aislado de la transformación caliente: 123 entradas × 12 controles de precisión/redondeo = **1.476 casos**, sin diferencias en las seis salidas frente al original ejecutado con Unicorn.
+- Unicorn no reflejó los flags de precisión/redondeo que produjo el host: **1.412 diferencias de status word**. No sirve como único oráculo del estado FPU completo.
+- Compilado con NDK y ejecutado en WSA: **0 diferencias de salida/status frente a Windows nativo**, **0 fallos de restauración del entorno x87/MXCSR y registros x87 comprobados** con pila centinela. Sin integración ni ganancia FPS declarada.
+- [Alcance y pendientes](docs/WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md#continuación-prototipo-x87-nativo-aislado): materialización del estado guest binary80, alias/fallos/excepciones, entradas especiales y coste del aislamiento. APK y partidas sin cambios en este experimento.
+
 ### 2026-10-15 — Control reversible de FPS y seis corridas WSA con Alta
 
 - Archivo privado `frame_limit`: original/60/120/unlimited, coordinando `com_maxfps` y host sin cambiar relojes. Sin archivo conserva launcher/diagnóstico anterior. Pruebas de entrada inválida, redondeo y stalls; ejecutable nativo aprobado en WSA.

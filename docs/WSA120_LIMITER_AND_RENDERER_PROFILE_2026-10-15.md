@@ -126,6 +126,41 @@ Datos crudos y scripts de conducción permanecen privados bajo
 
 ## Verificación final del bloque
 
+### Continuación: prototipo x87 nativo aislado
+
+Se compiló y ejecutó la secuencia aritmética original, con el mismo orden de
+operandos, usando instrucciones x87 explícitas y punteros host. No usa
+`long double` ni el helper double bloqueado. Corpus: 23 casos de cancelación/
+midpoint anteriores y 100 casos finitos pseudoaleatorios (semilla 5061,
+exponentes -60..60), repetidos en las 12 combinaciones de precisión x87
+24/53/64 bits y los cuatro modos de redondeo: **1.476 casos**.
+
+- Windows nativo frente al original x86 en Unicorn: **0 diferencias de
+  salida** en los seis float32 de cada caso. Esto cubre aritmética en memoria
+  válida con pila inicial vacía; no equivale a equivalencia arquitectónica.
+- **1.412 diferencias de status word**: Unicorn devolvió cero; el host dio
+  `0x0020` (1.114 casos) o `0x0220` (298). Los bits de precisión/redondeo
+  impiden usar ese oráculo por sí solo para validar el estado FPU completo.
+- El mismo prototipo compilado con NDK r30 y ejecutado en el dispositivo
+  verificado `windows_x86_64`: **0 diferencias de salida y status word frente
+  al host Windows** en los 1.476 casos.
+- Cada caso WSA dejó dos valores centinela en la pila x87 y CW no predeterminado
+  antes del helper. FXSAVE/FXRSTOR: **0 fallos de restauración** en los primeros
+  32 bytes del entorno (incluido MXCSR) y los 10 bytes de cada registro x87.
+  No se compararon los registros XMM ni se probaron señales/context switches.
+
+Los resultados prueban viabilidad aritmética, no una mejora de FPS. El prototipo
+es privado y aislado: no cambió la APK, las partidas ni el runtime. No cubre
+NaN/Inf, entradas subnormales dirigidas, pila inicial llena, alias, accesos
+inválidos, excepciones sin máscara o metadatos guest FIP/FDP. Restaurar la FPU
+host tampoco implementa el estado x87 virtual del invitado. Antes de integrar,
+resolver ese contrato y su materialización binary80, además del coste real de
+guardar/restaurar el entorno. Los bloqueos existentes permanecen activos.
+
+Evidencia privada: `native_x87_probe_v3/summary.json`, `android_result.json`
+y scripts `probe_native_x87.py` / `run_android_x87_probe.py`, bajo la carpeta
+local de esta sesión. No se publican instrucciones originales ni binarios.
+
 Host: **386 tests Python, 4 omitidos, 35/35 CTest**. La CI detectó después
 un selector antiguo ligado al texto de un comentario CMake; se reprodujo y
 se cambió por límites de opciones, conservando todas sus aserciones.
