@@ -2,6 +2,11 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 14B — Precisión x87 y contrato del epílogo compartido
+
+Una auditoría Unicorn del `binary80` real en cinco operaciones x87 de `0x0041B8F0` reveló pérdida de precisión en el traductor basado en `double`: después del segundo `FSUB`, **167/256** estados ST0 no coinciden aunque el resultado `float32` final observado seguía coincidiendo en estos casos. Se verificó la lectura del registro físico x87 con **11 ejemplos FSTP m80** y se añadió una puerta estricta que **rechazó** el candidato en el ensayo negativo de 96 casos. **No se corrigió ni aceleró el runtime**: la conclusión es un bloqueo de equivalencia para reemplazos de funciones que toquen x87. Además, los tres saltos de salida van a la función `0x00523CD9`, una comparación contra el cookie global con retorno en éxito y rama de fallo; debe preservarse fuera de la región nativa. Ninguna mejora de FPS o ms/frame queda probada. [Informe y evidencias](PHASE14B_X87_BINARY80_SHARED_EPILOGUE_2026-10-15.md).
+
+
 ## Fase 14B: control de estado por byte y ejecución x86 en dos caminos
 
 Se extendió el oráculo original de `0x0041B8F0` a 20 instrucciones si JE no se toma y 27 si se toma. Unicorn ejecutó los bytes x86 originales y se contrastó una DLL privada de `pcode2c.Gen`: **512/512 casos coincidentes** de ocho GPR, CF/PF/ZF/SF/OF, PC y RAM acotada, con una mutación de PC correctamente rechazada. `AF y x87 NO se han verificado`; ambas rutas se detienen antes de FPU. Análisis MAY/MUST por byte de R completado para 450 bloques, que detecta LOAD/STORE y 80 bytes x87 en la función prioritaria; **no habilita caché de registros ni transforma el motor**. Sin beneficio probado de FPS. [Informe técnico](PHASE14B_STATE_BOUNDARIES_ORACLE_2026-10-15.md).

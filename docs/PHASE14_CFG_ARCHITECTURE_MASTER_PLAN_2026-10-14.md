@@ -32,6 +32,10 @@
 - [ ] Demostrar alias y efectos completos de RAM, AF, x87 y estados de salida en regiones que se vayan a transformar.
 - [ ] Verificar rutas de fallthrough, rama tomada/no tomada, bucles, salidas dinámicas y reentrada desde el dispatcher.
 
+- [x] **Auditoría adicional 14B:** validación independiente de ST0 `binary80` real en cinco checkpoints y 256 casos cada uno: **167/256 divergencias** tras la segunda operación `FSUB`, pese a GPR/RAM coincidentes; la precisión extendida es un requisito pendiente, no un pase de equivalencia.
+- [x] **Salida compartida verificada:** los tres JMP de `0x0041B8F0` alcanzan la función independiente `0x00523CD9`. Capstone x86 y p-code corroboran una comparación de valor global, retorno y camino de fallo; no puede borrarse ni fingir un `RET` local.
+- [ ] Quedan pendientes igualdad `binary80` bajo entradas válidas, estado completo de FPU `FPCW/FPSW/FPTAG` y contrato de retorno/fallo antes de sustituir un cuerpo entero; un futuro A/B debe preservar fallback. [Detalles](PHASE14B_X87_BINARY80_SHARED_EPILOGUE_2026-10-15.md).
+
 **Aceptación 14B:** oráculo independiente para las regiones elegidas, mutaciones negativas detectadas, estados finales iguales, rutas irresueltas explícitas.
 
 ### 14C — Arquitectura de regiones y SSA

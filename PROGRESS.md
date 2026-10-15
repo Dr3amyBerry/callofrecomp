@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Fase 14B, checkpoint siguiente: bloqueador binary80 y epílogo compartido
+
+- [x] Auditoría real Unicorn x86 vs `pcode2c.Gen` sobre **256 entradas por checkpoint** en 5 instrucciones originales `FLD, FSUB, FMUL, FSUB, FSTP`. Coincidencias `binary80` de ST0: **256/256; 255/256; 126/256; 89/256** antes del pop. Los **167/256** estados distintos después de la cuarta instrucción hacen **NO ELEGIBLE** la sustitución nativa ciega de este subgrafo.
+- [x] El método de leer ST0 físico fue contrastado con **11 instrucciones sintéticas FSTP m80** (representación Unicorn igual a memoria x86 en los 11 casos). Control estricto `--require-bitwise-st0` probó rechazo de **96 estados** con diferencias y retornó el código de error esperado **4**; no se marca una divergencia como éxito.
+- [x] Auditoría del epílogo **`0x00523CD9`**: tres JMP de geometría convergen en una **función Ghidra separada** que compara ECX contra memoria `0x00563940`, retorna cuando coincide y salta a `0x00523CA8` en fallo. Comprobado el CFG frente al PE real con Capstone. El chequeo debe conservarse, no reemplazarse por un simple retorno ARM64.
+- [x] Nuevos diagnósticos de solo lectura y pruebas sintéticas con targets alterados, p-code opaco, FPU extrema y condiciones de fallo. No se ha modificado motor, `pcode2c.py`, runtime, APK ni dispositivo; sin aumento de FPS medido.
+- [x] Validación general de esta entrega: **315 Python (4 omitidas, 0 fallidas)** y **35/35 CTest** después de compilación host. No se habilitó ningún nuevo fast path.
+- [ ] Pendiente 14B: equivalencia integral de `FPCW/FPSW/FPTAG`, precision x87, variantes de rama y ruta del fallo/RET. La siguiente optimización estructural debe escoger subgrafos seguros o mantener fallback, no convertir `float80` a `double` sin prueba. [Informe](docs/PHASE14B_X87_BINARY80_SHARED_EPILOGUE_2026-10-15.md).
+
+
 ### 2026-10-15 — Fase 14B: oráculo x86 bifurcado y contratos de estado por byte (PARCIAL, offline)
 
 - [x] Dos caminos x86 auténticos de `0x0041B8F0`: 20 instrucciones (JE no tomado) y 27 (JE tomado). `512/512` pruebas con 8 GPR, CF/PF/ZF/SF/OF, PC, tres regiones RAM y bytes R no tocados; Unicorn original vs `pcode2c.Gen` de LLVM-MinGW. **AF y x87 sin comprobar**.
