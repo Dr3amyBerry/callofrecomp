@@ -1,5 +1,7 @@
 # CallofRecomp 0.2.4
 
+Publicado desde `f493638`. [CI 38792819349 aprobada](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38792819349).
+
 Dos APK: teléfonos ARM64 y WSA x86_64. Requieren Android 8 o posterior y una
 copia compatible propia de Call of Duty 1.5; no incluyen recursos comerciales.
 VersionCode 6. Instalar encima conserva los datos; no hace falta desinstalar.

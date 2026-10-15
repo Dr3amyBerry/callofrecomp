@@ -22,7 +22,7 @@ nativa binary80 ya está integrada. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
-**CI del último cambio de código probado:** `bb9d200`, [run 38780053644 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38780053644).
+**CI del release 0.2.4:** `f493638`, [run 38792819349 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38792819349). [Release publicado](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.4), APK ARM64/WSA y hashes verificados; empaquetador público actualizado conservando su URL. Smoke WSA de actualización/defaults/entrenamiento aprobado sin cambios de partidas.
 **Integración acumulativa medida:** [APK, opciones, pruebas y A/B/A/B](performance/wsa/WSA_CUMULATIVE_2026-10-15.md).
 Región x87 binary80 conectada al runtime, retorno probado y conjunto compatible
 activo en WSA. Misma escena/Alta: medias de medianas **54,75 → 66,75 FPS**,
