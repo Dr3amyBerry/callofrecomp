@@ -27,7 +27,7 @@ Hay ahorro con localidad y regresion con fallos frecuentes. No son ciclos, tiemp
 
 ## APK real e integridad
 
-A y B usan normal-f2d y fuentes generadas normales; outlining x87, ICF y enlace local estan OFF. Solo se recompila `guest.c.o` entre variantes. Las 28 fuentes generadas conservan SHA. Las 490 exportaciones conservan nombre/tipo/binding/visibilidad; solo cambia el tamano de `guest_run`, de 1.152 a 1.336 bytes (288 a 334 instrucciones estaticas). El mayor cuerpo completo no contradice el ahorro dinamico en aciertos. Presion de registros y latencia real siguen pendientes de medicion.
+A y B usan normal-f2d y fuentes generadas normales; outlining x87, ICF y enlace local estan OFF. Solo se recompila `guest.c.o` entre variantes. Las 28 fuentes generadas conservan SHA. Las 490 exportaciones conservan nombre/tipo/binding/visibilidad; solo cambia el tamano de `guest_run`, de 1.152 a 1.336 bytes (288 a 334 instrucciones estaticas). El mayor cuerpo completo no contradice el ahorro dinamico en aciertos. El prologo reserva 96 bytes de pila en A y 128 en B; conserva los mismos registros callee-saved x19-x30. Los 32 bytes adicionales reflejan almacenamiento local adicional, no una ganancia. El coste dinamico de spills/reloads y la latencia real siguen pendientes de medicion.
 
 Los APK conservan entradas, assets, DEX y dependencias; solo difieren `lib/arm64-v8a/libmain.so` y firmas META-INF. Firma v2/v3 y alineacion comprobadas por el empaquetador. Al terminar se restauro la configuracion OFF, el ELF y APK A por SHA.
 
