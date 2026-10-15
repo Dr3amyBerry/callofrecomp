@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 9: auditoría del empaquetado x87, experimento descartado OFFLINE (0/5)
+
+- [x] Validada una fórmula aritmética alternativa de binary80: **1.205.360 comparaciones C de bits** más 20.000 pruebas binary32/64 y **44.000 comparaciones R/RAM/PC** sobre instrucciones x87 reales (Clang O1/O2).
+- [x] En función ARM64 aislada el código bajó de 324 a 320 bytes, pero en los tres chunks reales p4 no cambió el tamaño ni el histograma de instrucciones; la sección .text de libmain.so permaneció en **42.359.988 bytes** (diferencia 0). **No hay evidencia de mejora del juego.**
+- [x] Prototipo de conversor y nuevo flag de Android **retirados**. Se conserva solamente un auditor reutilizable de símbolos/instrucciones ARM64 offline, cuatro tests Python y una prueba C del cálculo sin cambiar código de producción ni calidad gráfica.
+- [x] **257 pruebas Python (4 omitidas), 35/35 CTest**; C original, ELF y biblioteca APK restaurados exactamente a referencia A por SHA-256; eliminado el flag CMake temporal. [Informe fase 9](docs/CPU_PHASE9_X87_INTEGER_PACK_OFFLINE_2026-10-14.md). TECNO sin uso; 60 FPS pendientes.
+- [x] Dos perfiles históricos: muestras inline inclusivas de memcpy **409/353**, rd **233/204**, wr **154/123**, f2d **366/329** y d2f **110/102**; estas categorías se solapan. Siguiente objetivo offline: costes de lectura/escritura de estado arquitectónico.
+
 ### 2026-10-14 — Fase 8: 124 PCs x87 observados en dos perfiles; SOLO OFFLINE (0/5)
 
 - [x] Se correlacionaron **dos** perfiles históricos Simpleperf/ELF de Build ID idéntico, recuperando marcos inline DWARF (en vez de solo el primer marco `memcpy`/`f2d`), la línea C externa y el PC x86 original. Muestras `p4` examinadas: **1.017/889**; con PC guest recuperado: **974/840**. Dentro de las cuatro funciones originales calientes se localizaron **240/218 muestras** atribuibles a conversiones `f2d(rd(...),10)` (458 combinadas).
