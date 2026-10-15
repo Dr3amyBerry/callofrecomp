@@ -63,3 +63,30 @@ static inline int dispatch_index_find_recent(
     recent->generation = index->generation;
     return found;
 }
+
+/* A complete last-entry hint for the ARM64 experiment. The table is immutable
+   between dispatch_index_build calls, including changes to callback pointers.
+   Keep this local to one guest_run invocation; rebuilding invalidates it.
+   Index identity prevents equal generation numbers of separate indexes from
+   reusing each other's entry. No guest state is cached or deferred. */
+typedef struct {
+    const dispatch_index *owner;
+    uint64_t generation;
+    recomp_chunk entry;
+    int last_chunk;
+} dispatch_entry_recent;
+
+static inline int dispatch_index_find_entry(
+    const dispatch_index *index, const recomp_chunk *chunks, int count,
+    uint32_t pc, dispatch_entry_recent *recent) {
+    if (recent->last_chunk >= 0 && recent->last_chunk < count &&
+            recent->owner == index && recent->generation == index->generation &&
+            pc >= recent->entry.start && pc < recent->entry.end)
+        return recent->last_chunk;
+    int found = dispatch_index_find(index, chunks, count, pc);
+    recent->last_chunk = found;
+    recent->owner = index;
+    recent->generation = index->generation;
+    if (found >= 0) recent->entry = chunks[found];
+    return found;
+}

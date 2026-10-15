@@ -2,6 +2,11 @@
 #include "dispatch_index.h"
 #include <stdio.h>
 static dispatch_index index_table;
+static dispatch_index other_index;
+static unsigned call_value;
+static void mark_a(void) { call_value += 3; }
+static void mark_b(void) { call_value += 5; }
+static void mark_c(void) { call_value += 7; }
 int main(void) {
     recomp_chunk chunks[] = {{0x1000,0x1800,0},{0x1800,0x2800,0},{0x4000,0x5000,0}};
     dispatch_index_build(&index_table,chunks,3);
@@ -92,6 +97,50 @@ int main(void) {
         if (dispatch_index_find_recent(&index_table, chunks, 3, pc, &nested) != 0
             || dispatch_index_find_recent(&index_table, chunks, 3, pc, &recent) != 0)
             return 11;
-    puts("Dispatch index: boundaries, shared pages, holes, reload and recent-cache equivalence OK");
+    // Complete-entry hints retain the exact target as well as the range.
+    dispatch_entry_recent entry = { .last_chunk = -1 };
+    for (int i=0;i<170;i++) dense[i].fn=(i%3==0?mark_a:i%3==1?mark_b:mark_c);
+    dispatch_index_build(&index_table,dense,170);
+    for (int repeat=0;repeat<3;repeat++)
+        for (uint32_t pc=0x60f0u;pc<cursor+80u;pc++) {
+            int expected_index=-1;
+            for (int i=0;i<170;i++)
+                if(pc>=dense[i].start && pc<dense[i].end){expected_index=i;break;}
+            for (int again=0;again<4;again++) {
+                int got=dispatch_index_find_entry(&index_table,dense,170,pc,&entry);
+                if(got!=expected_index)return 12;
+                if(got>=0) {
+                    if(entry.entry.start!=dense[got].start || entry.entry.end!=dense[got].end ||
+                       entry.entry.fn!=dense[got].fn)return 13;
+                    call_value=0;dense[got].fn();unsigned expected_call=call_value;
+                    call_value=0;entry.entry.fn();if(call_value!=expected_call)return 14;
+                }
+            }
+        }
+    // Independent lookup hints retain separate complete entries.
+    dispatch_entry_recent inner_entry={ .owner=&index_table, .last_chunk=-1 };
+    if(dispatch_index_find_entry(&index_table,dense,170,dense[0].start,&entry)!=0)return 20;
+    if(dispatch_index_find_entry(&index_table,dense,170,dense[169].start,&inner_entry)!=169)return 21;
+    if(entry.last_chunk!=0 || entry.entry.fn!=dense[0].fn)return 22;
+    // Same slot/range but a different callback after an in-place reload.
+    recomp_chunk reload[]={{0x1000,0x2000,mark_a}};
+    dispatch_index_build(&index_table,reload,1);
+    if(dispatch_index_find_entry(&index_table,reload,1,0x1100,&entry)!=0 || entry.entry.fn!=mark_a)return 15;
+    reload[0].fn=mark_b;
+    dispatch_index_build(&index_table,reload,1);
+    if(dispatch_index_find_entry(&index_table,reload,1,0x1100,&entry)!=0 || entry.entry.fn!=mark_b)return 16;
+    // Separate indexes can have equal generation numbers; identity matters.
+    other_index.generation=index_table.generation-1;
+    recomp_chunk alternate[]={{0x1000,0x2000,mark_c}};
+    dispatch_index_build(&other_index,alternate,1);
+    if(dispatch_index_find_entry(&other_index,alternate,1,0x1100,&entry)!=0 || entry.entry.fn!=mark_c)return 17;
+    dispatch_index_build(&index_table,high,3);
+    for(unsigned i=0;i<sizeof high_pc/sizeof *high_pc;i++)
+        if(dispatch_index_find_entry(&index_table,high,3,high_pc[i],&entry)!=high_expect[i])return 18;
+    if(dispatch_index_find_entry(&index_table,high,3,high[2].start,&entry)!=2)return 23;
+    if(dispatch_index_find_entry(&index_table,high,1,high[2].start,&entry)!=-1)return 24;
+    dispatch_index_build(&index_table,0,0);
+    if(dispatch_index_find_entry(&index_table,0,0,0xfffffffeu,&entry)!=-1 || entry.last_chunk!=-1)return 19;
+    puts("Dispatch index: boundaries, holes, reload, recent/entry caches and exact callback equivalence OK");
     return 0;
 }

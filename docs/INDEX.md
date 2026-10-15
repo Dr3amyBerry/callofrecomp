@@ -1,5 +1,7 @@
 # CallofRecomp — entrada rápida de conocimiento
 
+**ARM64-07 / dispatch:** [cache de entrada completa](performance/tecno/ARM64_DISPATCH_ENTRY_CACHE_2026-10-15.md), opt-in OFF. APK ARM64 A/B y oracle AArch64 preparados; menos instrucciones con localidad, mas con fallos frecuentes. Sin nuevos FPS. Siguiente: estado/memoria en chunks calientes y A/B/A/B fisico pendiente.
+
 - [ARM64: safe ICF, equivalencia AArch64 y APK experimental](performance/tecno/ARM64_SAFE_ICF_2026-10-15.md).
 
 **Regla para todas las IAs:** leer primero este índice y los documentos de estado, no buscar recursivamente `.local/`, builds, Ghidra, fuentes generadas o repos externos. Los informes fechados preservan evidencia, **no son instrucciones operativas vigentes**.

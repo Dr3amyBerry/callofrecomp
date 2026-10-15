@@ -106,6 +106,17 @@ if(CODRECOMP_DISPATCH_LAST_CACHE)
   set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND
     PROPERTY COMPILE_DEFINITIONS CODRECOMP_DISPATCH_LAST_CACHE)
 endif()
+option(CODRECOMP_DISPATCH_ENTRY_CACHE "ARM64 experiment: last complete dispatch entry" OFF)
+if(CODRECOMP_DISPATCH_ENTRY_CACHE)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "Entry dispatch cache requires arm64-v8a")
+  endif()
+  if(CODRECOMP_DISPATCH_LAST_CACHE)
+    message(FATAL_ERROR "Choose one dispatch cache: entry or last hint")
+  endif()
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND
+    PROPERTY COMPILE_DEFINITIONS CODRECOMP_DISPATCH_ENTRY_CACHE)
+endif()
 option(CODRECOMP_CPU_PROFILING "Compile opt-in sampled CPU diagnostics" OFF)
 if(CODRECOMP_CPU_PROFILING)
   # Only guest.c consumes this flag. Do not recompile all private generated

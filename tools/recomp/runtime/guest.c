@@ -727,7 +727,9 @@ static void guest_project_compass_marker(uint32_t esp, unsigned arg_start,
 #endif
 
 void guest_run(void) {
-#if defined(CODRECOMP_DISPATCH_LAST_CACHE)
+#if defined(CODRECOMP_DISPATCH_ENTRY_CACHE)
+    dispatch_entry_recent entry_recent = { .owner = &code_index, .last_chunk = -1 };
+#elif defined(CODRECOMP_DISPATCH_LAST_CACHE)
     /* Local to this invocation: nested guest_run calls never share hints. */
     dispatch_recent recent = { .generation = 0, .last_chunk = -1 };
 #endif
@@ -820,7 +822,10 @@ void guest_run(void) {
                 guest_project_compass_marker(esp, 4, 8u, 0); // objective pulse
         }
 #endif
-#if defined(CODRECOMP_DISPATCH_LAST_CACHE)
+#if defined(CODRECOMP_DISPATCH_ENTRY_CACHE)
+        int found = dispatch_index_find_entry(&code_index, all_chunks,
+                                              all_chunk_count, PC, &entry_recent);
+#elif defined(CODRECOMP_DISPATCH_LAST_CACHE)
         int found = dispatch_index_find_recent(&code_index, all_chunks,
                                                all_chunk_count, PC, &recent);
 #else
@@ -829,7 +834,11 @@ void guest_run(void) {
         recomp_miss = 0;
         if (found >= 0) {
             uint64_t sample = profile_begin();
+#if defined(CODRECOMP_DISPATCH_ENTRY_CACHE)
+            entry_recent.entry.fn();
+#else
             all_chunks[found].fn();
+#endif
             profile_end((unsigned)found, sample);
         }
         if (found < 0 || (recomp_miss && PC >= all_chunks[found].start && PC < all_chunks[found].end))
