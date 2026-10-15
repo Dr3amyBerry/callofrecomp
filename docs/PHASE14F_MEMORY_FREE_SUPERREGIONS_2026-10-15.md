@@ -4,6 +4,11 @@
 
 **Estado:** análisis, generador de superregiones y pruebas offline completados; **no se integra ninguna variante nativa experimental** porque no aparece un ahorro de código o accesos ARM64. No hay nueva APK ni nuevos FPS medidos.
 
+## Actualización — Fase 15, CPU física y ROI
+
+El ranking de superregiones de esta fase se contrastó con dos perfiles Simpleperf de TECNO del **mismo Build ID**. Ocho funciones originales seleccionadas representan ~19 % de las muestras del proceso; aun si se eliminara todo ese trabajo, la cota CPU idealizada rondaría 32 FPS, lejos de los 60. Las tres superregiones de 14F siguen correctamente **rechazadas** por tamaño/accesos ARM64 regresivos. Ahora se prioriza estudiar costos comunes de **estado y conversiones x87** sin alterar semántica. [Informe de perfil transversal](PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md).
+
+
 ## 1. Alcance y criterios conservadores
 
 Se analizaron las **siete funciones originales calientes** que se habían perfilado previamente, utilizando el p-code de CoDSP.exe 1.5, el mapa Ghidra de cuerpos B v2 y el CFG independiente recuperado. Se fijaron por SHA-256 los insumos:

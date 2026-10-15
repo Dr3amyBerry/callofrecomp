@@ -9,6 +9,17 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Fase 15: perfiles físicos TECNO, ROI/Amdahl y coste x87 transversal
+
+- [x] Dos capturas físicas Simpleperf distintas verificadas contra **ELF Build ID `80dc3884c64e395f87d7975f200d34edccf648fd`**, checksum y conteos nativos: **7.953/6.541 muestras del proceso**, **6.675/5.491 de libmain.so**. p-code original y mapa Ghidra B con SHA-256 fijados; no se usó WSA como sustituto de ARM64.
+- [x] **Ocho funciones originales** (incluida `0x0042B0A0`, entera sin x87) suman **1.557/7.953 = 19,578 %** y **1.244/6.541 = 19,018 %** de las muestras. Para 60 FPS desde 38,895 ms CPU/frame haría falta ~**57,15 % de reducción**; suprimir estas ocho funciones por completo **no bastaría**. Cota Amdahl aproximada CPU-only ~31,8–32 FPS, **NO pronóstico ni ms exclusivos**.
+- [x] Atribución exhaustiva PCs nativos→líneas C→instrucciones x86 originales, con comprobación del reporte histórico: de esos **1.557/1.244** samples, **1.255/1.005** (~81 %) corresponden a instrucciones que manipulan estado x87. **Etiquetas de instrucciones, no tiempo de cada micro-op**, y muchas mezclan x87, LOAD y flags.
+- [x] **565 POPCOUNT p-code** dentro de ocho funciones; variante especializada por ancho (8/16/32/64/128) pasó **20.495 entradas**, pero Clang ARM64 `-O1`/`-O2` generó **mismo tamaño de funciones**; experimento rechazado, sin cambiar runtime ni recompilador.
+- [x] Herramientas `prioritize_profiled_cpu.py` y `attribute_cpu_hot_microops.py`, pruebas sintéticas y guía [fase 15](docs/PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md). Metadatos y archivos `perf.data` bajo `.local/profiles` ignorado.
+- [x] **Regresión: 382 Python (4 omitidas, 0 fallos), 35/35 CTest**, compilación host correcta, revisión de sintaxis/diffs limpia. No se modificó la ejecución del juego.
+- [ ] Próximo bloque: inspección de nativo ARM64 alrededor de x87/rd/wr en **múltiples funciones**, preservar binary80/flags/estado y exigir oráculo original Unicorn; solo instalar tras mejora demostrada. TECNO no conectado (ADB solo WSA); CFG14 sigue BLOQUEADO.
+
+
 ### 2026-10-15 — Fase 14F: superregiones multi-CFG sin RAM + contrato Android de faltas
 
 - [x] Herramienta `cfg_superregion.py` descubre solo **bloques completos originales Ghidra B** unidos mediante aristas CFG reales hacia delante, con entrada única líder, salida a **dispatcher original**, excluyendo memoria guest (incluye varnodes `m`), x87, CALL, RETURN, CALLOTHER, microbranches ambiguos, overlaps y loops nativos no verificados.
