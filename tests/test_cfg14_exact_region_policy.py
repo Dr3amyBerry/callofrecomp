@@ -95,6 +95,16 @@ class RuntimeABITest(unittest.TestCase):
         with self.assertRaises(CFGError):
             generate_region_c(region,memory_model="unknown")
 
+    def test_builder_denies_unsafe_cfg14_even_on_supported_abi(self):
+        import subprocess
+        import sys
+        cmd=[sys.executable,str(ROOT/"tools/recomp/build_android.py"),
+             "--cfg14-geom-region","--abi","arm64-v8a","--recomp-opt","1"]
+        result=subprocess.run(cmd,capture_output=True,text=True,timeout=15)
+        self.assertEqual(result.returncode,2)
+        self.assertIn("BLOCKED",result.stderr)
+        self.assertIn("page-fault",result.stderr)
+
     def test_normal_android_build_remains_off_with_original_fallback(self):
         cmake=(ROOT/"android/CMakeLists.txt").read_text(encoding="utf-8")
         guest=(ROOT/"tools/recomp/runtime/guest.c").read_text(encoding="utf-8")
@@ -104,6 +114,9 @@ class RuntimeABITest(unittest.TestCase):
         self.assertIn("dfd2655e497bbf8fa83ad434244f6a33d1afcccca5308bd413c523919cd19899",cmake)
         self.assertIn("file(SHA256",cmake)
         self.assertIn("cfg14_source_hash",cmake)
+        # Phase14D proves the optimization cannot recover correct guest
+        # state at 15/18 mid-block page faults; direct CMake ON must refuse.
+        self.assertIn("CFG14 FAULT_STATE_UNSAFE",cmake)
         self.assertIn("PC == UINT32_C(0x0041c017)",guest)
         self.assertIn("module_loaded_at(UINT32_C(0x00400000))",guest)
         self.assertIn("codsp_cfg14_geom_41c017()",guest)

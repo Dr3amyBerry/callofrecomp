@@ -2,6 +2,11 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 14D — NO habilitar CFG14: estado R/PC incorrecto ante fallos de memoria
+
+Aunque los **40/40** casos normales del helper CFG de geometría coincidieron, un nuevo ensayo Unicorn con páginas guest realmente desmapeadas mostró **15/18** fronteras de excepción con registros cacheados sin volcar y/o PC incorrecto. Primera lectura **3/3** correcta; después R difiere. La puerta `--require-safe` **rechaza** el candidato; `build_android.py` impide empaquetarlo. El epílogo compartido original pasó **128/128** ruta RET + **128/128** ruta al error, y la ampliación hasta el primer CALL del manejador pasó **64/64** por ruta; el handler externo completo y AF NO están verificados. **No afirmar FPS ni activar flag experimental hasta demostrar deopt safe.** Enlace ARM64 aislado del candidato anterior: **292/292** pasos y `libmain.so` AArch64 ELF verificado, **sin APK**. Después se bloquearon explícitamente **CMake ON y el constructor**. Tests: **343 Python (4 omitidos), 35/35 CTest**. TECNO no conectado, solo WSA x86_64. [Informe](PHASE14D_EPILOGUE_FAULT_SAFETY_2026-10-15.md).
+
+
 ## Fase 14C/D — Guard CFG en el dispatcher, OFF hasta ensayo físico
 
 **40/40** comparaciones Unicorn originales del bloque de geometría `0x0041C017` de 29 instrucciones, más **40/40** usando el helper final compatible con el runtime; RAM exacta de 24 MiB, 8 GPR, cinco EFLAGS materializados, R completo y salto a epílogo original coinciden. Alias de memoria read-after-write ejercitado, control negativo sin flush de ESP rechazado. CMake/Ninja ARM64 **ON/OFF** verificado: apagado no hay helper ni macro; encendido compilación de dos objetos y símbolo `codsp_cfg14_geom_41c017` enlazable; el dispatcher solo intercepta el líder y deja los PC interiores al código antiguo. **Ninguna APK ON construida ni FPS medido**; no habilitar por defecto ante riesgos pendientes de page faults, AF/estado no modelado y epílogo completo. [Informe 14C](PHASE14C_REAL_X86_GUARDED_RUNTIME_2026-10-15.md).

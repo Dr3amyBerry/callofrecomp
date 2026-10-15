@@ -9,6 +9,17 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Fase 14D: epílogo original y FALLO de seguridad por excepciones
+
+- [x] Oráculo Unicorn sobre el epílogo `0x00523CD9` (PE CoDSP original, Capstone y `pcode2c.Gen`): **128/128** retornos con cookie correcta y **128/128** saltos con cookie incorrecta verificados en 8 GPR, cinco EFLAGS materializados, R completo, PC, pila y RAM. `RET` también modifica `R+0x284` (EIP sombra), confirmado.
+- [x] Recorrido ampliado de error hasta el primer `CALL 0x0051FF90` pasando por `PUSH 8` y `PUSH 0x533B68`: **64/64** errores y **64/64** retornos normales, incluida la pila y ESP. **El cuerpo llamado NO está verificado**. Control negativo con destino corrupto detectado.
+- [x] Auditoría de excepciones en bloque de 29 instrucciones `0x0041C017`: Unicorn desmapea páginas reales de 4 KiB; el helper privado se interrumpe justo en el acceso correspondiente. **15/18** puntos de fallo de tres semillas tenían estado arquitectónico R/PC divergente; primer acceso **3/3** correcto. `--require-safe` devolvió **rechazo 4** como debe. **BLOQUEO REAL de seguridad** pese a 40/40 comparaciones normales.
+- [x] `build_android.py` rechaza `--cfg14-geom-region` aun en ARM64 optimizado. **CMake ON ahora también bloqueado con `FAULT_STATE_UNSAFE`** por los 15/18 fallos; pruebas reales de rechazo CMake ON (exit 1) y configuración OFF correcta.
+- [x] **Link AArch64 integral aislado del viejo candidato ON:** Ninja **292/292**, `lib/libmain.so` **229.834.608 B**, ELF ET_DYN AArch64, símbolo `codsp_cfg14_geom_41c017` definido mediante `llvm-readelf`. **No APK, no ejecución, no permiso de habilitación**.
+- [x] Regresión: **343 tests Python (4 omitidos, 0 fallidos)** y **35/35 CTest**, control negativo del epílogo con destino alterado detectado.
+- [ ] El TECNO no aparece en `adb devices -l`: solo WSA x86_64. No hay pruebas físicas ARM64, CPU/frame ni FPS nuevos. Próxima prioridad: deoptimización segura antes de accesos guest a memoria o regiones enteras sin accesos de memoria. [Informe](docs/PHASE14D_EPILOGUE_FAULT_SAFETY_2026-10-15.md).
+
+
 ### 2026-10-15 — Fase 14C/D: oráculo original x86 y guard CFG productivo opt-in (OFF por defecto)
 
 - [x] Nuevo oráculo independiente Unicorn sobre **29 instrucciones x86 originales** del bloque caliente de geometría `0x0041C017`, con direcciones invitadas **exactas** y **24 MiB de RAM**: **40/40** escenarios A y B coincidieron en 8 GPR, cinco flags materializados, R completo, memoria mapeada y salida `0x00523CD9`. **Cinco escenarios**, dos con alias read-after-write realmente ejecutado. Se conserva el epílogo original.

@@ -88,6 +88,14 @@ def main():
         parser.error("--cfg14-geom-region is ARM64-only")
     if args.cfg14_geom_region and args.recomp_opt != "1":
         parser.error("--cfg14-geom-region requires --recomp-opt 1")
+    if args.cfg14_geom_region:
+        # Phase14D original x86 fault audit: 15 of 18 sampled mid-block
+        # page faults left cached R fields/PC inconsistent. Do not package
+        # even an experimental APK until exception-safe deoptimization is
+        # implemented and the independent original-x86 gate passes.
+        parser.error("--cfg14-geom-region BLOCKED: original x86 page-fault "
+                     "audit found stale architectural R/PC (15/18 faults); "
+                     "requires exception-safe fallback before APK testing")
     if args.core_hot_o2 and args.recomp_opt != "1":
         parser.error("--core-hot-o2 requires --recomp-opt 1")
     if args.wsa_uncap_bench and args.abi != "x86_64":

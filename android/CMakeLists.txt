@@ -152,6 +152,14 @@ endif()
 option(CODRECOMP_CFG14_GEOM_REGION
   "OFFLINE-VERIFIED EXPERIMENT: guarded CoDSP 1.5 0x0041C017 CFG region, OFF" OFF)
 if(CODRECOMP_CFG14_GEOM_REGION)
+  # Phase14D: independent Unicorn page-fault audit on real CoDSP 1.5 bytes
+  # found 15/18 unsafe R/PC snapshots on mid-region memory exceptions.
+  # Normal-exit 40/40 success does NOT make this eligible for runtime.
+  # Fail closed for direct CMake callers too; cannot bypass via CLI.
+  message(FATAL_ERROR
+    "CFG14 FAULT_STATE_UNSAFE: 15/18 original x86 guest memory-fault "
+    "boundaries leave cached R/PC stale; implement verified exception-safe "
+    "deoptimization before enabling any APK build")
   if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
     message(FATAL_ERROR "CFG14 CoDSP geometry experiment is ARM64 only")
   endif()

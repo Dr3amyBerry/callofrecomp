@@ -2,6 +2,11 @@
 
 **Estado:** integración experimental implementada, **OFF por defecto**; compilación aislada Android ARM64 del dispatcher y el helper verificada. **No se ha instalado APK ni medido CPU/frame o FPS.** La fase de habilitación productiva sigue pendiente.
 
+## Actualización de seguridad — fase 14D, 2026-10-15
+
+**La conclusión de integración de este informe quedó SUPERADA por evidencia posterior:** las ejecuciones normales 40/40 no garantizan el estado observable ante fallos. Un ensayo Unicorn con páginas guest desmapeadas encontró **15/18** fronteras de excepción R/PC divergentes. La opción `--cfg14-geom-region` y la configuración CMake ON también se bloquean expresamente para impedir despliegues inseguros; el motor normal sigue idéntico. Véase el [informe de excepción de 14D](PHASE14D_EPILOGUE_FAULT_SAFETY_2026-10-15.md) y no interpretar esta versión como candidata segura para una APK ON.
+
+
 ## 1. Verificación del bloque real de geometría
 
 El nuevo `tools/recomp/diagnostics/verify_geometry_region_original_x86.py` ejecuta con **Unicorn los 29 bytes/instrucciones originales de CoDSP.exe 1.5**, comprobados por Capstone, de `0x0041C017` hasta el salto a la función compartida `0x00523CD9` (se detiene **antes** de ejecutar el epílogo). P-code y mapa Ghidra B están fijados por SHA-256.

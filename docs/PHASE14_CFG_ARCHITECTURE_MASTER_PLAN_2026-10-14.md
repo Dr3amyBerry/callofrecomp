@@ -2,6 +2,9 @@
 
 **Inicio:** 2026-10-14. **Rama:** `main`. **Estado:** 14A IMPLEMENTADA y auditada contra p-code + Capstone x86 original; 14B EN CURSO: oráculo de dos rutas y liveness conservador por byte implementados; equivalencia x87 y cuerpo completo pendientes. **TECNO:** no disponible y no requerido para las etapas offline. **Meta de 60 FPS:** pendiente; no confundir validación estructural con ms/frame.
 
+**Checkpoint 14D (2026-10-15):** el epílogo `0x00523CD9` se verificó con Unicorn original en 128 retornos y 128 saltos al error; se comprobó adicionalmente la secuencia de 3 instrucciones del manejador hasta `CALL 0x0051FF90` en 64 casos por ruta. No obstante, el fast path de geometría tiene un **bloqueo crítico de equivalencia ante fallos guest**: 15 de 18 páginas desmapeadas observadas muestran R/PC divergente durante la ejecución de la caché. La opción Android ARM64 queda **BLOQUEADA además de OFF**, hasta implementar deoptimización segura. El TECNO no figura entre los dispositivos ADB y no se ha medido ningún FPS nuevo. [Informe 14D](PHASE14D_EPILOGUE_FAULT_SAFETY_2026-10-15.md).
+
+
 ## 0. Decisiones técnicas y límites
 
 1. **Unidad de optimización = región de control de flujo de funciones originales, no chunks arbitrarios de 1.500 instrucciones.** Un chunk de `pcode2c.py` puede contener múltiples funciones, huecos Ghidra y entradas independientes. Por ejemplo, `0x0041B8F0` contiene 553 instrucciones distribuidas en dos intervalos y comparte su chunk con otras funciones.
