@@ -1,5 +1,7 @@
 # Investigación profunda de rendimiento — CallofRecomp
 
+> INVESTIGACIÓN HISTÓRICA: hipótesis y medidas del 13 de octubre. Los perfiles físicos y fases posteriores actualizan las prioridades; consultar [estrategia vigente](PERFORMANCE_STRATEGY_CURRENT.md).
+
 **Fecha:** 2026-10-13  
 **Proyecto objetivo:** Dr3amyBerry/callofrecomp, Call of Duty 1.5 single-player recompilado estáticamente para Android ARM64  
 **Línea base documental:** main en 52f70c902fed41d728097622a19e810ae2457288; release 0.2.3 publicada el 2026-10-13  

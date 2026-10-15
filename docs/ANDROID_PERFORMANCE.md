@@ -1,5 +1,7 @@
 # Android performance profiles
 
+> Guía de perfiles y resultados históricos. Para estado y prioridades actuales consultar [PROJECT_STATUS.md](PROJECT_STATUS.md) y [PERFORMANCE_STRATEGY_CURRENT.md](PERFORMANCE_STRATEGY_CURRENT.md). Los apartados fechados no son una cola de trabajo vigente.
+
 Select the graphics profile in the launcher before starting the game. Choices
 persist independently of campaign saves. Balanced is the default; Android devices
 reporting low-RAM capability default to Light. All retain the 60 FPS ceiling.

@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Consolidación documental y auditoría de GitHub
+
+- Fuente de estado vigente: [PROJECT_STATUS.md](docs/PROJECT_STATUS.md); índice completo: [INDEX.md](docs/INDEX.md). Esta bitácora conserva hechos y decisiones en su contexto temporal: sus antiguas colas, capacidades e hitos no describen automáticamente el presente.
+- Estrategia y roadmap consolidados, con copias previas archivadas; README reducido a rutas de entrada. Checkpoint del 14 marcado histórico. No se borraron informes ni se cambiaron motor, APK o flags.
+- Código local/remoto revisado `bda83a6`; CI remoto fallido por `unicorn` ausente en dos imports, pese a regresiones locales previas aprobadas. Reparación de CI pendiente y visible en P0.
+- Siguiente investigación: coste transversal de mantenimiento x87 en ARM64, con fidelidad y fallos comprobados antes de A/B físico; no repetir candidatos negativos sin nueva evidencia. FPS nuevos: no medidos.
+
 ### 2026-10-15 — Fase 15: perfiles físicos TECNO, ROI/Amdahl y coste x87 transversal
 
 - [x] Dos capturas físicas Simpleperf distintas verificadas contra **ELF Build ID `80dc3884c64e395f87d7975f200d34edccf648fd`**, checksum y conteos nativos: **7.953/6.541 muestras del proceso**, **6.675/5.491 de libmain.so**. p-code original y mapa Ghidra B con SHA-256 fijados; no se usó WSA como sustituto de ARM64.

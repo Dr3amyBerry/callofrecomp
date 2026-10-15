@@ -6,7 +6,7 @@
 
 **Estado / Status:** versión de prueba (pre-release). Menús y componentes están en pruebas; **todavía no se ha verificado que toda la campaña pueda completarse en dispositivos Android reales**.
 
-**Punto de control técnico:** [Progreso consolidado, resultados reales y próximos bloqueos (2026-10-14)](docs/PROJECT_STATUS_CHECKPOINT_2026-10-14.md).
+**Estado del proyecto:** [Estado actual](docs/PROJECT_STATUS.md) · [Índice documental](docs/INDEX.md) · [Siguiente paso hacia 60 FPS](docs/PERFORMANCE_STRATEGY_CURRENT.md).
 
 **Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Estado técnico / Progress](PROGRESS.md) · [Investigación de rendimiento](docs/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) · [Panorámico y HUD](docs/HUD_WIDESCREEN_2026-10-14.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
 
@@ -18,23 +18,8 @@ Usa los menús y recursos de tu instalación de PC, con controles táctiles
 límite de 60 FPS. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
-· [**ANGLE: descarga verificada y viabilidad GL4ES→Vulkan**](docs/ANGLE_GLES_VULKAN_FEASIBILITY_2026-10-14.md)
-· [**Oráculo FCOMP x87: 1.037 casos de flags comprobados**](docs/CPU_PHASE2_FCOM_CONDITION_ORACLE_2026-10-14.md)
-· [**Oráculo x87: 1.024 salidas float32 verificadas frente al x86 real**](docs/CPU_PHASE2_X87_WINDOW_ORACLE_2026-10-14.md)
-· [**Oráculo x86 independiente: 1.024 casos sobre 20 instrucciones reales**](docs/CPU_PHASE2_X86_PREFIX_ORACLE_2026-10-14.md)
-· [**CPU ARM64: auditoría Fase 2 y prueba x87 sin cambio nativo**](docs/CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md)
-· [**ANGLE: prueba A/B/A real 3D Camp Toccoa (sin ganancia de FPS)**](docs/ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md)
-· [**ANGLE: prueba real del menú del juego sobre Vulkan en WSA**](docs/ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md)
-· [**ANGLE: compilación Android reproducible (solo manual)**](docs/ANGLE_BUILD_PIPELINE_2026-10-14.md)
-· [**Investigación Mesa Zink y requisitos Android/WSA**](docs/MESA_ZINK_FEASIBILITY_2026-10-14.md)
-· [**Vulkan: matrices y proyecciones OpenGL**](docs/WSA_GL_MATRIX_BRIDGE_2026-10-14.md)
-· [**Vulkan: TexEnv y descarte alfa**](docs/WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md)
-· [**Captura OpenGL → estado Vulkan del juego real**](docs/GL_VK_STATE_BRIDGE_2026-10-14.md)
-· [**Vulkan: profundidad, stencil y transparencia**](docs/WSA_VULKAN_DEPTH_STENCIL_BLEND_2026-10-14.md)
-· [**Texturas y sampler Vulkan**](docs/WSA_VULKAN_TEXTURE_2026-10-14.md)
-· [**Geometría y shaders Vulkan**](docs/WSA_VULKAN_INDEXED_MESH_2026-10-14.md)
-· [**Preparar los archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
-· [Benchmarks Vulkan/WSA](docs/WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md) · [Decisión Vulkan/DirectX 12 en WSA](docs/WSA_VULKAN_DX12_RENDERER_DECISION_2026-10-14.md) · [Estrategia de rendimiento actual](docs/PERFORMANCE_STRATEGY_CURRENT.md) · [Estado técnico](PROGRESS.md)
+· [**Preparar archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
+· [**Desarrollo y evidencia técnica**](docs/INDEX.md)
 
 ## Empezar en Android
 

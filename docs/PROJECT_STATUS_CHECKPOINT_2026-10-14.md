@@ -1,5 +1,7 @@
 # Estado consolidado y continuación — CallofRecomp (2026-10-14)
 
+> HISTÓRICO (2026-10-14): reemplazado como estado vigente por [PROJECT_STATUS.md](PROJECT_STATUS.md). Las tareas ANGLE pendientes aquí ya tuvieron un ensayo 3D posterior; consultar el índice y la estrategia actual.
+
 **Avance posterior de fase 2:** [auditoría `0x0041B8F0` y laboratorio de copias x87](CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md). La función quedó delimitada, pero sustituir `rd/wr` por `memcpy` no redujo las instrucciones ARM64 en el experimento aislado. No se aceptó optimización ni se probó hardware TECNO.
 
 **Hito posterior completado:** [A1/B/A2 de Camp Toccoa con GL4ES y ANGLE/Vulkan](ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md). Los 54,75 / 55,15 / 55,20 FPS medianos demuestran compatibilidad 3D básica, no una aceleración. WSA y guardados restaurados; próxima prioridad CPU ARM64.
