@@ -1,6 +1,6 @@
 # Fase 14 — Arquitectura de recompilación por regiones CFG (plan maestro)
 
-**Inicio:** 2026-10-14. **Rama:** `main`. **Estado:** 14A IMPLEMENTADA y auditada contra p-code + Capstone x86 original; 14B AÚN PENDIENTE en equivalencia de estado completo. **TECNO:** no disponible y no requerido para las etapas offline. **Meta de 60 FPS:** pendiente; no confundir validación estructural con ms/frame.
+**Inicio:** 2026-10-14. **Rama:** `main`. **Estado:** 14A IMPLEMENTADA y auditada contra p-code + Capstone x86 original; 14B EN CURSO: oráculo de dos rutas y liveness conservador por byte implementados; equivalencia x87 y cuerpo completo pendientes. **TECNO:** no disponible y no requerido para las etapas offline. **Meta de 60 FPS:** pendiente; no confundir validación estructural con ms/frame.
 
 ## 0. Decisiones técnicas y límites
 
@@ -23,11 +23,13 @@
 
 **Aceptación 14A:** coherencia estructural, cobertura por PC exacta de cuerpos Ghidra, límites y todos los destinos identificables auditados. Un CFG derivado de Ghidra/p-code **no** es todavía un oráculo independiente x86.
 
-### 14B — Verificación independiente x86 y contrato de frontera (**verificación estática x86 iniciada; estado completo pendiente**)
+### 14B — Verificación independiente x86 y contrato de frontera (**dos rutas con Unicorn y estado conservador por byte verificados; equivalencia completa pendiente**)
 
 - [x] Verificar con Capstone las **3.326 instrucciones** reales (límites y anchuras) y **342 transferencias** decodificables contra Ghidra p-code: **0 discrepancias**. Cuatro instrucciones con p-code vacío quedan bloqueadas; esta verificación **no prueba** equivalencia de estados.
-- [ ] Extender el oráculo Unicorn/Capstone del prólogo existente a regiones de flujo de control **acotadas y alcanzables**; comprobar que los bytes reales x86 y el p-code coinciden en límites de instrucciones y destinos de saltos donde se puedan verificar.
-- [ ] Establecer `live-in/live-out` byte a byte de `R`, efectos de RAM, bandera y estado x87. Añadir barreras para `CALLOTHER`, memoria aliasable, accesos externos y trampas; no almacenar registros virtuales en variables locales sin las guardas.
+- [x] Extender de manera acotada el oráculo Unicorn a dos rutas reales: 20 instrucciones (salto no tomado) y 27 (tomado), con `512/512` estados verificables coincidentes en GPR, cinco banderas, PC y RAM mapeada; mutación deliberada del PC detectada. Ambas rutas terminan antes de x87.
+- [ ] Extender ahora el oráculo al cuerpo x87, estado binary80, control/tag, epílogos y demás caminos; este resultado aún no prueba la función completa.
+- [x] Implementar análisis conservador de `read-before-def`, `must-write`, `may-write` y `live-in/live-out` por byte del estado R en 450 bloques, con barreras para RAM, CALLOTHER, llamadas, retornos y p-code faltante. Prohibida la promoción automática.
+- [ ] Demostrar alias y efectos completos de RAM, AF, x87 y estados de salida en regiones que se vayan a transformar.
 - [ ] Verificar rutas de fallthrough, rama tomada/no tomada, bucles, salidas dinámicas y reentrada desde el dispatcher.
 
 **Aceptación 14B:** oráculo independiente para las regiones elegidas, mutaciones negativas detectadas, estados finales iguales, rutas irresueltas explícitas.
@@ -68,4 +70,4 @@
 - El compilador LLVM ya elimina muchos temporales y una caché de chunk grande provocó *spills*. No repetir fases 12/13 sin nuevos datos.
 - Los contratos x87 son más estrictos que equivalencia numérica aproximada: respetar bytes, padding y señales relevantes.
 
-**Primera entrega 14A completada:** recuperación de **450 bloques** en siete cuerpos originales (3.326 instrucciones), con informe privado, pruebas sintéticas y chequeo independiente de Capstone de 342 controles directos/indirectos. **Análisis, no optimización ejecutable.** Ver [informe de 14A](PHASE14_CFG_INITIAL_RECOVERY_2026-10-14.md). Las etapas 14B–14E siguen pendientes hasta cumplir criterios.
+**Primera entrega 14A completada:** recuperación de **450 bloques** en siete cuerpos originales (3.326 instrucciones), con informe privado, pruebas sintéticas y chequeo independiente de Capstone de 342 controles directos/indirectos. **Análisis, no optimización ejecutable.** Ver [informe de 14A](PHASE14_CFG_INITIAL_RECOVERY_2026-10-14.md). 14B permanece parcial; 14C–14E siguen pendientes. Ver [informe 14B](PHASE14B_STATE_BOUNDARIES_ORACLE_2026-10-15.md).

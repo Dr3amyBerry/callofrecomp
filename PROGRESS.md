@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Fase 14B: oráculo x86 bifurcado y contratos de estado por byte (PARCIAL, offline)
+
+- [x] Dos caminos x86 auténticos de `0x0041B8F0`: 20 instrucciones (JE no tomado) y 27 (JE tomado). `512/512` pruebas con 8 GPR, CF/PF/ZF/SF/OF, PC, tres regiones RAM y bytes R no tocados; Unicorn original vs `pcode2c.Gen` de LLVM-MinGW. **AF y x87 sin comprobar**.
+- [x] Control negativo con DLL privada y PC tomado alterado: rechazo verificado, mientras la rama intacta siguió pasando.
+- [x] Contratos `read-before-def/must-write/may-write/live-in/live-out` por byte en 450 bloques de siete funciones; `0x0041B8F0` con 187 LOAD, 67 STORE y 80 bytes x87 observados. Salidas externas conservan R y p-code opaco bloquea optimización.
+- [x] CLI privado reproducible, checks SHA y pruebas sintéticas para alias de bytes, bucles, entradas y salida al dispatcher.
+- [x] Suite de regresión: **301 pruebas Python** (4 omitidas), **35/35 CTest** aprobados; el dispositivo no se utilizó.
+- [ ] Ampliar oráculo a binary80, estado de FPU y epílogos de la función antes de aplicar optimización nativa. Sin APK, TECNO ni FPS nuevos. [Informe 14B](docs/PHASE14B_STATE_BOUNDARIES_ORACLE_2026-10-15.md).
+
 ### 2026-10-14 — Fase 14A: CFG de funciones completas verificado contra x86 original, offline
 
 - [x] Nuevo analizador **por función original Ghidra B**, no chunks arbitrarios: micro-CFG, saltos relativos de p-code, llamadas, retornos, indirectos, entradas externas, bloques básicos, peligros, fallthrough y propiedad de rangos discontinuos.

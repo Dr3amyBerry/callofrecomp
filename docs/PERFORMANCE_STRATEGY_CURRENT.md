@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 14B: control de estado por byte y ejecución x86 en dos caminos
+
+Se extendió el oráculo original de `0x0041B8F0` a 20 instrucciones si JE no se toma y 27 si se toma. Unicorn ejecutó los bytes x86 originales y se contrastó una DLL privada de `pcode2c.Gen`: **512/512 casos coincidentes** de ocho GPR, CF/PF/ZF/SF/OF, PC y RAM acotada, con una mutación de PC correctamente rechazada. `AF y x87 NO se han verificado`; ambas rutas se detienen antes de FPU. Análisis MAY/MUST por byte de R completado para 450 bloques, que detecta LOAD/STORE y 80 bytes x87 en la función prioritaria; **no habilita caché de registros ni transforma el motor**. Sin beneficio probado de FPS. [Informe técnico](PHASE14B_STATE_BOUNDARIES_ORACLE_2026-10-15.md).
+
 ## Fase 14A: control de flujo por función original, no ajustes de una operación
 
 El análisis offline de los siete cuerpos calientes de CoDSP.exe 1.5 recuperó **3.326 instrucciones y 450 bloques básicos**, distinguiendo rango B discontiguo, accesos a estado, entrada externa, saltos locales p-code y retornos indirectos. Los límites y clases/targets x86 reales se comprobaron **independientemente con Capstone**: **3.326 límites y 342 transferencias coincidentes; cero discrepancias**, aunque **cuatro instrucciones carecen de p-code exportado**. Estos resultados **no** demuestran equivalencia del motor ni mejoras FPS. El objetivo de 14B es proteger y verificar los límites de `0x0041B8F0`, que tiene 553 instrucciones, 88 bloques, cero huecos o salidas indirectas conocidas, pero varias entradas/salidas externas; no optimizar hasta que la frontera y estado completo sean comprobados. No se tocó la APK, Android, los gráficos ni el TECNO. [Plan](PHASE14_CFG_ARCHITECTURE_MASTER_PLAN_2026-10-14.md) · [Reporte](PHASE14_CFG_INITIAL_RECOVERY_2026-10-14.md).
