@@ -10,17 +10,17 @@
 
 **Estado del proyecto:** [Estado actual](docs/PROJECT_STATUS.md) · [Índice documental](docs/INDEX.md) · [Optimización acumulativa](docs/OPTIMIZATION_LEDGER.md).
 
-**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Registro de mejoras / Optimization ledger](docs/OPTIMIZATION_LEDGER.md) · [Estado técnico / Progress](PROGRESS.md) · [Investigación WSA](docs/performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md) · [Panorámico y HUD](docs/performance/graphics/HUD_WIDESCREEN_2026-10-14.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
+**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.4) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Registro de mejoras / Optimization ledger](docs/OPTIMIZATION_LEDGER.md) · [Estado técnico / Progress](PROGRESS.md) · [Investigación WSA](docs/performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md) · [Panorámico y HUD](docs/performance/graphics/HUD_WIDESCREEN_2026-10-14.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
 
 **Call of Duty clásico para Android, mediante recompilación estática de la versión PC 1.5.**
 
 Proyecto independiente en desarrollo, centrado en la campaña de un jugador.
 Usa los menús y recursos de tu instalación de PC, con controles táctiles
 [RetroTouch](https://github.com/Andiweli/RetroTouch), pantalla panorámica y un
-límite de 60 FPS en la configuración pública; el objetivo experimental WSA de
-120 FPS se prueba por separado. Necesitas tu propia copia del juego.
+límite de 60 FPS en teléfonos. La APK experimental WSA usa límite 120 y las
+optimizaciones medidas por separado. Necesitas tu propia copia del juego.
 
-[**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
+[**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.4)
 · [**Preparar archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
 · [**Desarrollo y evidencia técnica**](docs/INDEX.md)
 

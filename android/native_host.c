@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include "../tools/recomp/runtime/widescreen.h"
 #include "../tools/recomp/runtime/frame_pacing.h"
+#include "../tools/recomp/runtime/launch_profile.h"
 #define main engine_main
 #include "../tools/recomp/hosts/engine_host.c"
 #undef main
@@ -33,19 +34,22 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
 #ifdef CODRECOMP_NATIVE_X87_REGION
     char native_path[4096];
     unsetenv("CODRECOMP_NATIVE_X87_REGION");
+    int native_enabled=LAUNCH_DEFAULT_NATIVE_X87;
     int native_length=snprintf(native_path,sizeof native_path,"%s/native_x87",argv[2]);
     FILE *native_file=native_length>0 && (size_t)native_length<sizeof native_path ? fopen(native_path,"rb"):NULL;
     if(native_file) {
-        int first=fgetc(native_file),second=fgetc(native_file);
-        if(first=='1' && second==EOF && !ferror(native_file)) setenv("CODRECOMP_NATIVE_X87_REGION","1",1);
+        char setting[2];size_t length=fread(setting,1,sizeof setting,native_file);
+        if(!ferror(native_file)) native_enabled=launch_native_x87_setting(native_enabled,setting,length);
         fclose(native_file);
     }
+    if(native_enabled) setenv("CODRECOMP_NATIVE_X87_REGION","1",1);
 #endif
     /* One bounded private setting owns BOTH guest and host limits. Read once;
      * no saved cvars, simulation clocks or commercial resources are edited. */
     char limit_path[4096], limit_text[32];
-    int selected_limit = 60, limit_override = 0;
+    int selected_limit = LAUNCH_DEFAULT_FRAME_LIMIT, limit_override = LAUNCH_DEFAULT_FRAME_LIMIT != 60;
     unsetenv("CODRECOMP_FRAME_LIMIT");
+    if(limit_override) setenv("CODRECOMP_FRAME_LIMIT","120",1);
     int limit_path_size = snprintf(limit_path, sizeof limit_path, "%s/frame_limit", argv[2]);
     FILE *limit_file = limit_path_size > 0 && (size_t)limit_path_size < sizeof limit_path
         ? fopen(limit_path, "rb") : NULL;

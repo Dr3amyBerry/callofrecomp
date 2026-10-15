@@ -8,6 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER = ROOT / 'tools/recomp/build_android.py'
 
 class ProfileBuildFlagsTest(unittest.TestCase):
+    def test_release_defaults_require_wsa_and_original_pe(self):
+        for options in (['--wsa-release'],['--abi','x86_64','--wsa-release']):
+            proc=subprocess.run([sys.executable,str(BUILDER),*options],capture_output=True,text=True)
+            self.assertNotEqual(proc.returncode,0)
+            self.assertIn('--wsa-release requires',proc.stderr)
+
     def test_cumulative_bundle_requires_wsa_and_verified_pe_argument(self):
         for options in (['--wsa-cumulative'],
                         ['--abi','x86_64','--wsa-cumulative'],
