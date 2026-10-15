@@ -70,20 +70,35 @@ int main(void) {
     CHECK(!x87_native_binary(X87_NATIVE_ADD,0x017f,&one,&two,&r)); CHECK(!memcmp(&r,&sentinel,sizeof r));
     CHECK(!x87_native_binary(99,0x037f,&one,&two,&r)); CHECK(!memcmp(&r,&sentinel,sizeof r));
     CHECK(!x87_native_binary(X87_NATIVE_ADD,0x837f,&one,&two,&r)); CHECK(!memcmp(&r,&sentinel,sizeof r));
+    CHECK(!x87_native_binary(X87_NATIVE_ADD,0x033f,&one,&two,&r)); CHECK(!memcmp(&r,&sentinel,sizeof r));
     CHECK(live_compiler_values(&one,&tiny)==2.0L);
     /* Preserve host x87 stack, control/status, pointers and MXCSR. */
     unsigned char before[512] __attribute__((aligned(16)))={0};
     unsigned char after[512] __attribute__((aligned(16)))={0};
     unsigned char original[512] __attribute__((aligned(16)));
     unsigned short hostcw=0x0b7f;
-    __asm__ volatile("fxsave %0" : "=m"(original) : : "memory");
+    __asm__ volatile("fxsave64 %0" : "=m"(original) : : "memory");
     __asm__ volatile("fninit; fldcw %0; fld1; fldpi" : : "m"(hostcw) : "st","st(1)");
-    __asm__ volatile("fxsave %0" : "=m"(before) : : "memory");
+    __asm__ volatile("fxsave64 %0" : "=m"(before) : : "memory");
+    uint64_t host_ip=UINT64_C(0x176543210),host_dp=UINT64_C(0x165432100);
+    memcpy(before+8,&host_ip,8);memcpy(before+16,&host_dp,8);
+    __asm__ volatile("fxrstor64 %0; fxsave64 %0" : "+m"(before) : : "memory","st","st(1)");
     int accepted=x87_native_binary(X87_NATIVE_ADD,0x037f,&one,&tiny,&r);
-    __asm__ volatile("fxsave %0" : "=m"(after) : : "memory");
-    __asm__ volatile("fxrstor %0" : : "m"(original) : "memory","st","st(1)");
+    __asm__ volatile("fxsave64 %0" : "=m"(after) : : "memory");
+    __asm__ volatile("fxrstor64 %0" : : "m"(original) : "memory","st","st(1)");
     CHECK(accepted); CHECK(!memcmp(before,after,32));
     for(unsigned i=0;i<8;i++) CHECK(!memcmp(before+32+16*i,after+32+16*i,10));
+    unsigned char pending[512] __attribute__((aligned(16)));
+    memcpy(pending,original,sizeof pending);
+    unsigned short pendingcw=0x037e,pendingsw=0x8081;
+    memcpy(pending,&pendingcw,2);memcpy(pending+2,&pendingsw,2);pending[4]=0;
+    __asm__ volatile("fxrstor64 %0" : : "m"(pending) : "memory","st","st(1)",
+        "st(2)","st(3)","st(4)","st(5)","st(6)","st(7)");
+    accepted=x87_native_binary(X87_NATIVE_ADD,0x037f,&one,&tiny,&r);
+    __asm__ volatile("fxsave64 %0; fxrstor64 %1" : "=m"(after) : "m"(original) : "memory","st","st(1)",
+        "st(2)","st(3)","st(4)","st(5)","st(6)","st(7)");
+    unsigned short restoredcw,restoredsw;memcpy(&restoredcw,after,2);memcpy(&restoredsw,after+2,2);
+    CHECK(accepted);CHECK(restoredcw==pendingcw);CHECK((restoredsw&0x8081)==0x8081);
     puts("native binary80 arithmetic/control/status/host restoration passed");
     return 0;
 }

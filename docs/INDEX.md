@@ -6,6 +6,8 @@
 
 **Último bloque:** [Limitador configurable, comparación física y perfil del renderer](WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md).
 
+**Desarrollo posterior:** [Estado x87 completo y oráculo nativo x86/WSA](WSA120_NATIVE_X87_STATE_2026-10-15.md), todavía sin integración en APK.
+
 ## Responsabilidad de cada documento
 
 | Documento | Qué mantener aquí |

@@ -19,6 +19,10 @@ Componente binary80 nativo aislado y probado en Windows/WSA O0/O2/O3;
 36/36 CTest finales. Sigue fuera del juego hasta resolver el contrato guest
 y medir una APK integrada. [Detalle y siguiente bloque](superpowers/plans/2026-10-15-wsa-native-binary80.md).
 
+**Continuación local:** [adaptador de estado y oráculo nativo x86](WSA120_NATIVE_X87_STATE_2026-10-15.md),
+1.596 casos de RAM/CW/SW/tags/ocho slots sin diferencias también en WSA;
+37/37 CTest. Metadatos y fallos siguen pendientes; sin integración ni FPS nuevos.
+
 **Prototipo posterior, sin integración:** x87 explícito en WSA coincide en
 1.476 casos de salida/status con Windows nativo y restaura el entorno x87
 comprobado. Unicorn coincide en salidas, pero omite flags observados en nativo.

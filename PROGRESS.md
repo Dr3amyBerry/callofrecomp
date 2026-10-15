@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Adaptador de estado x87 y oráculo CPU de 32 bits
+
+- Implementado `x87_native_state.h`: entorno de 108 bytes, mapeo R medido, selectores explícitos, tag completo/TOP/ocho slots binary80 y preservación de bytes ajenos. Sigue fuera del juego.
+- Original ejecutado nativamente en proceso i686 frente a región x64 Windows y WSA: **1.596 casos sin diferencias** en RAM/CW/SW/tags/ocho slots. Incluye pila llena, TOP, flags previos, NaN/Inf/subnormales. Excluye metadatos host, alias y fallos.
+- Revisión corrigió formato host a FXSAVE64/FXRSTOR64, bit reservado CW y excepción host pendiente que el test reprodujo como fallo numérico. FNINIT tras guardar y antes de FRSTOR evita dispararla; el estado pendiente se conserva al salir.
+- Math/state O0/O2/O3 aprobados Windows/WSA (12 ejecuciones); **37/37 CTest** finales. Ensayo aislado con contexto: 441,349 ns generados / 210,508 ns nativos, sin costes R/guardas/fallos; no equivale a ahorro por frame.
+- [Informe y frontera pendiente](docs/WSA120_NATIVE_X87_STATE_2026-10-15.md). Sin cambios en APK/partidas ni ganancia FPS declarada. Siguen metadatos, alias y recuperación precisa antes de integrar.
+
 ### 2026-10-15 — Operaciones binary80 nativas, todavía sin integración guest
 
 - Implementado `tools/recomp/runtime/x87_native_math.h`: ADD/SUB/MUL/DIV binary80 explícito, CW y estado de operación capturado antes de almacenar. Conserva x87/MXCSR host; rechaza excepciones sin máscara/controles inválidos y soporta alias. No modifica APK ni lowering.

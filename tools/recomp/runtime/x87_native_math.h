@@ -23,7 +23,7 @@ static inline int x87_native_binary(unsigned op, uint16_t cw,
         const x87_native_value *lhs, const x87_native_value *rhs,
         x87_native_result *output) {
 #if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
-    if (op > X87_NATIVE_DIV || (cw & 0x3f) != 0x3f ||
+    if (op > X87_NATIVE_DIV || (cw & 0x7f) != 0x7f ||
         ((cw >> 8) & 3) == 1 || (cw & 0xe080)) return 0;
     const x87_native_value a=*lhs, b=*rhs;
     x87_native_result result;
@@ -33,8 +33,8 @@ static inline int x87_native_binary(unsigned op, uint16_t cw,
     // occur BEFORE the save. No compiler SSE operation may be interleaved with
     // the save/restore pair, which restores XMM registers as well as x87.
 #define X87_NATIVE_CALCULATE(instruction) \
-    __asm__ volatile("fxsave %[host]\n\tfninit\n\tfldcw %[cw]\n\tfldt %[b]\n\tfldt %[a]\n\t" \
-        instruction " %%st(1), %%st\n\tfnstsw %[sw]\n\tfstpt %[result]\n\tfstp %%st(0)\n\tfxrstor %[host]" \
+    __asm__ volatile("fxsave64 %[host]\n\tfninit\n\tfldcw %[cw]\n\tfldt %[b]\n\tfldt %[a]\n\t" \
+        instruction " %%st(1), %%st\n\tfnstsw %[sw]\n\tfstpt %[result]\n\tfstp %%st(0)\n\tfxrstor64 %[host]" \
         : [host] "=m"(host), [result] "=m"(result.value), [sw] "=m"(status) \
         : [cw] "m"(cw), [a] "m"(a), [b] "m"(b) \
         : "memory", "st", "st(1)", "st(2)", "st(3)", \
