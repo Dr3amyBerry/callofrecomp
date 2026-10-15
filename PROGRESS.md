@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Nueva misión WSA 120 FPS y reglas de eficiencia
+
+- Instrucción actual: desarrollo local autónomo para 120 FPS reales en WSA, sin reducir calidad ni precisión; el objetivo TECNO anterior queda como antecedente independiente.
+- `AGENTS.md`: scripts y salidas resumidas primero; capturas visuales solo ante incertidumbre o validación necesaria, sin omitir pruebas de fidelidad.
+- APK/perfil/partidas respaldados; A1 actual: 52,7 FPS y 18,66 ms CPU/frame (35 ventanas). Simpleperf posterior: 12.329 muestras, ninguna perdida. Pantalla WSA actual de 75 Hz y doble cap guest/host de 60 comprobados.
+- [Evidencia, límites y siguiente bloque](docs/WSA120_BASELINE_2026-10-15.md). Sin mejora nueva declarada; faltan perfil fino, opción configurable, A/B y validación compleja/prolongada.
+
 ### 2026-10-15 — Consolidación documental y auditoría de GitHub
 
 - Fuente de estado vigente: [PROJECT_STATUS.md](docs/PROJECT_STATUS.md); índice completo: [INDEX.md](docs/INDEX.md). Esta bitácora conserva hechos y decisiones en su contexto temporal: sus antiguas colas, capacidades e hitos no describen automáticamente el presente.

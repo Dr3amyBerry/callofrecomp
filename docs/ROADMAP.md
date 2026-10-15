@@ -1,5 +1,7 @@
 # Cola de trabajo del proyecto
 
+> **Prioridad actual: misión WSA 120 FPS.** Seguir el [bloque de diagnóstico e implementación WSA](WSA120_BASELINE_2026-10-15.md#siguiente-bloque). La cola TECNO de abajo queda como referencia; no extrapolar sus perfiles a WSA.
+
 **Revisada:** 2026-10-15. [Estado actual](PROJECT_STATUS.md) · [Estrategia y política](PERFORMANCE_STRATEGY_CURRENT.md) · [Índice](INDEX.md).
 
 | Orden | Trabajo | Termina cuando | Dependencia |

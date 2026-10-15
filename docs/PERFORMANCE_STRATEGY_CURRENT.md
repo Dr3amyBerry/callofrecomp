@@ -1,5 +1,7 @@
 # Estrategia vigente de rendimiento
 
+> **Cambio de objetivo por instrucción del usuario (2026-10-15): 120 FPS reales en WSA.** La [nueva línea base WSA](WSA120_BASELINE_2026-10-15.md) dirige el trabajo actual. Esta estrategia y su contador corresponden al objetivo TECNO anterior; se conservan los bloqueos de seguridad, sin transferir a WSA sus atribuciones de coste.
+
 **Revisión documental:** 2026-10-15. Mantiene la estrategia adoptada el 2026-10-14 y su política de intentos; esta consolidación no es una nueva medición ni reinicia el contador.
 
 [Estado actual](PROJECT_STATUS.md) · [Cola de trabajo](ROADMAP.md) · [Índice documental](INDEX.md)

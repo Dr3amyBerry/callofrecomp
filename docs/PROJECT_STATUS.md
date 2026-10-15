@@ -1,5 +1,10 @@
 # Estado actual de CallofRecomp
 
+> **Nueva misión (2026-10-15): 120 FPS reales en WSA mediante desarrollo local.**
+> [Línea base actual y trabajo abierto](WSA120_BASELINE_2026-10-15.md).
+> El corte TECNO y el estado de CI descritos abajo siguen como antecedentes;
+> no son mediciones nuevas ni la prioridad de rendimiento de esta misión.
+
 **Corte:** 2026-10-15. **Código revisado:** `bda83a6532b7cbf6489740f42830eb9f55fdff98` (fase 15). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
 
 [Documentación completa](INDEX.md) · [Próximo trabajo](ROADMAP.md) · [Estrategia 60 FPS](PERFORMANCE_STRATEGY_CURRENT.md) · [Bitácora](../PROGRESS.md)

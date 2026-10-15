@@ -2,6 +2,8 @@
 
 **Revisión:** 2026-10-15. Empezar por [estado actual](PROJECT_STATUS.md), seguir con [cola de trabajo](ROADMAP.md) y [estrategia de rendimiento](PERFORMANCE_STRATEGY_CURRENT.md).
 
+**Misión activa:** [120 FPS reales en WSA: línea base, límites y siguiente bloque](WSA120_BASELINE_2026-10-15.md). [Reglas de eficiencia](../AGENTS.md).
+
 ## Responsabilidad de cada documento
 
 | Documento | Qué mantener aquí |
