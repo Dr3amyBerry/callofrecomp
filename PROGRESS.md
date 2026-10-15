@@ -9,6 +9,16 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 14A: CFG de funciones completas verificado contra x86 original, offline
+
+- [x] Nuevo analizador **por función original Ghidra B**, no chunks arbitrarios: micro-CFG, saltos relativos de p-code, llamadas, retornos, indirectos, entradas externas, bloques básicos, peligros, fallthrough y propiedad de rangos discontinuos.
+- [x] Sobre CoDSP 1.5 **3.326 instrucciones/450 bloques básicos** de siete cuerpos calientes; cuatro instrucciones con p-code vacío bloqueadas, sin inventar operaciones ni convertir faltantes en NOP.
+- [x] Capstone independiente sobre el PE original: **3.326/3.326 límites x86**, **342/342 clases/destinos de control verificables** coincidentes con el p-code; **0 discrepancias**. Esto **no** verifica EFLAGS/x87/RAM/PC finales, tiempo CPU ni FPS.
+- [x] Nuevas herramientas puras `region_cfg.py`, `diagnostics/analyze_cfg_regions.py` y `diagnostics/verify_cfg_against_x86.py`; los tres insumos se verifican mediante SHA antes de emitir informes privados bajo `.local/profiles`.
+- [x] Pruebas sintéticas con inyección de targets/tamaños erróneos, CFG compartido y huecos, entradas múltiples y rechazo de rutas inseguras.
+- [x] Validación general: **287 Python (4 omitidas, 0 fallidas) y 35/35 CTest**. Sin modificar `pcode2c`, motor de ejecución, APK, ni archivos originales.
+- [ ] **14B pendiente:** frontera byte a byte de R/EFLAGS/x87/RAM, ampliar oráculo independiente Unicorn desde el prólogo al cuerpo/ramas; luego 14C SSA y sustitución A/B reversible. **Ninguna APK ni FPS modificados**. [Plan maestro](docs/PHASE14_CFG_ARCHITECTURE_MASTER_PLAN_2026-10-14.md) · [Informe 14A](docs/PHASE14_CFG_INITIAL_RECOVERY_2026-10-14.md).
+
 ### 2026-10-14 — Fase 14: referencias CFG/BSP/colisiones preparadas, sin modificar el motor
 
 - [x] Descargadas y verificadas como clones Git sparse bajo `.local/references` (ignorada): **ioq3**, **KILLTUBE/iocod** y **QEMU/TCG**. Recuperados solo subárboles relevantes, incluyendo `cm_trace.c`, `tr_bsp_cod1.c` y `tcg/optimize.c`; hashes exactos y licencias revisados.

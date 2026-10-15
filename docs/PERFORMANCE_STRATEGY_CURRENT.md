@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 14A: control de flujo por función original, no ajustes de una operación
+
+El análisis offline de los siete cuerpos calientes de CoDSP.exe 1.5 recuperó **3.326 instrucciones y 450 bloques básicos**, distinguiendo rango B discontiguo, accesos a estado, entrada externa, saltos locales p-code y retornos indirectos. Los límites y clases/targets x86 reales se comprobaron **independientemente con Capstone**: **3.326 límites y 342 transferencias coincidentes; cero discrepancias**, aunque **cuatro instrucciones carecen de p-code exportado**. Estos resultados **no** demuestran equivalencia del motor ni mejoras FPS. El objetivo de 14B es proteger y verificar los límites de `0x0041B8F0`, que tiene 553 instrucciones, 88 bloques, cero huecos o salidas indirectas conocidas, pero varias entradas/salidas externas; no optimizar hasta que la frontera y estado completo sean comprobados. No se tocó la APK, Android, los gráficos ni el TECNO. [Plan](PHASE14_CFG_ARCHITECTURE_MASTER_PLAN_2026-10-14.md) · [Reporte](PHASE14_CFG_INITIAL_RECOVERY_2026-10-14.md).
+
 ## Fase 13: compilación A/B de bloques calientes completos (nueva opción OFF)
 
 Se compararon tres chunks completos (1.500 instrucciones p-code cada uno) en ARM64 por compilación NDK, usando dos perfiles CPU físicos antiguos y ninguna prueba nueva en TECNO. `-O2` con `-ffp-contract=off` reduce cargas/escrituras ARM64 **estáticas** en geometría chunk18 y recorrido chunk88. Sobre **p4 completa**: `.text` **1.998.764→1.979.316 B**, cargas **82.258→77.931**, escrituras **68.537→54.388**. **No** es una reducción medida de tiempo por frame ni FPS; el compilador puede afectar cada ruta de manera distinta.
