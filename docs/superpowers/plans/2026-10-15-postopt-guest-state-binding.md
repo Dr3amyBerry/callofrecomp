@@ -45,7 +45,7 @@ puede sustituir FXSAVE64/FXRSTOR64 perdiendo metadatos host de 64 bits.
 - Revisión independiente sin bloqueo; añadió cobertura de wiring CLI/CMake.
   A/B/A/B en ejecución. No se compila durante sus capturas.
 - A/B/A/B completado: CPU/frame menor en ambas parejas; se conserva enlace
-  local en APK WSA. [Resultados y alcance](../../WSA_POSTOPT_APPLICATION_2026-10-15.md).
+  local en APK WSA. [Resultados y alcance](../../performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md).
 - P2 ejecutado con contadores/timers existentes y analizador ponderado nuevo;
   restaurados APK normal y marcadores ausentes. Sin cachés no verificadas.
 - P3: desambiguadas muestras del símbolo final vs restauración/postámbulo.

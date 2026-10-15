@@ -1,6 +1,6 @@
 # Ejecución de PERFORMANCE_STRATEGY_CURRENT — TECNO (2026-10-14)
 
-**Estrategia vigente:** [PERFORMANCE_STRATEGY_CURRENT.md](PERFORMANCE_STRATEGY_CURRENT.md) v1.
+**Estrategia vigente:** [PERFORMANCE_STRATEGY_CURRENT.md](../../PERFORMANCE_STRATEGY_CURRENT.md) v1.
 **Meta:** 60 FPS sostenidos en el spawn del entrenamiento Camp Toccoa, TECNO CK6n ARM64, Equilibrado, sin degradar gráficos, HUD, colisiones ni partidas.
 **Estado:** fase 1 CPU ejecutada y contrastada en dos capturas; perfil hardware GPU incompleto por permisos del fabricante; fase 2 objetivo identificado, **sin modificación insegura del juego**; fase 3 aún no iniciada.
 **Contador de la estrategia:** **0/5**. Son diagnósticos, NO intentos válidos de optimización A/B.

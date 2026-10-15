@@ -71,6 +71,6 @@ selectores/semántica de excepciones. Evidencia: `frstor_mapping_v6/summary.json
 
 **Publicación:** componente `f389f2d`; [CI 38734909191 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38734909191).
 
-**Continuación implementada:** [adaptador de estado y oráculo nativo x86](../../WSA120_NATIVE_X87_STATE_2026-10-15.md).
+**Continuación implementada:** [adaptador de estado y oráculo nativo x86](../../performance/wsa/WSA120_NATIVE_X87_STATE_2026-10-15.md).
 37/37 CTest; 1.596 casos contrastados en CPU x86 y WSA para RAM, CW, SW,
 tags y ocho slots. No incluye metadatos, alias ni fallos y sigue fuera de APK.

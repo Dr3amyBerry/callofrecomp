@@ -1,6 +1,6 @@
 # Android performance profiles
 
-> Guía de perfiles y resultados históricos. Para estado y prioridades actuales consultar [PROJECT_STATUS.md](PROJECT_STATUS.md) y [PERFORMANCE_STRATEGY_CURRENT.md](PERFORMANCE_STRATEGY_CURRENT.md). Los apartados fechados no son una cola de trabajo vigente.
+> Guía de perfiles y resultados históricos. Para estado y prioridades actuales consultar [PROJECT_STATUS.md](../PROJECT_STATUS.md) y [PERFORMANCE_STRATEGY_CURRENT.md](../PERFORMANCE_STRATEGY_CURRENT.md). Los apartados fechados no son una cola de trabajo vigente.
 
 Select the graphics profile in the launcher before starting the game. Choices
 persist independently of campaign saves. Balanced is the default; Android devices
@@ -33,7 +33,7 @@ phone; manual checks remain with the user in flash mode.
 
 ## October 14: two failed ARM64 performance experiments
 
-Two opt-in experiments were checked on the physical TECNO CK6n in the **same training spawn** after the confirmed native x87 improvement (+19.58% FPS). A full p-code-equivalent 32-byte copy implementation at CoDSP `0x0042B0A0` passed **17,000** complete ARM64 differential calls but gave median A/B/A **25.45 / 25.10 / 25.30 FPS**. Selective `-O2 -ffp-contract=off` on the CoDSP visibility partition p8 gave **25.30 / 25.50 / 25.45 FPS**. These are **NOT new FPS improvements**. `--fast-copy32` and `--visibility-o2` both remain **OFF by default**, with reference APK restored on the phone. The 60-FPS training-spawn target remains unmet. Full methodology, private log filenames and next priorities: [ARM64 experiments report](ARM64_PERF_EXPERIMENTS_2026-10-14.md).
+Two opt-in experiments were checked on the physical TECNO CK6n in the **same training spawn** after the confirmed native x87 improvement (+19.58% FPS). A full p-code-equivalent 32-byte copy implementation at CoDSP `0x0042B0A0` passed **17,000** complete ARM64 differential calls but gave median A/B/A **25.45 / 25.10 / 25.30 FPS**. Selective `-O2 -ffp-contract=off` on the CoDSP visibility partition p8 gave **25.30 / 25.50 / 25.45 FPS**. These are **NOT new FPS improvements**. `--fast-copy32` and `--visibility-o2` both remain **OFF by default**, with reference APK restored on the phone. The 60-FPS training-spawn target remains unmet. Full methodology, private log filenames and next priorities: [ARM64 experiments report](../performance/tecno/ARM64_PERF_EXPERIMENTS_2026-10-14.md).
 
 ## October 14: HUD aspect corrections are not FPS optimizations
 
@@ -349,7 +349,7 @@ no single-function CPU claim is justified. These are *structure* measurements,
 not FPS or ARM64 real-device results.
 
 Commands, external references, attribution rules and follow-up experiments:
-[Function-level performance research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
+[Function-level performance research](../performance/cpu/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
 
 ## Function-body CPU symbolization phase (2026-10-14)
 
@@ -363,12 +363,12 @@ is added to normal gameplay and **no FPS gain was measured**.
 
 Four private Ghidra exports gave 7,116 body ranges and 519,757/599,770
 instructions uniquely assigned to static Ghidra bodies. See
-[the full methodology and reproduction commands](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md)
+[the full methodology and reproduction commands](../performance/cpu/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md)
 for identity and accuracy limits.
 
 ## TECNO CK6n Android 14 ARM64 — 2026-10-14
 
-Primera medición física en training: 21,55 FPS de mediana / 44,585 ms de CPU por frame en 40 ventanas tardías, calidad Equilibrado. Simpleperf identificó la transformación original CoDSP.exe 0x005061B0 como función candidata principal. La opción selectiva -O2 no mejoró de manera demostrable; -Oz empeoró fuertemente; Ligero tampoco produjo una mejora sostenida. La APK normal y el perfil Equilibrado fueron restaurados. Datos completos: [informe del TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md).
+Primera medición física en training: 21,55 FPS de mediana / 44,585 ms de CPU por frame en 40 ventanas tardías, calidad Equilibrado. Simpleperf identificó la transformación original CoDSP.exe 0x005061B0 como función candidata principal. La opción selectiva -O2 no mejoró de manera demostrable; -Oz empeoró fuertemente; Ligero tampoco produjo una mejora sostenida. La APK normal y el perfil Equilibrado fueron restaurados. Datos completos: [informe del TECNO](../performance/tecno/TECNO_CK6N_ARM64_PERF_2026-10-14.md).
 
 ### Continuación: fast path x87 por función, activación opcional
 
@@ -389,7 +389,7 @@ normales y experimentales por separado y se verificaron 26/26 CTest,
 93 pruebas Python (4 omitidas) y firma Android. No publicar datos del juego.
 No extrapolar estas mejoras a la zona concurrida, toda la campaña u otros
 teléfonos sin nuevos A/B/A y validación visual; más detalles en el
-[informe TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md).
+[informe TECNO](../performance/tecno/TECNO_CK6N_ARM64_PERF_2026-10-14.md).
 
 
 ## Real widescreen 3D plus corrected 2D HUD (2026-10-14)
@@ -402,4 +402,4 @@ compass horizontally even though the 3D world was not stretched.
 override at startup from the user's installed original PK3. The
 compass and square posture/prompt/tank symbols are adjusted only in X.
 All original game files and 3D projection remain unchanged. See
-[method, visual verification, private-file rules and test coverage](HUD_WIDESCREEN_2026-10-14.md).
+[method, visual verification, private-file rules and test coverage](../performance/graphics/HUD_WIDESCREEN_2026-10-14.md).

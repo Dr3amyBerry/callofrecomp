@@ -6,16 +6,19 @@
 
 **Estado / Status:** versión de prueba (pre-release). Menús y componentes están en pruebas; **todavía no se ha verificado que toda la campaña pueda completarse en dispositivos Android reales**.
 
-**Estado del proyecto:** [Estado actual](docs/PROJECT_STATUS.md) · [Índice documental](docs/INDEX.md) · [Siguiente paso hacia 60 FPS](docs/PERFORMANCE_STRATEGY_CURRENT.md).
+**Objetivos separados:** **120 FPS WSA** en desarrollo experimental y **60 FPS TECNO ARM64** vigente, pendiente de nueva medición física ([plan TECNO](docs/TECNO_REVALIDATION.md)).
 
-**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Estado técnico / Progress](PROGRESS.md) · [Investigación de rendimiento](docs/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) · [Panorámico y HUD](docs/HUD_WIDESCREEN_2026-10-14.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
+**Estado del proyecto:** [Estado actual](docs/PROJECT_STATUS.md) · [Índice documental](docs/INDEX.md) · [Optimización acumulativa](docs/OPTIMIZATION_LEDGER.md).
+
+**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Registro de mejoras / Optimization ledger](docs/OPTIMIZATION_LEDGER.md) · [Estado técnico / Progress](PROGRESS.md) · [Investigación WSA](docs/performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md) · [Panorámico y HUD](docs/performance/graphics/HUD_WIDESCREEN_2026-10-14.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
 
 **Call of Duty clásico para Android, mediante recompilación estática de la versión PC 1.5.**
 
 Proyecto independiente en desarrollo, centrado en la campaña de un jugador.
 Usa los menús y recursos de tu instalación de PC, con controles táctiles
 [RetroTouch](https://github.com/Andiweli/RetroTouch), pantalla panorámica y un
-límite de 60 FPS. Necesitas tu propia copia del juego.
+límite de 60 FPS en la configuración pública; el objetivo experimental WSA de
+120 FPS se prueba por separado. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.3)
 · [**Preparar archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
@@ -98,7 +101,7 @@ no forma parte de los releases.
 El contenedor `.codpack` tiene comprobación CRC32, límites de tamaño y nombres
 permitidos. Android extrae a una carpeta temporal y valida la instalación antes
 de activarla. Un paquete inválido conserva la instalación anterior y las partidas.
-Consulta la [especificación del formato](docs/PACKAGE_FORMAT.md).
+Consulta la [especificación del formato](docs/guides/PACKAGE_FORMAT.md).
 
 ## Desarrollo
 
@@ -109,7 +112,7 @@ No se dispone del código fuente original de Call of Duty.
 Los binarios y fuentes generadas de la recompilación son entradas/salidas locales
 ignoradas por Git. Clonar el repositorio permite ejecutar las pruebas sintéticas;
 **no basta por sí solo para construir el motor jugable**. La documentación de
-[análisis y recompilación](docs/ANALYSIS_TOOLS.md) explica las herramientas y los
+[análisis y recompilación](docs/guides/ANALYSIS_TOOLS.md) explica las herramientas y los
 artefactos privados necesarios.
 
 Pruebas del host:
@@ -142,4 +145,4 @@ en [Entorno local de trabajo](docs/WORKSPACE.md).
 
 Call of Duty y sus recursos pertenecen a sus respectivos titulares. Este proyecto
 no está afiliado a Activision. Las licencias de las dependencias se incluyen en
-el APK y se detallan en el [registro técnico](PROGRESS.md).
+el APK y se detallan en el [registro técnico](docs/history/PROGRESS_LOG.md).

@@ -6,7 +6,7 @@
 
 ## Actualización — Fase 15, CPU física y ROI
 
-El ranking de superregiones de esta fase se contrastó con dos perfiles Simpleperf de TECNO del **mismo Build ID**. Ocho funciones originales seleccionadas representan ~19 % de las muestras del proceso; aun si se eliminara todo ese trabajo, la cota CPU idealizada rondaría 32 FPS, lejos de los 60. Las tres superregiones de 14F siguen correctamente **rechazadas** por tamaño/accesos ARM64 regresivos. Ahora se prioriza estudiar costos comunes de **estado y conversiones x87** sin alterar semántica. [Informe de perfil transversal](PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md).
+El ranking de superregiones de esta fase se contrastó con dos perfiles Simpleperf de TECNO del **mismo Build ID**. Ocho funciones originales seleccionadas representan ~19 % de las muestras del proceso; aun si se eliminara todo ese trabajo, la cota CPU idealizada rondaría 32 FPS, lejos de los 60. Las tres superregiones de 14F siguen correctamente **rechazadas** por tamaño/accesos ARM64 regresivos. Ahora se prioriza estudiar costos comunes de **estado y conversiones x87** sin alterar semántica. [Informe de perfil transversal](../tecno/PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md).
 
 
 ## 1. Alcance y criterios conservadores

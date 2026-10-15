@@ -51,4 +51,4 @@ La primera prueba de salida x87 se amplió en un ensayo independiente: **1.024/1
 
 Ampliar un oráculo independiente a **una ventana de coma flotante posterior a `0x0041B94D`**, con captura explícita del estado FPU x87 y memoria, y distinguir discrepancias de precisión `binary80` frente a `double`. Antes de aceptar cualquier optimización estructural se deben demostrar equivalencia de **entradas, salidas, flags, memoria y PC** y mejora de **código máquina AArch64** con la misma versión de Clang. La ganancia en el **TECNO CK6n** solo puede afirmarse con medición A/B/A/B/A en el teléfono, aún no conectado.
 
-**Referencias:** [auditoría de la función](CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md), [estrategia vigente](PERFORMANCE_STRATEGY_CURRENT.md), [perfil original del TECNO](PERFORMANCE_STRATEGY_RUN_2026-10-14.md).
+**Referencias:** [auditoría de la función](CPU_PHASE2_41B8F0_AUDIT_2026-10-14.md), [estrategia vigente](../../PERFORMANCE_STRATEGY_CURRENT.md), [perfil original del TECNO](PERFORMANCE_STRATEGY_RUN_2026-10-14.md).

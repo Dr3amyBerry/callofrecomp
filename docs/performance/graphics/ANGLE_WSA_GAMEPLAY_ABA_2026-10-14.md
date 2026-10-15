@@ -58,4 +58,4 @@ Es una comparación de capturas *no sincronizadas*; NPC, cámara, animaciones y 
 
 El backend Vulkan propio sigue incompleto y la evaluación de Zink sigue desfavorable en WSA. Con ausencia de una ganancia de ANGLE, priorizar la estrategia vigente de optimización **CPU ARM64**: análisis aislado de la función caliente CoDSP `0x0041B8F0`, equivalencia de registros/EFLAGS/x87/memoria y revisión del AArch64 realmente generado, sin activar fast paths hasta probarlos en el **TECNO físico** con A/B/A/B/A. Cuando se disponga de hardware, medir de nuevo GPU Mali con los permisos disponibles y no extrapolar desde WSA.
 
-**Referencias:** [estrategia vigente](PERFORMANCE_STRATEGY_CURRENT.md), [ejecución ANGLE inicial](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md), [punto de control anterior](PROJECT_STATUS_CHECKPOINT_2026-10-14.md).
+**Referencias:** [estrategia vigente](../../PERFORMANCE_STRATEGY_CURRENT.md), [ejecución ANGLE inicial](ANGLE_WSA_REAL_GAME_TRIAL_2026-10-14.md), [punto de control anterior](../../history/checkpoints/PROJECT_STATUS_CHECKPOINT_2026-10-14.md).

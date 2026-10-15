@@ -13,11 +13,15 @@ cachés de CMake, scripts y comandos existentes.
 | `web/` | Empaquetador público |
 | `.local/references/` | Quake3e, openmohaa, gl4es y opencod1 descargados con Git |
 | `.local/dependencies/` | Dependencias fijadas de la build Android |
-| `.local/builds/` | Compilaciones y empaquetado locales |
+| `.local/builds/` | Compilaciones actuales y empaquetado locales; `history/` conserva ensayos de build pasados, sin pretender que sus cachés CMake sean reutilizables tras moverlas |
 | `.local/private/` | Instalación original, decompilación, Ghidra y salidas privadas |
 | `.local/toolchains/` | Android Performance Analyzer 0.9.0 para Windows, con su JBR |
 | `.local/downloads/` | ZIP oficial de APA |
 | `.local/profiles/` | Lugar reservado para proyectos y capturas de rendimiento |
+
+**Ruta recomendada a las IAs:** [AGENTS](../AGENTS.md) → [estado vigente](PROJECT_STATUS.md) → [roadmap](ROADMAP.md) → [registro acumulativo](OPTIMIZATION_LEDGER.md). Las más de cien notas y decenas de scripts locales de experimentos no deben leerse como una cola actual. Búsqueda dirigida por nombre de transformación, APK/ELF Build ID, escena y fecha; ignorar por defecto `.local/builds/`, `references/`, `dependencies/`, `toolchains/`, `downloads/`, `decomp/` y snapshots de terceros. Los scripts y capturas privados se preservan, no se deduplican automáticamente.
+
+Se archivaron siete conjuntos históricos: cuatro árboles de builds de CFG14 en `.local/builds/history/cfg14/` y tres releases anteriores en `.local/builds/history/releases/`. El release v0.2.3, los objetos generados activos y las junctions permanecieron donde los necesitan las herramientas. Ver el inventario local `.local/catalog/BUILDS.md` y `.local/catalog/SCRIPTS.md`.
 
 Todo `.local/` está excluido de Git. No subir recursos del juego, APK privado,
 fuentes generadas del original ni capturas privadas.

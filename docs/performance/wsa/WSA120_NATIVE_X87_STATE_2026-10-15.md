@@ -3,7 +3,7 @@
 > Informe del componente aislado. Continuación completada:
 > [integración en APK, conjunto acumulativo y mediciones físicas](WSA_CUMULATIVE_2026-10-15.md).
 
-Fecha: 2026-10-15. Continúa el [componente binary80](superpowers/plans/2026-10-15-wsa-native-binary80.md).
+Fecha: 2026-10-15. Continúa el [componente binary80](../../superpowers/plans/2026-10-15-wsa-native-binary80.md).
 Código: `d68e164`; [CI 38737576358 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38737576358).
 **Fuera de la APK. No demuestra mejora de FPS.** El juego conserva su referencia
 de ~18 ms CPU/frame; todavía no se alcanzan 120 FPS.

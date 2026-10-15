@@ -36,7 +36,7 @@ Implementar Vulkan real exigiría rediseñar la capa que traduce el API OpenGL h
 | `VK_KHR_swapchain` | Disponible entre extensiones de dispositivo |
 | Superficie Vulkan Android, swapchain y presentación | **PROBADOS en NativeActivity aislada (~75 FPS FIFO); tiempo de GPU por draw NO medido** |
 
-La prueba no usa assets del juego, se ejecutó únicamente en WSA (x86_64) y está implementada en [`tools/recomp/diagnostics/probe_android_vulkan.c`](../tools/recomp/diagnostics/probe_android_vulkan.c). Su salida privada exacta está bajo `.local/profiles/wsa_vulkan_probe_result.txt`. La presencia de una extensión no garantiza que una escena del juego pueda presentarse o que su rendimiento sea superior al de GLES.
+La prueba no usa assets del juego, se ejecutó únicamente en WSA (x86_64) y está implementada en [`tools/recomp/diagnostics/probe_android_vulkan.c`](../../../tools/recomp/diagnostics/probe_android_vulkan.c). Su salida privada exacta está bajo `.local/profiles/wsa_vulkan_probe_result.txt`. La presencia de una extensión no garantiza que una escena del juego pueda presentarse o que su rendimiento sea superior al de GLES.
 
 ### En el PC Windows host
 

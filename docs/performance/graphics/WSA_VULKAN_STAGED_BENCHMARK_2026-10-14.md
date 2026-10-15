@@ -83,7 +83,7 @@ Una validación del renderer Vulkan del juego solo es válida cuando:
 3. Se comparan al menos 60 ventanas A/B/A, idealmente A/B/A/B/A, FPS medianos, p10, CPU/frame, swap, capturas visuales y estado de la simulación. No confundir un `vkQueuePresentKHR` exitoso con un frame completo.
 4. La ganancia supera la variación de A1/A2. Repetir finalmente en hardware ARM64 cuando el teléfono vuelva.
 
-**Estrategia oficial:** conserva las tres fases y contador **0/5**. Una prueba de superficie, su repetición y el diagnóstico sin limitador no son «fallos» de una optimización Vulkan funcional; son controles de laboratorio. [Estrategia vigente](PERFORMANCE_STRATEGY_CURRENT.md).
+**Estrategia oficial:** conserva las tres fases y contador **0/5**. Una prueba de superficie, su repetición y el diagnóstico sin limitador no son «fallos» de una optimización Vulkan funcional; son controles de laboratorio. [Estrategia vigente](../../PERFORMANCE_STRATEGY_CURRENT.md).
 
 ## Verificación de cierre tras la interrupción del chat
 

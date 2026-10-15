@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/sync-release-description.yml
-      - docs/RELEASE_NOTES_v0.2.1.md
+      - docs/history/releases/RELEASE_NOTES_v0.2.1.md
   workflow_dispatch:
 
 permissions:
@@ -21,13 +21,26 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 2
+
+      - name: Skip automatic release edits when notes were only relocated
+        id: notes_change
+        shell: bash
+        run: |
+          if git cat-file -e 'HEAD^:docs/RELEASE_NOTES_v0.2.1.md' 2>/dev/null &&
+             git show 'HEAD^:docs/RELEASE_NOTES_v0.2.1.md' | cmp -s - docs/history/releases/RELEASE_NOTES_v0.2.1.md; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Verify release and update only its description
+        if: github.event_name == 'workflow_dispatch' || steps.notes_change.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: "411282738"
           RELEASE_TAG: "v0.2.1"
-          NOTES_FILE: docs/RELEASE_NOTES_v0.2.1.md
+          NOTES_FILE: docs/history/releases/RELEASE_NOTES_v0.2.1.md
         shell: bash
         run: |
           set -euo pipefail

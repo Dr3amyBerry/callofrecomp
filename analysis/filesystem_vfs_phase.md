@@ -64,7 +64,7 @@ punteros nativos de 64 bits a palabras x86 de 32 bits.
 
 La prueba `tests/host_adapter_smoke.cpp` ejercita modos incorrectos, rutas rechazadas, lecturas sucesivas, EOF, archivos vacíos, handles independientes y cierre/invalidez. El número de modo `77` de esta prueba es un convenio host sintético, **no** un número del juego.
 
-**Actualización posterior:** se añadió además un puente VM read-only independiente (`GuestMemory` y `LegacyFsReadBridge`) para los syscalls 21/22/37, usando el **modo original 0** y punteros invitados validados. Véase [`../docs/LEGACY_FS_BRIDGE.md`](../docs/LEGACY_FS_BRIDGE.md). Esto no ejecuta el código original de `gamex86.dll` ni hace funcionar la campaña Android.
+**Actualización posterior:** se añadió además un puente VM read-only independiente (`GuestMemory` y `LegacyFsReadBridge`) para los syscalls 21/22/37, usando el **modo original 0** y punteros invitados validados. Véase [`../docs/guides/LEGACY_FS_BRIDGE.md`](../docs/guides/LEGACY_FS_BRIDGE.md). Esto no ejecuta el código original de `gamex86.dll` ni hace funcionar la campaña Android.
 
 ## Por integrar
 

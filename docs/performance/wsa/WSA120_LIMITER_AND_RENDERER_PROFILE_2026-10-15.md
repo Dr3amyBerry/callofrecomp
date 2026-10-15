@@ -11,7 +11,7 @@ para investigar el objetivo, sin afirmar que sea una optimización de CPU.
 SDL_main lee una vez el archivo y coordina `com_maxfps` y el pacing del host.
 Sin archivo conserva el launcher y los diagnósticos previos; entrada inválida
 conserva 60. No se cambian relojes, precisión matemática ni ajustes gráficos.
-Documentación de uso: [FRAME_PACING](FRAME_PACING.md).
+Documentación de uso: [FRAME_PACING](../../guides/FRAME_PACING.md).
 
 Pruebas C: 120 Hz fraccional, cero/unlimited, stalls, relojes extremos y
 configuración inválida/NUL; rojo previo y verde posterior. Ejecutable nativo
@@ -161,7 +161,7 @@ Evidencia privada: `native_x87_probe_v3/summary.json`, `android_result.json`
 y scripts `probe_native_x87.py` / `run_android_x87_probe.py`, bajo la carpeta
 local de esta sesión. No se publican instrucciones originales ni binarios.
 
-**Componente desarrollado después:** [binary80 nativo y contrato pendiente](superpowers/plans/2026-10-15-wsa-native-binary80.md).
+**Componente desarrollado después:** [binary80 nativo y contrato pendiente](../../superpowers/plans/2026-10-15-wsa-native-binary80.md).
 Cuatro operaciones con estado de operación explícito, aisladas del runtime
 guest; pruebas host/WSA O0/O2/O3 aprobadas. El ensayo privado alternado de la
 transformación dio 435,083 ns generados y 135,617 ns nativos aislados de mediana.

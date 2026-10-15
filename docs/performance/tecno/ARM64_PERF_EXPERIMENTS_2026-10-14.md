@@ -55,7 +55,7 @@ Comando: `python tools/recomp/build_android.py --hot-x87-transform --visibility-
 3. En el teléfono, verificar cada candidato con el **mismo guardado**, al menos 40 ventanas estables por A/B/A y suficiente cobertura posterior de 60 ventanas consecutivas cercanas al techo de 60 FPS para el criterio final; controlar calentamiento, NPC, pantalla y calidad.
 4. **Preservar de forma acumulativa** el fast path x87 demostrado (+19,58 %) y las correcciones completas del HUD. Ninguno de estos dos nuevos ensayos alcanza el objetivo de 60 FPS.
 
-Información vinculada: [perfil original](TECNO_CK6N_ARM64_PERF_2026-10-14.md), [análisis de procedencia de funciones](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) y [plan](ROADMAP.md).
+Información vinculada: [perfil original](TECNO_CK6N_ARM64_PERF_2026-10-14.md), [análisis de procedencia de funciones](../cpu/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) y [plan](../../ROADMAP.md).
 
 ## Continuación: clasificador NaN binary80 (sin mejora aceptada)
 

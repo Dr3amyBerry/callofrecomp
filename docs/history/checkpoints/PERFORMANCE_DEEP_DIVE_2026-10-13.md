@@ -1,6 +1,6 @@
 # Investigación profunda de rendimiento — CallofRecomp
 
-> INVESTIGACIÓN HISTÓRICA: hipótesis y medidas del 13 de octubre. Los perfiles físicos y fases posteriores actualizan las prioridades; consultar [estrategia vigente](PERFORMANCE_STRATEGY_CURRENT.md).
+> INVESTIGACIÓN HISTÓRICA: hipótesis y medidas del 13 de octubre. Los perfiles físicos y fases posteriores actualizan las prioridades; consultar [estrategia vigente](../../PERFORMANCE_STRATEGY_CURRENT.md).
 
 **Fecha:** 2026-10-13  
 **Proyecto objetivo:** Dr3amyBerry/callofrecomp, Call of Duty 1.5 single-player recompilado estáticamente para Android ARM64  
@@ -47,7 +47,7 @@ Separaciones obligatorias:
 - Ni WSA x86_64, ni microbenchmarks host, ni compilar ARM64 sustituyen una captura en teléfono ARM64.
 - El perfil de gráficos Light modifica varias opciones además de resolución: una comparación entre perfiles no aísla por sí sola fill-rate.
 
-**Archivos públicos:** PROGRESS.md; docs/ANDROID_PERFORMANCE.md; docs/FRAME_PACING.md; docs/RELEASE_NOTES_v0.2.3.md.
+**Archivos públicos:** PROGRESS.md; docs/guides/ANDROID_PERFORMANCE.md; docs/guides/FRAME_PACING.md; docs/history/releases/RELEASE_NOTES_v0.2.3.md.
 
 ## 2. Recorrido de un frame y fronteras de coste
 
@@ -512,8 +512,8 @@ Destino local privado preferido: .local/profiles/ (en workspace callofrecomp, NO
 - https://github.com/Dr3amyBerry/callofrecomp/blob/main/tools/recomp/runtime/files.c
 - https://github.com/Dr3amyBerry/callofrecomp/blob/main/android/CMakeLists.txt
 - https://github.com/Dr3amyBerry/callofrecomp/blob/main/tools/recomp/patch_gl4es.py
-- https://github.com/Dr3amyBerry/callofrecomp/blob/main/docs/ANDROID_PERFORMANCE.md
-- https://github.com/Dr3amyBerry/callofrecomp/blob/main/docs/FRAME_PACING.md
+- https://github.com/Dr3amyBerry/callofrecomp/blob/main/docs/guides/ANDROID_PERFORMANCE.md
+- https://github.com/Dr3amyBerry/callofrecomp/blob/main/docs/guides/FRAME_PACING.md
 
 **Quake3e fe07ae0eb34aad954715c74ec0cd76baa48a0419:**
 - https://github.com/ec-/Quake3e/blob/fe07ae0eb34aad954715c74ec0cd76baa48a0419/code/renderer/tr_vbo.c

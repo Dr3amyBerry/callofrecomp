@@ -1,0 +1,7 @@
+# Investigación TECNO CK6n ARM64 — objetivo vigente
+
+**Objetivo:** 60 FPS sostenidos con fidelidad y la misma calidad gráfica. El teléfono no está disponible ahora: el trabajo WSA progresa en paralelo, pero **no reemplaza** la meta ni convierte estas capturas en obsoletas.
+
+**Primero leer:** [plan de revalidación TECNO](../../TECNO_REVALIDATION.md), [registro global de cambios](../../OPTIMIZATION_LEDGER.md) y [fase 15 de CPU ARM64](PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md). Los experimentos y medidas de octubre 14–15 siguen siendo útiles para priorizar, pero no son el rendimiento de una APK recompilada después de las optimizaciones WSA.
+
+Al reconectar el TECNO: A/B/A/B del APK ARM64 actual, medir baseline nuevo con hashes/ELF/escena/temperatura, probar solo transformaciones portables con oráculos y actualizar esta fuente. **No extrapolar mejoras x86_64 ni confundir menús con gameplay.**

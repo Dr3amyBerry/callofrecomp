@@ -22,7 +22,7 @@ Referencias de proyectos examinados:
 - [GL4ES/USAGE](https://github.com/ptitSeb/gl4es/blob/master/USAGE.md): modos batching y VBO; advierte que VBO 2/3 son experimentales y pueden ser más lentos.
 - [GL4ES/MEDIA](https://github.com/ptitSeb/gl4es/blob/master/MEDIA.md): para motores ya optimizados tipo Quake3 el wrapper puede no mejorar frente al GLES directo.
 - [ioquake3](https://github.com/ioquake/ioq3/blob/main/README.md): renderer OpenGL ES2+ nativo, pero no reemplaza sin más el CoDSP recompilado y sus dependencias de OpenGL antiguo.
-- [Perfil de traducción del proyecto](RENDER_TRANSLATION_AUDIT_2026-10-14.md) y [rendimiento ARM64](TECNO_CK6N_ARM64_PERF_2026-10-14.md).
+- [Perfil de traducción del proyecto](../graphics/RENDER_TRANSLATION_AUDIT_2026-10-14.md) y [rendimiento ARM64](TECNO_CK6N_ARM64_PERF_2026-10-14.md).
 
 ## Nuevo objetivo: fusionar una comparación x87 completa y un pop FPU
 

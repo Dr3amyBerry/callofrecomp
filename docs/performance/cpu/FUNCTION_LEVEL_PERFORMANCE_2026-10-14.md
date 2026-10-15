@@ -16,7 +16,7 @@ ranges, **not recovered functions**. A single chunk often includes function
 entries belonging to many unrelated original routines.
 
 The 2026-10-14 WSA x86_64 comparisons in
-[the rendering/translation audit](RENDER_TRANSLATION_AUDIT_2026-10-14.md)
+[the rendering/translation audit](../graphics/RENDER_TRANSLATION_AUDIT_2026-10-14.md)
 did **not** establish a gameplay FPS benefit from targeted `-O2`, `-Oz`,
 GL4ES batching or VBO modes 2/3. GL thunk draw-call CPU accounted for about
 2.64 ms/frame in one diagnostic window, but excludes generated renderer
@@ -280,4 +280,4 @@ Repeat `--generated` for every relevant generated C translation unit and
 - A B body range is Ghidra's **static** model; multiple functions may
   share code or compiled control flow may jump inside a body. A sample
   count is not exclusive function CPU time.
-- **Actualización 2026-10-14:** el TECNO ARM64 ya está conectado; se midieron muestras de CPU reales y FPS en la **entrada de training**, documentados en [informe físico TECNO](TECNO_CK6N_ARM64_PERF_2026-10-14.md). Siguen pendientes la zona concurrida y una ganancia de FPS verificada. Los sidecars y perfiles brutos siguen privados.
+- **Actualización 2026-10-14:** el TECNO ARM64 ya está conectado; se midieron muestras de CPU reales y FPS en la **entrada de training**, documentados en [informe físico TECNO](../tecno/TECNO_CK6N_ARM64_PERF_2026-10-14.md). Siguen pendientes la zona concurrida y una ganancia de FPS verificada. Los sidecars y perfiles brutos siguen privados.

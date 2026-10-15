@@ -119,7 +119,7 @@ The generator's Ghidra `F` function-entry markers are now preserved in
 optional, private function maps. A real four-module mapping found 378 of
 403 chunks containing multiple function entries. Therefore earlier hotspot
 attribution to chunk 186/187 or another range must not be presented as
-single-function cost. See [function-level performance research](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) for exact reproducible mapping,
+single-function cost. See [function-level performance research](../cpu/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md) for exact reproducible mapping,
 safe sample correlation and reference recompilers.
 
 ## Function-body and inlined native source attribution — follow-up
@@ -132,7 +132,7 @@ generated-C callsite rather than misattributing helpers from
 `recomp_rt.h` and NDK headers. The real unstripped shared library
 proved address-to-line resolution, and artificial PC fixtures verified
 the end-to-end mapping, NOT actual performance or frames per second.
-See [body mapping and native sample procedure](FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
+See [body mapping and native sample procedure](../cpu/FUNCTION_LEVEL_PERFORMANCE_2026-10-14.md).
 
 ## Technical references
 

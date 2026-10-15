@@ -1,13 +1,15 @@
 # Estado actual de CallofRecomp
 
 > **Nueva misión (2026-10-15): 120 FPS reales en WSA mediante desarrollo local.**
-> [Control de FPS, perfil exacto del renderer y resultados actuales](WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md).
+> [Control de FPS, perfil exacto del renderer y resultados actuales](performance/wsa/WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md).
 > El corte TECNO y el estado de CI descritos abajo siguen como antecedentes;
 > no son mediciones nuevas ni la prioridad de rendimiento de esta misión.
 
-**Aplicación del perfil:** [enlace local del estado guest, A/B/A/B y medición GL](WSA_POSTOPT_APPLICATION_2026-10-15.md). Conjunto anterior conservado; candidata normal instalada con **68,0–68,3 FPS / 14,64–14,71 ms CPU/frame** en ambas B. Mejora pequeña repetida, no 120 FPS sostenidos. Guardados intactos, instrumentación retirada.
+**Política vigente:** [registro acumulativo y clasificación de cada optimización](OPTIMIZATION_LEDGER.md). Las ganancias verificadas, aunque pequeñas, se conservan; el antiguo límite de cinco intentos no aplica. Prioridad operativa 120 FPS WSA; **el objetivo TECNO ARM64 de 60 FPS sigue vigente, en espera de nueva medición**. Ver [plan de revalidación](TECNO_REVALIDATION.md).
 
-**Perfil base conservado:** [CPU y renderizador antes del enlace local](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md), 12.695 muestras y 5.074 con stacks. Corresponde a la APK acumulativa anterior; no resolver sus PC contra el ELF nuevo. Se midieron además draws/índices/buffers y CPU GL sobre una APK diagnóstica separada; GPU y reutilización de geometría siguen sin certificar.
+**Aplicación del perfil:** [enlace local del estado guest, A/B/A/B y medición GL](performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md). Conjunto anterior conservado; candidata normal instalada con **68,0–68,3 FPS / 14,64–14,71 ms CPU/frame** en ambas B. Mejora pequeña repetida, no 120 FPS sostenidos. Guardados intactos, instrumentación retirada.
+
+**Perfil base conservado:** [CPU y renderizador antes del enlace local](performance/wsa/WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md), 12.695 muestras y 5.074 con stacks. Corresponde a la APK acumulativa anterior; no resolver sus PC contra el ELF nuevo. Se midieron además draws/índices/buffers y CPU GL sobre una APK diagnóstica separada; GPU y reutilización de geometría siguen sin certificar.
 
 **Continuación WSA:** límites original/60/120/sin límite implementados y probados
 en la misma escena con Alta; no hay ahorro CPU demostrado por retirarlos.
@@ -18,19 +20,26 @@ nativa binary80 ya está integrada. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
-**CI del último código:** `bb9d200`, [run 38780053644 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38780053644).
-**Integración acumulativa medida:** [APK, opciones, pruebas y A/B/A/B](WSA_CUMULATIVE_2026-10-15.md).
+**CI del último cambio de código probado:** `bb9d200`, [run 38780053644 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38780053644).
+**Integración acumulativa medida:** [APK, opciones, pruebas y A/B/A/B](performance/wsa/WSA_CUMULATIVE_2026-10-15.md).
 Región x87 binary80 conectada al runtime, retorno probado y conjunto compatible
 activo en WSA. Misma escena/Alta: medias de medianas **54,75 → 66,75 FPS**,
 **18,25 → 14,985 ms CPU/frame**. Capturas físicas completas; guardados intactos.
-Los ensayos originales de [estado/alias/faltas](WSA120_NATIVE_X87_STATE_2026-10-15.md)
+Los ensayos originales de [estado/alias/faltas](performance/wsa/WSA120_NATIVE_X87_STATE_2026-10-15.md)
 son antecedentes; el oráculo de 22.344 casos se repitió con el adaptador final
 y con el alias CW real del juego sin diferencias. La reanudación SEH, excepciones
 sin máscara, estabilidad larga y 120 FPS sostenidos siguen sin certificarse.
 
 **Corte:** 2026-10-15. **Código base de la revisión de CPU WSA:** `d6d6f8e174a24f259978fd30885ece63fc14902b` (solo documentación; APK acumulativa B integrada en `8401f29`). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
 
-[Documentación completa](INDEX.md) · [Próximo trabajo](ROADMAP.md) · [Estrategia 60 FPS](PERFORMANCE_STRATEGY_CURRENT.md) · [Bitácora](../PROGRESS.md)
+[Documentación completa](INDEX.md) · [Próximo trabajo](ROADMAP.md) · [Estrategia 60 FPS](PERFORMANCE_STRATEGY_CURRENT.md) · [Bitácora](history/PROGRESS_LOG.md)
+
+## Reorganización de fuentes de conocimiento — 2026-10-15
+
+- La carpeta `docs/` mantiene únicamente entradas operativas y divide **78 documentos trasladados** entre guías, WSA, TECNO, CPU, CFG, gráficos e historial. [Índice corto](INDEX.md) y [catálogo completo](history/DOCUMENT_CATALOG.md).
+- **TECNO CK6n sigue siendo meta vigente de 60 FPS**; la falta del dispositivo solo aplaza su revalidación. [Protocolo sin extrapolación de WSA](TECNO_REVALIDATION.md).
+- Archivadas siete carpetas de builds pasadas, sin tocar las junctions ni la compilación actual; catálogo privado de 732 scripts, incluyendo duplicados exactos, sin borrarlos.
+- Validación de esta reorganización: **396 pruebas Python, 6 omitidas, 0 fallos**, **38/38 CTest**, **119 Markdown sin enlaces internos rotos**, migradores repetibles sin nuevas mudanzas. Son pruebas de regresión, **no nuevas mediciones FPS**.
 
 ## Qué existe y qué falta
 
@@ -46,7 +55,7 @@ sin máscara, estabilidad larga y 120 FPS sostenidos siguen sin certificarse.
 | Regresión local previa | Fase 15 registra 382 Python (4 omitidas) y 35/35 CTest | Son resultados históricos del autor de esa fase, no ejecuciones nuevas de esta revisión |
 | GitHub CI | Reparado en `fbbf074`: [run 38727099017 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38727099017) | Se instalaron dependencias pinneadas; el fallo anterior de 32/33 queda como antecedente |
 
-## Decisión para avanzar hacia 60 FPS
+## TECNO hacia 60 FPS — objetivo vigente, en espera de disponibilidad
 
 Estudiar **copias, materialización de pila y transferencias de estado x87 que se repitan en varias funciones**, usando ensamblador ARM64 y perfiles archivados. Después escoger una sola candidata con ahorro nativo plausible, demostrar estados y fallos, y medir en el TECNO. Las ocho funciones seleccionadas cubren ~19 % de muestras; no bastaría eliminarlas enteras para cubrir el presupuesto CPU hipotético de 60 FPS. [Fundamento y puertas de validación](PERFORMANCE_STRATEGY_CURRENT.md).
 

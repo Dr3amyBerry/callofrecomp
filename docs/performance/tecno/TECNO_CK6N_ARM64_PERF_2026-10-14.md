@@ -217,7 +217,7 @@ La comprobación directa de NaN de x87 `--x87-nan-bits` sustituye **1.178 sitios
 ## Cómo repetir y continuar
 
 La herramienta pública de comparación sin conexión es
-[analyze_frame_stats.py](../tools/recomp/analyze_frame_stats.py).
+[analyze_frame_stats.py](../../../tools/recomp/analyze_frame_stats.py).
 Con archivos de registro privados bajo .local/profiles:
 
 ~~~powershell
@@ -227,7 +227,7 @@ python tools/recomp/analyze_frame_stats.py --baseline .local/profiles/tecno_base
 Para muestreo real usar el NDK Simpleperf app_profiler.py sobre
 org.callofrecomp, guardar el libmain.so exacto **sin strip**, extraer
 vaddr_in_file con simpleperf_report_lib y ejecutar
-[resolve_guest_samples.py](../tools/recomp/resolve_guest_samples.py)
+[resolve_guest_samples.py](../../../tools/recomp/resolve_guest_samples.py)
 con los cuatro mapas Ghidra privados v2 y las fuentes C generadas
 correspondientes. Comprobar siempre las identidades de compilación
 y fuentes; line tables optimizadas no garantizan reconstruir la pila
