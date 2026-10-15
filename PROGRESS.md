@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 10: TECNO A/B/A físico de p4 x87 perfilado, NO aprobado
+
+- [x] Ensayo con el TECNO CK6n (Camp Toccoa, Equilibrado, cámara estática): 55 s de juego por pasada y últimas 40 ventanas estables. Referencia **A1 26,00 FPS / 37,100 ms CPU**; candidata **B2 26,05 FPS / 36,980 ms CPU**; retorno **A2 25,90 FPS / 37,145 ms CPU**. B frente al promedio A: **+0,10 FPS (~0,39 %) y -0,1425 ms CPU (~0,38 %)**, sin mejora causal demostrada. P10 por ventanas, NO p10 de frames individuales.
+- [x] A/B difieren únicamente en `lib/arm64-v8a/libmain.so`; recursos, resolución **2400 × 1080**, juego, partida y calidad equivalentes. Capturas de gameplay verificadas, sin evidencia de elementos visuales retirados. B1 careció de medición válida por fallo de sincronización de navegación automatizada, corregido para B2.
+- [x] **Restauración automática exitosa:** APK originalmente instalada y `libmain.so` verificados por SHA-256; `training.svg` 30.360 bytes inalterado (hash coincidente en cada etapa y comprobación posterior). La aplicación quedó cerrada. **Mantener `CODRECOMP_X87_NORMAL_F2D_P4_PROFILED=OFF`**. Los tests de fases previas no son pruebas de FPS.
+- [x] [Informe físico A/B/A](docs/CPU_PHASE10_TECNO_P4_PROFILED_ABA_2026-10-14.md). Próximo bloque: identificar operaciones `rd`/`wr`/`memcpy` verdaderamente dominantes usando dos perfiles históricos y diferenciación inclusiva/exclusiva, antes de modificar código. Meta 60 FPS sostenidos **pendiente**; no repetir estas capturas.
+
 ### 2026-10-14 — Fase 9: auditoría del empaquetado x87, experimento descartado OFFLINE (0/5)
 
 - [x] Validada una fórmula aritmética alternativa de binary80: **1.205.360 comparaciones C de bits** más 20.000 pruebas binary32/64 y **44.000 comparaciones R/RAM/PC** sobre instrucciones x87 reales (Clang O1/O2).

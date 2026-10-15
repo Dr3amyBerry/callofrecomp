@@ -2,6 +2,12 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 10 TECNO: A/B/A físico de la candidata x87 p4 perfilada (DESCARTADA)
+
+Se cerró el experimento que las fases 8 y 9 dejaban pendiente de medición física. Mismo TECNO CK6n, Camp Toccoa, Equilibrado, **2400 × 1080** y cámara estática. **A1 26,00 FPS / 37,100 ms CPU**, **B2 26,05 FPS / 36,980 ms CPU**, **A2 25,90 FPS / 37,145 ms CPU** (medianas de las últimas 40 ventanas de 55 segundos por ejecución). B vs. media A: **+0,10 FPS (+0,39 %) / −0,1425 ms CPU (−0,38 %)**: variación insuficiente para atribuir una mejora real a p4 x87. Las ventanas no son fotogramas independientes; B1 no cargó por temporización de la navegación y no tiene FPS válidos. Solo cambia `libmain.so` entre las dos APK experimentales; las capturas del gameplay permanecen prácticamente iguales, no idénticas píxel a píxel.
+
+**Decisión: NO activar `CODRECOMP_X87_NORMAL_F2D_P4_PROFILED`.** La instalación previa exacta y el autoguardado fueron verificados y restaurados por SHA-256, con el juego detenido. Mantener también OFF las otras optimizaciones p4 no aprobadas y no reducir geometría, resolución, efectos, NPC ni fidelidad x87. **60 FPS sostenidos pendientes.** Siguiente investigación offline: distinguir costes inclusivos/exclusivos de `memcpy`, `rd` y `wr` en los perfiles archivados antes de elegir nuevos sitios; un cambio C o un binario más pequeño no demuestran FPS. [Informe](CPU_PHASE10_TECNO_P4_PROFILED_ABA_2026-10-14.md).
+
 ## Fase 9 offline: empaquetado x87 alternativo descartado; auditor ARM64 añadido (0/5)
 
 Una variante aritmética de empaquetado binary80 fue bit-equivalente en **1.205.360 patrones** y **44.000 estados completos R/RAM/PC**, pero su supuesto ahorro de 4 bytes en una función aislada no apareció en los tres chunks reales. La sección ARM64 .text de libmain.so fue **42.359.988 bytes** tanto con el empaquetado previo como con el nuevo (delta 0), y tampoco variaron los recuentos ni histogramas de instrucciones. **Se descartó el cambio en el motor y el flag Android; no hay nueva ganancia FPS demostrada**. Se añadió una herramienta de análisis de símbolos ARM64 con prueba C y pruebas unitarias para futuras auditorías offline. Cierre: **257 pruebas Python (4 omitidas) y 35/35 CTest**; binario ARM64 y biblioteca empaquetada verificados idénticos por SHA-256 a referencia A, flags experimentales OFF, caché limpiada. [Informe](CPU_PHASE9_X87_INTEGER_PACK_OFFLINE_2026-10-14.md).
