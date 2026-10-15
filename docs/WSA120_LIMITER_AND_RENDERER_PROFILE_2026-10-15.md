@@ -1,6 +1,7 @@
 # WSA 120 FPS: control reversible y perfil del renderer
 
 Fecha: 2026-10-15. Continuación de [la línea base](WSA120_BASELINE_2026-10-15.md).
+Código: control de límites `5132112`; bloqueo de precisión `5ebe4cd`.
 **120 FPS reales no alcanzados.** Se implementó una configuración necesaria
 para investigar el objetivo, sin afirmar que sea una optimización de CPU.
 
@@ -118,4 +119,3 @@ Tiempo GPU, escenas complejas y estabilidad prolongada siguen pendientes.
 
 Datos crudos y scripts de conducción permanecen privados bajo
 `.local/profiles/wsa120_20261015/`; no se publican PE, APK, p-code ni trazas.
-
