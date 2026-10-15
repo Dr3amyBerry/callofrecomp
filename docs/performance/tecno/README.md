@@ -1,5 +1,9 @@
 # Investigación TECNO CK6n ARM64 — objetivo vigente
 
+**Control de estabilidad TECNO (2026-10-15):**
+Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. [Informe tecnico](TECNO_STABILITY_GATE_2026-10-15.md).
+
+
 **WSA port a ARM64 (2026-10-15):**
 [enlace local R/MEM/U/PC y precision x87](ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md): prueba A/B/A/B 19.57->22.12 FPS (+13.03%), INCONCLUSO POR VARIACION DE ESCENA/TIEMPO. Sin integrar native x87 de WSA ni reactivar el transform double incorrecto.
 

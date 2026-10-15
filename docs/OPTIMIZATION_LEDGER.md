@@ -1,5 +1,9 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-MET-01, control de FPS (2026-10-15):**
+Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. Implementadas herramientas read-only de estabilidad y telemetria CPU/termica; no hay cambios al motor ni a la calidad. Datos privados preservados; docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md.
+
+
 **ARM64-05 / WSA-POR-01 (2026-10-15):**
 [Port del enlace local WSA + A/B/A/B TECNO](performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md), exactamente 4 simbolos ocultos y 486 exports preservados; FPS brutos 19.57->22.12 (+13.03%), **no ganancia confirmada** por A1 anómala; INCONCLUSO. R/RAM/FPU invariantes por codigo fuente; no equivale a prueba total de estado ni a native x87 ARM64. Ruta OFF por defecto.
 

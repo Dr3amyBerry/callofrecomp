@@ -70,3 +70,12 @@ La referencia `tools/recomp/diagnostics/binary80_arithmetic_reference.py`
 es SOLO laboratorio numerico de operandos finitos y CW=0x037f; nunca conectarla
 al motor porque no implementa SW/C1/TOP/tags, excepciones, fallos ni CW completos.
 `--hot-x87-transform` sigue BLOQUEADO por divergencia con el x86 original.
+
+
+## Protocolo obligatorio de estabilidad y ganancias pequenas (TECNO / WSA)
+
+Conservar TODA mejora positiva pequena como experimento rastreable; no descartar por un umbral arbitrario. Tampoco proclamar una mejora sin pasadas A/B repetibles con las mismas APK, calidad, escena, camara y guardados.
+- Usar `tools/recomp/diagnostics/stable_frame_gate.py` para comprobar deriva temporal, calentamiento y repetibilidad en A/B/A/B. Una sola mediana no valida FPS estables.
+- Usar `tools/recomp/diagnostics/android_perf_environment.py` para observar temperatura HAL y relojes CPU en el TECNO sin modificar governors, afinidad ni potencia. El monitor tambien puede alterar el rendimiento y su overhead debe controlarse en mejoras inferiores al 1%.
+- Esperar gameplay estable por logs antes de capturar 40 ventanas. No hacer decenas de fotos. Fallar cerrado si la escena deriva.
+- Registrar pruebas en `docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md`. El atajo x87 double impreciso permanece BLOQUEADO.

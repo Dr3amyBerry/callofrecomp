@@ -1,5 +1,9 @@
 # Estado actual de CallofRecomp
 
+**Mediciones TECNO: control temporal (2026-10-15):**
+Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. Auditor permanente de FPS y telemetria HAL/CPU, docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md. Conservar las pequeñas mejoras ARM64 como opt-in hasta pruebas limpias.
+
+
 **Adaptacion ARM64 de la mejora WSA de enlace local (2026-10-15):**
 [informe y limite binary80](performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md). ELF 490->486 exportaciones; solo R/MEM/U/PC locales, fuentes y recursos intactos. A/B/A/B, medias brutas 19.57->22.12 FPS (+13.03 %) y CPU 49.70->43.42 ms (-12.64 %); **no son ganancias atribuibles** porque A1 cayó 22.5->16.1 FPS en 40 ventanas; INCONCLUSO. 0.2.4 sigue como APK segura; x87 exacto ARM64 no implementado: oraculo numerico offline probado, sin estado/fallos. No activar por defecto.
 

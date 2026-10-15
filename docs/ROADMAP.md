@@ -1,5 +1,9 @@
 # Cola de trabajo del proyecto
 
+**Siguiente objetivo TECNO: pequenas ganancias reproducibles (2026-10-15):**
+Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. Repetir por separado la optimizacion x87 de copias y enlace local ARM64 con el protocolo de docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md antes de acumular otras variantes.
+
+
 **TECNO ARM64, siguiente prioridad tras WSA local-state (2026-10-15):**
 [A/B aislado y estado del oraculo numeric binary80](performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md): enlace local R/MEM/U/PC portado y probado, media bruta +13.03% FPS NO atribuible a la optimización por A1 anómala; veredicto INCONCLUSO POR VARIACION DE ESCENA/TIEMPO. Continuar con renderer/dispatch **una bandera por APK** y un backend de software binary80 completo (CW/SW/TOP/tags, excepciones, PC y fallos) verificado contra x86 original; no usar el helper double bloqueado.
 

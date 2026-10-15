@@ -1,5 +1,11 @@
 # Project Progress
 
+### 2026-10-15 — Auditor de estabilidad TECNO y ruido entre replicas
+- Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código.
+- Se detectaron 3/4 pasadas estables tanto en el A/B historico de copias x87 como en el de estado local ARM64, por lo que ambas ganancias siguen como senales no concluyentes. Se conserva toda la evidencia privada y no se habilitan flags por defecto.
+- Nuevas herramientas canonicas de FPS y telemetria termica: [informe](../performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md).
+
+
 ### 2026-10-15 — Port WSA local state a ARM64, A/B/A/B y referencia binary80
 - Adaptada la misma version-script R/MEM/U/PC con bandera ARM64 propia OFF; 490->486 exports, ningun otro cambio ABI, recursos iguales, C generado SHA intacto.
 - A/B/A/B fisico: 19.575->22.125 FPS (+13.03%), CPU 49.703->43.420 (-12.64%). **Veredicto INCONCLUSO POR VARIACION DE ESCENA/TIEMPO**; no activar por defecto.
