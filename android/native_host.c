@@ -30,6 +30,17 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     int fd = open(log, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if (fd >= 0) { dup2(fd, STDOUT_FILENO); dup2(fd, STDERR_FILENO); close(fd); }
     setvbuf(stdout, NULL, _IOLBF, 0);
+#ifdef CODRECOMP_NATIVE_X87_REGION
+    char native_path[4096];
+    unsetenv("CODRECOMP_NATIVE_X87_REGION");
+    int native_length=snprintf(native_path,sizeof native_path,"%s/native_x87",argv[2]);
+    FILE *native_file=native_length>0 && (size_t)native_length<sizeof native_path ? fopen(native_path,"rb"):NULL;
+    if(native_file) {
+        int first=fgetc(native_file),second=fgetc(native_file);
+        if(first=='1' && second==EOF && !ferror(native_file)) setenv("CODRECOMP_NATIVE_X87_REGION","1",1);
+        fclose(native_file);
+    }
+#endif
     /* One bounded private setting owns BOTH guest and host limits. Read once;
      * no saved cvars, simulation clocks or commercial resources are edited. */
     char limit_path[4096], limit_text[32];

@@ -35,5 +35,13 @@ class Copy32PatchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             patch_generated_source(self.sample().replace("L_42b100:","L_42b100:\n"+HOOK))
 
+    def test_combines_with_spaces_and_existing_fcom_or_nan(self):
+        for header in ('codsp_fcom.h','x87_nan_bits.h'):
+            source=self.sample().replace('recomp_rt.h',header).replace('R+','guest_regs+')
+            patched,changed=patch_generated_source(source)
+            self.assertTrue(changed)
+            self.assertEqual(patched.count(INCLUDE),1)
+            self.assertEqual(patch_generated_source(patched),(patched,False))
+
 if __name__=="__main__":
     unittest.main()

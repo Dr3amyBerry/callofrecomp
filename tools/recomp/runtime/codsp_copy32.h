@@ -10,6 +10,9 @@
 #define CODRECOMP_CODSP_COPY32_H
 #include <stdint.h>
 #include <string.h>
+#if defined(CODRECOMP_CODSP_COPY32_FASTPATH) && defined(__ANDROID__)
+extern int guest_committed(uint32_t);
+#endif
 
 static inline int codsp_copy32_step(uint8_t *regs, uint8_t *guest_mem) {
     uint32_t src, dst, off;
@@ -24,6 +27,13 @@ static inline int codsp_copy32_step(uint8_t *regs, uint8_t *guest_mem) {
         d + 32 > UINT64_C(0x100000000) ||
         (s < d + 32 && d < s + 32))
         return 0;
+
+#if defined(CODRECOMP_CODSP_COPY32_FASTPATH) && defined(__ANDROID__)
+    // No optimized partial-copy faults: use the original ordered MOVs if
+    // any operand page is absent. The runtime commits pages read/write.
+    if(!guest_committed((uint32_t)s) || !guest_committed((uint32_t)(s+31)) ||
+       !guest_committed((uint32_t)d) || !guest_committed((uint32_t)(d+31))) return 0;
+#endif
 
     uint32_t eax, esi;
     // Match the original final MOV pair and preserve full register state.

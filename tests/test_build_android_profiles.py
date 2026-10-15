@@ -8,6 +8,14 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER = ROOT / 'tools/recomp/build_android.py'
 
 class ProfileBuildFlagsTest(unittest.TestCase):
+    def test_cumulative_bundle_requires_wsa_and_verified_pe_argument(self):
+        for options in (['--wsa-cumulative'],
+                        ['--abi','x86_64','--wsa-cumulative'],
+                        ['--abi','arm64-v8a','--wsa-cumulative','--native-x87-region','unused.exe']):
+            proc=subprocess.run([sys.executable,str(BUILDER),*options],capture_output=True,text=True)
+            self.assertNotEqual(proc.returncode,0)
+            self.assertIn('--wsa-cumulative requires',proc.stderr)
+
     def test_legacy_transform_cannot_bypass_original_x87_precision_gate(self):
         for abi in ('arm64-v8a', 'x86_64'):
             with self.subTest(abi=abi):

@@ -81,7 +81,18 @@ def main():
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
                         help="experiment: fuse verified CoDSP p1/p8 x87 compare/status/pop blocks; default OFF")
     parser.add_argument("--package-only", action="store_true")
+    parser.add_argument("--native-x87-region", type=Path, help="WSA experiment: verified original PE for private binary80 region")
+    parser.add_argument("--wsa-cumulative", action="store_true",
+                        help="WSA bundle: native x87, copy32, strict renderer/visibility O2, NaN/f2d/FCOM and dispatch cache; requires --native-x87-region PE")
     args = parser.parse_args()
+    if args.wsa_cumulative:
+        if args.abi != "x86_64" or not args.native_x87_region:
+            parser.error("--wsa-cumulative requires --abi x86_64 --native-x87-region PE")
+        args.fast_copy32=args.visibility_o2=args.render_o2=True
+        args.x87_nan_bits=args.x87_normal_f2d=args.x87_fcom_fastpath=True
+        args.dispatch_last_cache=True
+    if args.native_x87_region and args.abi != "x86_64":
+        parser.error("--native-x87-region requires x86_64")
     if args.hot_x87_transform:
         parser.error("ORIGINAL_X87_PRECISION_UNSAFE: legacy transform loses binary80 "
                      "cancellation results; independent original-x86 outputs differ. "
@@ -202,6 +213,9 @@ def main():
             if actual != revision:
                 raise SystemExit(f"{name}: expected {revision}, found {actual}; use a clean dependency directory")
         run(sys.executable, root / 'tools/recomp/patch_gl4es.py', deps / 'gl4es')
+        if args.native_x87_region:
+            run(sys.executable, root / 'tools/recomp/native_x87_region.py', '--pe', args.native_x87_region,
+                '--out', root / 'recomp_out/codsp_native_x87_region.c')
         run("cmake", "-S", root / "android", "-B", native, "-G", "Ninja",
             f"-DCMAKE_TOOLCHAIN_FILE={(ndk / 'build/cmake/android.toolchain.cmake').as_posix()}",
             f"-DANDROID_ABI={args.abi}", "-DANDROID_PLATFORM=android-26", "-DCMAKE_BUILD_TYPE=Release",
@@ -215,6 +229,7 @@ def main():
             f"-DCODRECOMP_CFG14_GEOM_REGION={'ON' if args.cfg14_geom_region else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
+            f"-DCODRECOMP_NATIVE_X87_REGION={'ON' if args.native_x87_region else 'OFF'}",
             f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",
             f"-DCODRECOMP_VISIBILITY_O2={'ON' if args.visibility_o2 else 'OFF'}",
             f"-DCODRECOMP_X87_NAN_BITS={'ON' if args.x87_nan_bits else 'OFF'}",

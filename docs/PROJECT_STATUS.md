@@ -9,18 +9,20 @@
 en la misma escena con Alta; no hay ahorro CPU demostrado por retirarlos.
 La pantalla virtual sigue en 75 Hz. El perfil exacto prioriza conversión/copia
 x87 y la transformación `0x005061B0`. Su helper antiguo queda **BLOQUEADO**
-por diferencias float32 frente al x86 original (commit `5ebe4cd`). Se desarrolla
-una ruta nativa binary80. GPU time y sesiones complejas/prolongadas
+por diferencias float32 frente al x86 original (commit `5ebe4cd`). Su alternativa
+nativa binary80 ya está integrada. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
-**CI del código actual:** `b0256db`, [run 38741645925 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38741645925).
-**Desarrollo x87 aislado:** [estado, metadatos, alias y faltas reales](WSA120_NATIVE_X87_STATE_2026-10-15.md#continuación-metadatos-alias-y-fallos-reales).
-22.344 casos de alias/metadatos y 540 pares de faltas sin diferencias CPU
-x86/WSA en los campos contrastados. Componentes O0/O2/O3 aprobados en ambas
-plataformas; regresión final 37/37 CTest. Falta conectar la región y la captura
-al runtime, probar el RET y medir una APK integrada. La reanudación del fallo
-y las excepciones guest sin máscara no están certificadas. No hay FPS nuevos.
+**Última CI aprobada anterior a la integración:** `b0256db`, [run 38741645925](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38741645925). La integración acumulativa debe contrastarse con su nueva ejecución de CI.
+**Integración acumulativa medida:** [APK, opciones, pruebas y A/B/A/B](WSA_CUMULATIVE_2026-10-15.md).
+Región x87 binary80 conectada al runtime, retorno probado y conjunto compatible
+activo en WSA. Misma escena/Alta: medias de medianas **54,75 → 66,75 FPS**,
+**18,25 → 14,985 ms CPU/frame**. Capturas físicas completas; guardados intactos.
+Los ensayos originales de [estado/alias/faltas](WSA120_NATIVE_X87_STATE_2026-10-15.md)
+son antecedentes; el oráculo de 22.344 casos se repitió con el adaptador final
+y con el alias CW real del juego sin diferencias. La reanudación SEH, excepciones
+sin máscara, estabilidad larga y 120 FPS sostenidos siguen sin certificarse.
 
 **Corte:** 2026-10-15. **Código revisado:** `bda83a6532b7cbf6489740f42830eb9f55fdff98` (fase 15). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
 

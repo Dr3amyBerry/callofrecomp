@@ -32,7 +32,8 @@ EXIT = 0x42b13e
 
 
 def patch_generated_source(contents: str) -> tuple[str, bool]:
-    if not contents.startswith(HEADER) or '#include "recomp_rt.h"' not in contents[:350]:
+    runtime_headers=('#include "recomp_rt.h"','#include "x87_nan_bits.h"','#include "codsp_fcom.h"')
+    if not contents.startswith(HEADER) or sum(h in contents[:350] for h in runtime_headers)!=1:
         raise ValueError("Refusing non-CoDSP private generated C")
     if contents.count(ANCHOR) != 1:
         raise ValueError("Expected exactly one original 0x42b100 block")
@@ -50,7 +51,7 @@ def patch_generated_source(contents: str) -> tuple[str, bool]:
         'rd(R+0xc,4)', 'rd(R+0x8,4)', 'rd(R+0x1c,4)',
         'goto L_42b100',
     ):
-        if fragment not in contents[begin:begin + 14000]:
+        if fragment not in contents[begin:begin + 14000].replace('guest_regs','R'):
             raise ValueError(f"Original copy loop invariant changed: {fragment}")
     present = HOOK in contents and INCLUDE in contents
     if present:
@@ -61,8 +62,8 @@ def patch_generated_source(contents: str) -> tuple[str, bool]:
         raise ValueError("Incomplete previous patch")
     if 'CODRECOMP_CODSP_COPY32_FASTPATH' in contents:
         raise ValueError("Unexpected previous copy32 code")
-    updated = contents.replace('#include "recomp_rt.h"\n',
-                                '#include "recomp_rt.h"\n' + INCLUDE, 1)
+    runtime_header=next(h for h in runtime_headers if h in contents[:350])+'\n'
+    updated = contents.replace(runtime_header, runtime_header + INCLUDE, 1)
     updated = updated.replace(ANCHOR, ANCHOR + HOOK, 1)
     return updated, True
 

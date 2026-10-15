@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Integración acumulativa y ganancia física WSA
+
+- Región x87 binary80 integrada en el APK y preset `--wsa-cumulative` con opciones compatibles existentes. Corregidas compatibilidades de parches, guarda copy32 de páginas y alias CW fijo observado en el juego.
+- A/B/A/B Alta, misma escena/guardado y límite 120: conjunto activo en ambas B; mejora repetida de CPU y FPS. Guardados intactos. [Tabla, alcance y reproducción](docs/WSA_CUMULATIVE_2026-10-15.md).
+- Oráculo del adaptador final: 22.344 casos WSA sin diferencias; repetición con alias CW contrastada también contra CPU i686 original. Se mantienen bloqueos de rutas con errores conocidos.
+- Preset experimental instalado y activo en WSA. No acredita 120 FPS sostenidos, TECNO ni estabilidad prolongada; próximo perfil debe usar el ELF nuevo.
+
 ### 2026-10-15 — Metadatos, alias y captura precisa de faltas x87
 
 - Adaptador público: metadatos guest explícitos tras una instrucción de memoria completada y lectura del estado aritmético desde FXSAVE64 de señal, con reconstrucción de tags físicos por TOP. Pruebas contra FNSAVE nativo, 24 patrones de pila y preservación de todos los demás campos.

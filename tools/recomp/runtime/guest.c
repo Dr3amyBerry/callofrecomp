@@ -6,6 +6,13 @@
 #include "dispatch_index.h"
 #include "pe_loader_bounds.h"
 #include "commit_runs.h"
+#ifdef CODRECOMP_NATIVE_X87_REGION
+#include "native_x87_bridge.h"
+#include <signal.h>
+#include <ucontext.h>
+static int native_x87_enabled;
+static struct sigaction native_previous_segv,native_previous_bus;
+#endif
 #ifdef __ANDROID__
 #include "compass_markers.h"
 #endif
@@ -322,6 +329,26 @@ static LONG CALLBACK on_fault(EXCEPTION_POINTERS *e) {
 }
 #else
 static void on_fault(int sig, siginfo_t *info, void *ctx) {
+#if defined(CODRECOMP_NATIVE_X87_REGION) && defined(__ANDROID__)
+    const native_x87_context *active=native_x87_active;
+    ucontext_t *u=ctx;
+    x87_native_state state;uint32_t guest_pc;
+    if(active && u->uc_mcontext.fpregs &&
+       native_x87_decode_fault(active,(uintptr_t)u->uc_mcontext.gregs[REG_RIP],
+          (const uint8_t *)u->uc_mcontext.fpregs,&state,&guest_pc)) {
+        x87_native_state_to_registers(R,&state);PC=guest_pc;
+        on_fault_report((uint64_t)(uintptr_t)info->si_addr);_exit(3);
+    }
+    /* Preserve Android/ART's existing signal ownership for unrelated faults. */
+    const struct sigaction *previous=sig==SIGBUS?&native_previous_bus:&native_previous_segv;
+    if(previous->sa_handler==SIG_IGN) return;
+    if(previous->sa_handler==SIG_DFL) {
+        sigaction(sig,previous,NULL);raise(sig);return;
+    }
+    if(previous->sa_flags&SA_SIGINFO) previous->sa_sigaction(sig,info,ctx);
+    else previous->sa_handler(sig);
+    return;
+#endif
     (void)sig;
     (void)ctx;
     on_fault_report((uint64_t)(uintptr_t)info->si_addr);
@@ -330,6 +357,18 @@ static void on_fault(int sig, siginfo_t *info, void *ctx) {
 #endif
 
 void guest_init(void) {
+#ifdef CODRECOMP_NATIVE_X87_REGION
+    native_x87_enabled=getenv("CODRECOMP_NATIVE_X87_REGION")!=NULL;
+    printf("codrecomp: native x87 enabled=%d\n",native_x87_enabled);
+    if(native_x87_enabled) {
+        struct sigaction native_action={0};
+        native_action.sa_sigaction=on_fault;
+        native_action.sa_flags=SA_SIGINFO|SA_ONSTACK;
+        sigemptyset(&native_action.sa_mask);
+        sigaction(SIGSEGV,&native_action,&native_previous_segv);
+        sigaction(SIGBUS,&native_action,&native_previous_bus);
+    }
+#endif
     trace_fault = getenv("CODRECOMP_TRACE_FAULT") != NULL;
     fault_history_count = 0;
 #ifdef _WIN32
@@ -750,6 +789,12 @@ void guest_run(void) {
             module_loaded_at(UINT32_C(0x00400000)) &&
             codsp_cfg14_geom_41c017())
             continue;
+#endif
+#ifdef CODRECOMP_NATIVE_X87_REGION
+        /* Selectors have no mapped fields in this runtime; retain its zero
+         * selector model. This route does not claim resumable guest SEH. */
+        if(native_x87_enabled && PC==0x005061b0u && module_loaded_at(0x00400000u) &&
+           codsp_native_x87_region_try(R,MEM,&PC,0,0)) continue;
 #endif
 #ifdef CODRECOMP_HOT_X87_FASTPATH
         // Verified only for the exact CoDSP 1.5 guest function entry.
