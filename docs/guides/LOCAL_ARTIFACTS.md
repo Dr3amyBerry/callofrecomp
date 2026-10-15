@@ -1,0 +1,69 @@
+# Organización privada y reutilización de scripts (ChatGPT + RigorCore Dev MCP)
+
+**Vigente desde 2026-10-15.** Obligatorio para cualquier agente que use el plugin RigorCore Dev, otros MCP o scripts locales de CallofRecomp. Objetivos independientes: **120 FPS WSA** y **60 FPS TECNO ARM64, vigente aunque el dispositivo esté temporalmente ausente**.
+
+## Antes de escribir o ejecutar
+
+1. Leer `AGENTS.md`, `docs/PROJECT_STATUS.md`, `docs/ROADMAP.md` y `docs/OPTIMIZATION_LEDGER.md`. **Comprobar el estado Git y tareas en curso**, pues otras IAs pueden trabajar a la vez.
+2. Antes de crear un script, buscar la operación por concepto, no solo por nombre:
+   - `python tools/local_workspace.py find capture --kind script --limit 12`
+   - `python tools/local_workspace.py find x87 --kind script --limit 20`
+   - `python tools/local_workspace.py find "frame stats" --kind script --limit 12`
+   - Actualizar el índice si aparecen scripts nuevos: `python tools/local_workspace.py refresh`.
+3. Preferir **herramientas versionadas y probadas** en `tools/`, `tools/recomp/` y `tools/recomp/diagnostics/` sobre experimentos sueltos de `.local/profiles/`. Revisar parámetros, plataforma, equivalencia y fecha. No ejecutar como "actual" un script de fase antigua sin cotejar su ELF/flags.
+4. Si algo existe pero necesita una variación, **añadir un argumento/configuración y pruebas a la herramienta canónica** cuando sea seguro. Evitar `script_v2.py`, `script_final.py` y múltiples copias con rutas A/B escritas dentro. No reescribir el script histórico para reutilizarlo.
+5. No suponer que los scripts parecidos son intercambiables: una semilla, A/B, checkpoint, CW, Build ID, ABI o región x86 diferentes **pueden ser esenciales**. Nada de deduplicación automática por nombre o parecido textual.
+
+## Dónde escribir a partir de ahora
+
+Crear **una sesión por hipótesis/ejecución**:
+
+`python tools/local_workspace.py new-run --target wsa --slug gl-buffer-reuse --agent chatgpt-mcp`
+
+La herramienta devuelve una ruta única, por ejemplo:
+
+`.local/profiles/runs/wsa/2026-10-15/gl-buffer-reuse/20261015T180000Z-1234-00/`
+
+A partir de esa ruta **todos** los archivos de la sesión van dentro de estas subcarpetas:
+
+| Subcarpeta | Guardar aquí |
+| --- | --- |
+| `captures/` | PNG/JPG originales, capturas WSA/TECNO/Windows y comparaciones visuales |
+| `logs/` | `adb logcat`, compilación, ejecución, simpleperf textual, errores |
+| `metrics/` | Estadísticas FPS/CPU/GPU, A/B/A/B, JSON/CSV, timestamps |
+| `scripts/` | Solo scripts experimentales **específicos** de esa sesión; no clones de helpers existentes |
+| `builds/` | APK/ELF/objetos de comparación privados identificados por hash; builds activas compartidas continúan en `.local/builds/` |
+| `reports/` | Hipótesis, método, resultados, límites, `SHA256`, decisiones y pasos siguientes |
+| `raw/` | Perfdata, dumps y trazas binarias sin procesar |
+| `session.json` | Metadatos creados automáticamente: plataforma, estudio, agente, hora y commit al empezar |
+
+**Capturas:** para obtener una imagen que **persista en disco**, usar el capturador reutilizable (o un script equivalente que tome `--run`):
+
+`python tools/local_capture.py android --run RUTA_DE_SESION --serial SERIAL_ADB --name training-a1`
+
+`python tools/local_capture.py windows --run RUTA_DE_SESION --name scene-reference`
+
+`--serial` se obtiene de `adb devices` o del MCP **en esa sesión**; nunca reutilizar uno antiguo sin verificar. Una captura devuelta visualmente por `android_screenshot` o `take_screenshot` mediante el MCP **no demuestra que exista un PNG guardado**. Si debe conservarse, crear la sesión y escribir el archivo con un método que confirme ruta y bytes. No volcar PNG/base64 ni decenas de capturas repetidas en el chat.
+
+## Trabajo simultáneo: contrato de no interferencia
+
+- **No mover, renombrar, sobrescribir, limpiar, deduplicar ni borrar** directorios de estudios que otro agente pueda estar utilizando. Las rutas antiguas en la raíz de `.local/profiles/` quedan como **legado en su sitio** hasta que el trabajo esté cerrado y las referencias verificadas. No asumir que una fecha vieja vuelve obsoleto un perfil TECNO.
+- Crear sesiones **únicas** (`new-run`, creación exclusiva, sin sobreescritura). Si un agente vuelve a trabajar sobre una evidencia anterior, enlazar su ruta/ID en el nuevo `reports/`, no modificar los raw anteriores.
+- No ejecutar `git add -A`, `git reset --hard`, `git clean`, cambios de rama, reinstalación APK ni cierres de procesos si otra IA trabaja; hacer staging por archivos propios y comprobar el estado justo antes del commit. **No apropiarse de cambios ajenos**.
+- Antes de mover un artefacto legado: verificar referencias en scripts/documentos, recencia, tamaño/hash, destinatario libre y posibilidad de restauración. Documentar `old → new` en un manifiesto privado. Si hay riesgo o sesión activa, **catalogar y no mover**.
+- No volver a compilar ni repetir A/B si el objetivo era solo catalogar documentación. Para FPS físicos conservar perfil gráfico, escena, ABI y Build ID; no inferir resultados TECNO de capturas WSA.
+
+## Investigación anterior y directorios protegidos
+
+- `.local/profiles/wsa120_20261015/`: estudio WSA **vigente para reproducción**; no reorganizar sus rutas internas mientras existan scripts/reportes que las referencien.
+- `.local/profiles/tecno_live_20261014/` y `tecno_phase8_20261014/`: evidencia ARM64 **válida históricamente**, no medición de la build acumulativa más nueva.
+- `.local/profiles/history/`: archivos legados que ya pasaron controles de referencias/hashes, con manifiesto en `.local/catalog/`.
+- `.local/catalog/profiles_index.json`: índice **privado, de metadatos**; `find` lo consulta sin abrir el contenido de miles de binarios.
+- `.local/catalog/script_similarity_2026-10-15.json`: auditoría AST y similitud de scripts; **candidatos** a consolidación, no autorización para borrarlos.
+- `.local/private`, `.local/builds`, `recomp_out`, `build-*` y junctions: fuentes privadas, cachés, APK y artefactos activos; excluir de búsquedas generales.
+
+## Promoción de un script a herramienta común
+
+Solo si el comportamiento está bien definido, probarlo con entradas sintéticas **y** hay suficiente repetición: crear/modificar una herramienta pública bajo `tools/` y pruebas en `tests/`. Enlazar desde este documento y el registro; dejar los scripts originales como **historia reproducible**, sin sustituirlos sin consentimiento. Ejemplo: `tools/local_capture.py` centraliza guardado de capturas con `--serial` y `--run`, mientras antiguos scripts TECNO que imprimen base64 quedan como antecedentes y no como receta nueva.
+
+**Señal de final de sesión:** registrar en `reports/` el propósito, fuentes, IDs, comando ejecutado, resultado de pruebas, archivos generados y qué quedó pendiente. Evitar declarar que una captura/medición existe si no se verificó el archivo.

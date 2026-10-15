@@ -41,6 +41,12 @@ sin máscara, estabilidad larga y 120 FPS sostenidos siguen sin certificarse.
 - Archivadas siete carpetas de builds pasadas, sin tocar las junctions ni la compilación actual; catálogo privado de 732 scripts, incluyendo duplicados exactos, sin borrarlos.
 - Validación de esta reorganización: **396 pruebas Python, 6 omitidas, 0 fallos**, **38/38 CTest**, **119 Markdown sin enlaces internos rotos**, migradores repetibles sin nuevas mudanzas. Son pruebas de regresión, **no nuevas mediciones FPS**.
 
+## Organización de perfiles privados — 15/10/2026
+
+La raíz de `.local/profiles/` tenía **948 archivos sueltos**, incluidos 553 scripts Python, 33 imágenes PNG y 40 APK. Se archivaron **33 PNG históricos WSA sin referencias textuales** en `.local/profiles/history/wsa_20261013/captures/`, con manifiesto de origen y SHA256 reversible. **No se movieron directorios de perfiles activos, scripts históricos ni APK** que pudieran usar otras IAs.
+
+Se agregaron [reglas de sesión y reutilización](guides/LOCAL_ARTIFACTS.md), un índice local consultable sin búsquedas recursivas y capturadores reutilizables sin serial ADB fijo. El análisis de similitud inspeccionó **734 scripts Python** sin errores AST, detectó un par idéntico y varios pares similares que preservan variantes A/B, ELF, entradas y condiciones. Validación: **6/6 pruebas unitarias**, **120 Markdown sin enlaces locales rotos**, compilación sintáctica y `git diff --check` correctos. No se ha ejecutado una captura real de dispositivo ni un benchmark nuevo; **no son mediciones FPS**. TECNO ARM64 sigue en espera de nueva validación física, no obsoleto.
+
 ## Qué existe y qué falta
 
 | Área | Estado comprobado | Límite o pendiente |

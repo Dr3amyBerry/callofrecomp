@@ -18,3 +18,15 @@
 - **Correctitud primero:** cualquier divergencia x86 real, precisión binary80, PC/RAM/flags/alias/faltas, corrupción de saves o regresión visual/funcional es bloqueo, no una «mejora pequeña» acumulable. Mantener CFG14 y el transform antiguo double bloqueados.
 - **No mezclar plataformas:** WSA x86_64 y TECNO ARM64 tienen ELFs, drivers, límites de FPS y métricas separados. La misión activa es 120 FPS WSA sin reducir calidad; 60 FPS TECNO es un objetivo vigente, temporalmente pendiente de nueva medición por falta del teléfono. Ver `docs/TECNO_REVALIDATION.md`. El panel WSA de 75 Hz no acredita 120 presentaciones visibles/s.
 - Al finalizar cada cambio: actualizar `docs/OPTIMIZATION_LEDGER.md` y, si cambia el estado, `docs/PROJECT_STATUS.md`/`docs/ROADMAP.md`. Dejar commit, flags, SHA APK/ELF si aplica, oráculo, medidas, limitaciones y estado `integrado / opt-in / inconcluso / regresivo / bloqueado`. Nunca declarar FPS nuevo sin captura física comparable.
+
+## Contrato obligatorio de artefactos y scripts — ChatGPT / RigorCore Dev MCP
+
+Leer [la guía de artefactos privados](docs/guides/LOCAL_ARTIFACTS.md) **antes** de usar el MCP para guardar capturas, perfiles, logs, APK o scripts. La regla antigua «guardar en .local» queda precisada así:
+
+1. **Prohibido crear nuevos archivos sueltos en `.local/profiles/` o `.local/` raíz.** Crear una sesión única con `python tools/local_workspace.py new-run --target wsa --slug HIPOTESIS --agent chatgpt-mcp`. Usar sus directorios `captures/`, `logs/`, `metrics/`, `scripts/`, `builds/`, `reports/` y `raw/`.
+2. **Antes de crear un script:** ejecutar `python tools/local_workspace.py find PALABRA --kind script` para localizar la herramienta versionada o el experimento previo. Preferir `tools/` y añadir parámetros + pruebas a duplicar scripts `v2`/`final` sin motivo.
+3. **Capturas persistentes:** `python tools/local_capture.py android --run RUTA_SESION --serial SERIAL_ACTUAL --name escena-a` o variante `windows`. Una imagen recibida visualmente por el MCP no demuestra que exista un PNG en disco: guardar y comprobar ruta/bytes si se necesita evidencia. No imprimir capturas base64 en logs.
+4. **Otra IA puede estar trabajando aquí.** No mover ni renombrar estudios activos, editar sesiones ajenas, borrar pruebas, tocar partidas ni modificar APK instalada para una limpieza. Crear destinos únicos, comprobar Git antes de cada escritura y hacer staging solo de archivos propios (nunca `git add -A`/`reset --hard`/`clean` en trabajo concurrente).
+5. **No fusionar pruebas solo por nombres similares.** Una diferencia de ABI, Build ID, CW/x87, semillas, ramas o A/B puede ser esencial. Archivar requiere comparar referencias y hashes, dejar manifiesto reversible y no romper rutas originales. TECNO 60 FPS sigue como objetivo vigente.
+
+Para búsquedas, consultar `.local/catalog/profiles_index.json` mediante el comando `find`; para duplicaciones estudiar `.local/catalog/script_similarity_2026-10-15.json` sin abrir todo el árbol.

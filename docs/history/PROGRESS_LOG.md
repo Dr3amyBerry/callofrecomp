@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Convención de artefactos privados y reutilización de scripts
+
+- Inventario de `.local/profiles/`: 4.448 archivos bajo recorrido filtrado, 948 ficheros sueltos en la raíz y 553 scripts Python sueltos. Catálogo estructurado privado actualizado.
+- 33 capturas históricas WSA sin referencias textuales trasladadas a `.local/profiles/history/wsa_20261013/captures/`, hashes verificados y restauración documentada. Ninguna build actual, partida o directorio de perfiles activos se movió.
+- Nuevo flujo por sesión: `tools/local_workspace.py` (sesiones únicas + índice) y `tools/local_capture.py` (capturas persistentes, sin sobreescritura ni serial ADB fijo). Política obligatoria en `AGENTS.md` y `docs/guides/LOCAL_ARTIFACTS.md`.
+- Análisis AST de 734 scripts válidos con un duplicado exacto y familias similares A/B, TECNO/WSA y CFG que no se pueden fusionar automáticamente sin invalidar condiciones. Experimentación histórica conservada y nueva ruta común de captura.
+- Validados 6/6 tests unitarios del organizador/capturador, 120 documentos Markdown sin enlaces relativos rotos, compilación sintáctica de scripts nuevos y `git diff --check`. No hubo A/B nuevo ni cambios de motor, APK o partidas.
+
 ### 2026-10-15 — Reorganización de conocimiento y archivo de builds (sin cambios de ejecución)
 
 - 78 documentos trasladados por tema (guías, WSA, TECNO, CPU, CFG, gráficos e historia), enlaces relativos actualizados y catálogo regenerable en `docs/history/DOCUMENT_CATALOG.md`.

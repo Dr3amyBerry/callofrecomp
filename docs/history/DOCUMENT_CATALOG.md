@@ -23,6 +23,7 @@
 - [CAMPAIGN_VERIFICATION.md](../guides/CAMPAIGN_VERIFICATION.md) — Campaign verification
 - [FRAME_PACING.md](../guides/FRAME_PACING.md) — Desktop and Android frame pacing
 - [LEGACY_FS_BRIDGE.md](../guides/LEGACY_FS_BRIDGE.md) — Puente conservador entre el ABI de archivos x86 y servicios nativos
+- [LOCAL_ARTIFACTS.md](../guides/LOCAL_ARTIFACTS.md) — Organización privada y reutilización de scripts (ChatGPT + RigorCore Dev MCP)
 - [MANUAL_PLAYTEST.md](../guides/MANUAL_PLAYTEST.md) — Pruebas de juego pendientes
 - [PACKAGE_FORMAT.md](../guides/PACKAGE_FORMAT.md) — Paquetes de instalación `.codpack` (versión 1)
 - [RECOMP_CLOCKS.md](../guides/RECOMP_CLOCKS.md) — Recompiled engine clocks

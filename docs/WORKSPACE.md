@@ -78,3 +78,5 @@ Windows bloqueó el movimiento físico de `build-retrotouch/` y `recomp_out/`.
 Se conservan en su lugar y se accede a ellas también desde `.local/builds/` y
 `.local/private/` mediante junctions inversos. No se cerraron aplicaciones ni
 se borraron archivos para forzar el movimiento.
+
+**Capturas, mediciones y scripts privados:** [convención obligatoria para ChatGPT y MCP](guides/LOCAL_ARTIFACTS.md). La ruta nueva es `.local/profiles/runs/`; la herramienta `tools/local_workspace.py` crea sesiones y consulta un índice, y `tools/local_capture.py` guarda PNG persistentes. Las rutas antiguas se conservan para reproducir estudios y no interrumpir a otra IA.

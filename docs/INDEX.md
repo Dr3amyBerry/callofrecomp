@@ -17,6 +17,8 @@
 | **WSA x86_64** | **120 FPS de motor sostenidos** sin bajar calidad | [última A/B/A/B](performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md), [conjunto anterior](performance/wsa/WSA_CUMULATIVE_2026-10-15.md) | Desarrollo y mediciones ahora; pantalla virtual 75 Hz limita lo visible |
 | **TECNO CK6n ARM64** | **60 FPS sostenidos** con equivalencia y calidad | [plan de revalidación](TECNO_REVALIDATION.md), [perfiles TECNO](performance/tecno/PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md) | **Objetivo activo en espera del teléfono**. Últimos resultados físicos son anteriores a las mejoras WSA recientes; no extrapolar |
 
+**Política para nuevas IAs:** [artefactos privados, capturas y scripts reutilizables](guides/LOCAL_ARTIFACTS.md).
+
 ## Carpetas por función
 
 | Carpeta | Qué contiene |
