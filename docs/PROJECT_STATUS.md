@@ -47,6 +47,12 @@ La raíz de `.local/profiles/` tenía **948 archivos sueltos**, incluidos 553 sc
 
 Se agregaron [reglas de sesión y reutilización](guides/LOCAL_ARTIFACTS.md), un índice local consultable sin búsquedas recursivas y capturadores reutilizables sin serial ADB fijo. El análisis de similitud inspeccionó **734 scripts Python** sin errores AST, detectó un par idéntico y varios pares similares que preservan variantes A/B, ELF, entradas y condiciones. Validación: **6/6 pruebas unitarias**, **120 Markdown sin enlaces locales rotos**, compilación sintáctica y `git diff --check` correctos. No se ha ejecutado una captura real de dispositivo ni un benchmark nuevo; **no son mediciones FPS**. TECNO ARM64 sigue en espera de nueva validación física, no obsoleto.
 
+## Revisión funcional de 200 scripts históricos — 2026-10-15
+
+**Clasificación verificada contra dos manifiestos SHA256:** **103 scripts de edición puntual**, **94 experimentos/comprobaciones de escenario fijo** y **3 patrones convertidos en una utilidad genérica**. Se analizaron AST, llamadas y literales de rutas de cada uno de los 200 scripts archivados, sin ejecutar ninguno. Los 200 originales siguen en `.local/profiles/history/scripts/`. [Catálogo por archivo](history/ARCHIVED_SCRIPT_ROLES_FIRST200.md).
+
+La nueva utilidad `tools/recomp/diagnostics/profile_evidence.py` sustituye las *capacidades* (no los archivos históricos) de inventario de capturas, comparación de SHA256 y resúmenes de metadatos con validación de Build ID. **Prueba sobre evidencia archivada real:** el hash de `strategy_spawn_cpu_v1.perf.data` y `strategy_spawn_cpu_v1.telemetry.json` se guardó y verificó correctamente (**2/2**) en una sesión `.local/profiles/runs/shared/...`. No se midieron FPS nuevos ni se alteraron APK, motor, saves o datos del TECNO. Las próximas tandas deben priorizar por comportamiento y entradas, no solo por nombre. Validación final: **438 pruebas Python** (6 omitidas, 0 fallos), **38/38 CTest**, 121 Markdown sin enlaces rotos, y verificación adicional del índice y los 200 archivos históricos.
+
 ## Segunda tanda de archivo de scripts — 2026-10-15
 
 Se archivaron **100 scripts adicionales** (64 CFG14, 36 fases CPU). Hay **200 scripts históricos archivados** con dos manifiestos SHA256 independientes y **353 scripts Python sueltos** en `.local/profiles/`. No se borraron datos, ni se modificaron APK, saves o perfiles WSA/TECNO activos.

@@ -6,6 +6,8 @@
 
 - **Hecho:** dos tandas, **200 scripts Python** históricos organizados bajo `.local/profiles/history/scripts/` con manifiestos SHA256 separados (64 CFG14 + 36 CPU adicionales en la segunda); 33 capturas WSA y 7 builds anteriores ya verificados en sus archivos históricos. [Reglas canónicas para todas las IAs](guides/LOCAL_ARTIFACTS.md).
 - **Hecho:** auditoría estática de 580 scripts privados; 579 sintácticamente válidos y uno de parche puntual defectuoso, **no ejecutado**. La validación completa se puede repetir con `tools/verify_local_artifacts.py --save`.
+- **Hecho:** clasificados por código fuente real los 200 scripts archivados (103 ediciones puntuales, 94 experimentos de contexto, 3 patrones reutilizables). [Catálogo individual y criterios](history/ARCHIVED_SCRIPT_ROLES_FIRST200.md). El patrón de hash, inventario y metadatos ya es una herramienta permanente con tests en `tools/recomp/diagnostics/profile_evidence.py`.
+
 - **Pendiente:** revisar por subfamilias los **353 scripts todavía sueltos**, clasificar entradas/salidas y eliminar duplicación de funcionalidad **mediante herramientas probadas**, no borrando snapshots A/B o antiguos perfiles TECNO. Cambios físicos siempre con nuevo manifiesto, sin romper rutas de scripts aún referenciados.
 - **No confundir:** el objetivo TECNO 60 FPS sigue vigente y pendiente de nueva medición; organizar el historial no lo da por cerrado.
 

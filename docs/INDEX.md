@@ -2,6 +2,11 @@
 
 **Regla para todas las IAs:** leer primero este índice y los documentos de estado, no buscar recursivamente `.local/`, builds, Ghidra, fuentes generadas o repos externos. Los informes fechados preservan evidencia, **no son instrucciones operativas vigentes**.
 
+## Catálogo funcional de scripts archivados
+
+- [Análisis individual de los primeros 200 scripts (103 ediciones, 94 experimentos, 3 capacidades reutilizables)](history/ARCHIVED_SCRIPT_ROLES_FIRST200.md).
+- [Protocolo vigente de sesiones y herramientas reutilizables](guides/LOCAL_ARTIFACTS.md).
+
 ## Empezar en menos de cinco lecturas
 
 1. [Reglas de trabajo](../AGENTS.md) — contexto eficiente, pruebas y política de mejora acumulativa.

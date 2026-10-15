@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Revisión semántica y herramientas reutilizables de las 2 tandas
+
+- Auditoría AST + operaciones + entradas de los **200 scripts archivados**, contrastados con sus **200 SHA256 originales**: **103 ediciones puntuales**, **94 experimentos/verificaciones vinculadas a entradas fijadas**, **3 patrones reutilizables** (hash de evidencias, inventario y resumen de metadatos). El catálogo completo está en `docs/history/ARCHIVED_SCRIPT_ROLES_FIRST200.md`.
+- Herramienta canónica nueva `tools/recomp/diagnostics/profile_evidence.py`: `inventory`, `hash`, `verify` y `metadata` con guardas de rutas, no sobrescritura y comparador opcional de Build ID. Los scripts originales permanecen archivados.
+- A/B de la herramienta con datos privados existentes: `strategy_spawn_cpu_v1.perf.data` y `strategy_spawn_cpu_v1.telemetry.json` (2/2 huellas verificadas con manifiesto privado nuevo). Es validación de conservación de evidencia, no medición FPS.
+- Se revisaron los 200 sin ejecutarlos. El script único de edición de estas notas se guarda dentro de una sesión privada, no como herramienta reutilizable.
+
 ### 2026-10-15 — Segunda tanda: 100 scripts históricos adicionales
 
 - Preflight versionado: 453 scripts sueltos y 1.560 fuentes inspeccionados sin ejecutar scripts experimentales; 145 candidatos conservadores tras excluir referencias, imports hermanos, rutas `__file__`, sintaxis inválida y cambios recientes.

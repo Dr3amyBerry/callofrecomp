@@ -68,6 +68,33 @@ Solo si el comportamiento está bien definido, probarlo con entradas sintéticas
 
 **Señal de final de sesión:** registrar en `reports/` el propósito, fuentes, IDs, comando ejecutado, resultado de pruebas, archivos generados y qué quedó pendiente. Evitar declarar que una captura/medición existe si no se verificó el archivo.
 
+## Clasificación funcional de los primeros 200 scripts
+
+Tras las dos tandas de archivo, los 200 scripts fueron revisados estáticamente según sus **operaciones reales sobre archivos**, llamadas AST y entradas fijadas; también se confirmaron los **200 SHA256**. La [tabla individual de los 200](../history/ARCHIVED_SCRIPT_ROLES_FIRST200.md) distingue **103 parches/ediciones puntuales**, **94 experimentos o verificaciones específicas** y **3 patrones reutilizables**. No se ejecutó ni modificó ningún script histórico.
+
+**Regla para todas las IAs:** un editor que cambia una cadena, una sección de documentos o un test de una fase no es una utilidad permanente. Guardar el resultado, el diff y los tests; conservar un script puntual solo cuando aporte evidencia. En cambio, para verificaciones de uso general, reutilizar primero `tools/`, definir entradas explícitas y añadir tests si falta una función.
+
+Se promovieron tres **capacidades**, no los scripts antiguos ni sus rutas TECNO fijadas:
+
+| Utilidad histórica | Función nueva en herramienta permanente |
+|---|---|
+| `phase15_inventory_existing_perf.py` | `tools/recomp/diagnostics/profile_evidence.py inventory` |
+| `phase15_compare_capture_hashes.py` | `tools/recomp/diagnostics/profile_evidence.py hash` / `verify` |
+| `phase15_two_session_check.py` | `tools/recomp/diagnostics/profile_evidence.py metadata` |
+
+Ejemplos sin modificar resultados existentes:
+
+~~~powershell
+python tools/recomp/diagnostics/profile_evidence.py inventory --root .local/profiles --name-contains strategy_spawn --limit 15
+python tools/recomp/diagnostics/profile_evidence.py hash --root .local/profiles --files strategy_spawn_cpu_v1.perf.data strategy_spawn_cpu_v1.telemetry.json
+python tools/recomp/diagnostics/profile_evidence.py metadata --root .local/profiles --files strategy_spawn_cpu_v1.telemetry.json strategy_spawn_cpu_v2.json
+python tools/review_archived_scripts.py --check
+~~~
+
+La nueva CLI verifica rutas privadas, rechaza symlinks, manifiestos modificados y falta de Build ID cuando se exige igualdad; la huella opcional se guarda **sin sobrescribir** únicamente dentro de `runs/.../metrics/`. La comparación de muestras no autoriza inferir FPS.
+
+Los 94 scripts de oráculos, A/B, CFG, ARM64 y lectores de evidencias contextuales siguen preservados, no se fusionan ni se reejecutan por defecto. Sus verificadores genéricos existentes se encuentran en `tools/recomp/diagnostics/`. El script puntual para actualizar esta documentación se guarda solo dentro de la sesión privada de esta revisión.
+
 ## Segunda tanda verificada — 2026-10-15
 
 Se archivaron **100 scripts Python más** (64 CFG14 y 36 fases CPU), sumando **200 scripts históricos** y dejando **353 sueltos**. La primera tanda y la segunda tienen manifiestos SHA256 independientes; no se borran ni se sobrescriben.

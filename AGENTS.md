@@ -41,3 +41,16 @@ El **flujo canónico** para esta zona es `tools/local_workspace.py` + `tools/ver
 - **La reorganización de scripts históricos está centralizada:** otros agentes pueden crear nuevas sesiones y usar las herramientas comunes, pero no deben mover o deduplicar los scripts legados por su cuenta. La única excepción son cambios coordinados explícitamente y comprobados.
 - **No ejecutar scripts históricos en una auditoría:** inspeccionar sintaxis con AST y referencias sin efectos secundarios; un script de parche defectuoso no invalida el motor pero debe quedar señalado como no ejecutable.
 - Un auditor privado debe señalar desviaciones y fallos de SHA sin borrar nada. El verificador se ejecuta también antes de hacer commit.
+
+## Clasificación funcional obligatoria de scripts
+
+Los primeros 200 scripts de `.local/profiles/history/scripts/` ya tienen [catálogo funcional por archivo](docs/history/ARCHIVED_SCRIPT_ROLES_FIRST200.md) derivado de AST y rutas: **103 ediciones puntuales**, **94 pruebas/experimentos de contexto** y **3 capacidades extraídas a `tools/recomp/diagnostics/profile_evidence.py`**.
+
+**Antes de crear un nuevo script:**
+1. Buscar en el catálogo y en `tools/local_workspace.py find` si la función ya existe.
+2. Si es **un cambio textual/de una sola vez**, hacer edición puntual y verificar diff/tests. El script de parche debe ser local al `runs/<target>/<fecha>/<estudio>/<sesion>/scripts/` o no crearse si no hace falta. No promocionar un script por haberlo ejecutado una vez.
+3. Si es **un experimento**, mantener juntos script, versión, parámetros, entradas, hashes, oráculos y resultados en su sesión; no mezclar WSA con TECNO.
+4. Si es **una verificación repetible**, incorporar opciones y tests a una utilidad canónica en `tools/`, en vez de clonar variantes con nombres distintos. Para hashes de perfiles, inventario y metadatos usar `tools/recomp/diagnostics/profile_evidence.py`.
+5. No borrar, deduplicar ni ejecutar automáticamente los 200 scripts históricos. `python tools/review_archived_scripts.py --check` debe confirmar que su clasificación y hashes siguen válidos.
+
+El criterio es **función e identidad de entradas**, no solo nombre o antigüedad. La clasificación estática sirve para orientar mantenimiento; no garantiza que un viejo parche sea seguro.

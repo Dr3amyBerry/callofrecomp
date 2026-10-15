@@ -33,6 +33,7 @@
 
 ## Historial y releases
 
+- [ARCHIVED_SCRIPT_ROLES_FIRST200.md](ARCHIVED_SCRIPT_ROLES_FIRST200.md) — Clasificación funcional de los primeros 200 scripts históricos
 - [PERFORMANCE_DEEP_DIVE_2026-10-13.md](checkpoints/PERFORMANCE_DEEP_DIVE_2026-10-13.md) — Investigación profunda de rendimiento — CallofRecomp
 - [PROJECT_STATUS_CHECKPOINT_2026-10-14.md](checkpoints/PROJECT_STATUS_CHECKPOINT_2026-10-14.md) — Estado consolidado y continuación — CallofRecomp (2026-10-14)
 - [PROGRESS_LOG.md](PROGRESS_LOG.md) — Project Progress
