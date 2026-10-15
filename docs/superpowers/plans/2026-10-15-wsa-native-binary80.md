@@ -58,3 +58,15 @@ existen; no prueba aún todo su significado ni su actualización correcta.
 El lowering aritmético actual sigue ignorando ese CW. Priorizar la validación
 de esta frontera antes de añadir estado paralelo o reinterpretar los campos
 restantes. Datos: `fpu_control_mapping.json` privado.
+
+La prueba posterior ejecutó el FRSTOR real generado con un entorno sintético
+de 108 bytes, cada palabra distinta y operando `[ECX+8]` confirmado por
+Capstone. Copias directas comprobadas (offsets relativos al operando):
+`R+10a0 ← env+0`, `10a2 ← +4`, `10a4 ← +8`, `10a6 ← +18`,
+`10a8 ← +20`, `10ac ← +12`; los ocho slots de 10 bytes en `R+1100+16*i`
+cargan `env+28+10*i`. Esto identifica el formato que usa el lowering sin
+suponer que sus operaciones mantienen todos los campos correctamente.
+No se ejecutó FRSTOR nativo con ese patrón arbitrario ni se validaron aquí
+selectores/semántica de excepciones. Evidencia: `frstor_mapping_v6/summary.json`.
+
+**Publicación:** componente `f389f2d`; [CI 38734909191 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38734909191).

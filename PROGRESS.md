@@ -16,6 +16,7 @@
 - Ensayo privado WSA de la transformación: mediana generada 435,083 ns frente a nativa aislada 135,617 ns, diez rondas alternadas de 300.000. Un input fijo y sin exportar estado guest en la candidata: **no demuestra ahorro por frame ni mejora FPS**.
 - [Diseño, evidencias y contrato pendiente](docs/superpowers/plans/2026-10-15-wsa-native-binary80.md). Sigue pendiente una integración arquitectónica completa y su A/B/A/B; bloqueos de fast paths incompatibles conservados.
 - Escaneo PE/p-code localiza FLDCW/FNSTCW en `R+0x10a0` y FNSTSW/FNCLEX en `R+0x10a2`; validar esos campos y FRSTOR antes de introducir estado paralelo. El lowering matemático actual no usa ese CW.
+- FRSTOR generado comprobado con patrón sintético: mapeo directo del entorno de 108 bytes a control/status/tag/metadatos y ocho slots binary80 documentado; no certifica actualización aritmética ni excepciones. Publicado componente `f389f2d`, [CI 38734909191 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38734909191).
 
 ### 2026-10-15 — Viabilidad x87 nativa comprobada en WSA
 
