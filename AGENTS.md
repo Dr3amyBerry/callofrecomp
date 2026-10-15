@@ -30,3 +30,13 @@ Leer [la guía de artefactos privados](docs/guides/LOCAL_ARTIFACTS.md) **antes**
 5. **No fusionar pruebas solo por nombres similares.** Una diferencia de ABI, Build ID, CW/x87, semillas, ramas o A/B puede ser esencial. Archivar requiere comparar referencias y hashes, dejar manifiesto reversible y no romper rutas originales. TECNO 60 FPS sigue como objetivo vigente.
 
 Para búsquedas, consultar `.local/catalog/profiles_index.json` mediante el comando `find`; para duplicaciones estudiar `.local/catalog/script_similarity_2026-10-15.json` sin abrir todo el árbol.
+
+## Verificación obligatoria del orden privado
+
+El **flujo canónico** para esta zona es `tools/local_workspace.py` + `tools/verify_local_artifacts.py`; los traslados históricos se gestionan solamente con `tools/organize_legacy_scripts.py` y los manifiestos en `.local/catalog/`. **Las otras IAs deben ajustarse a estas rutas, no crear una estructura paralela.**
+
+- Para auditar antes y después de una tanda: `python tools/local_workspace.py refresh`, `python tools/verify_local_artifacts.py --save`, `python tools/refresh_doc_catalog.py --check-only`, y pruebas unitarias.
+- La primera tanda **100 scripts** se archivó bajo `.local/profiles/history/scripts/` con SHA256, filtrado de referencias y restauración. Manifest: `.local/catalog/archived_legacy_scripts_2026-10-15.json`. Cualquier otro movimiento requiere **un manifiesto nuevo y otra verificación**, no sobrescribir el anterior.
+- **La reorganización de scripts históricos está centralizada:** otros agentes pueden crear nuevas sesiones y usar las herramientas comunes, pero no deben mover o deduplicar los scripts legados por su cuenta. La única excepción son cambios coordinados explícitamente y comprobados.
+- **No ejecutar scripts históricos en una auditoría:** inspeccionar sintaxis con AST y referencias sin efectos secundarios; un script de parche defectuoso no invalida el motor pero debe quedar señalado como no ejecutable.
+- Un auditor privado debe señalar desviaciones y fallos de SHA sin borrar nada. El verificador se ejecuta también antes de hacer commit.

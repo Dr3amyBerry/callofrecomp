@@ -67,3 +67,30 @@ A partir de esa ruta **todos** los archivos de la sesión van dentro de estas su
 Solo si el comportamiento está bien definido, probarlo con entradas sintéticas **y** hay suficiente repetición: crear/modificar una herramienta pública bajo `tools/` y pruebas en `tests/`. Enlazar desde este documento y el registro; dejar los scripts originales como **historia reproducible**, sin sustituirlos sin consentimiento. Ejemplo: `tools/local_capture.py` centraliza guardado de capturas con `--serial` y `--run`, mientras antiguos scripts TECNO que imprimen base64 quedan como antecedentes y no como receta nueva.
 
 **Señal de final de sesión:** registrar en `reports/` el propósito, fuentes, IDs, comando ejecutado, resultado de pruebas, archivos generados y qué quedó pendiente. Evitar declarar que una captura/medición existe si no se verificó el archivo.
+
+## Tanda verificada de reorganización de scripts (2026-10-15)
+
+**Resultado real y reversible:** se archivaron **100 scripts Python antiguos** de la raíz de perfiles sin ejecutar ninguno. Procedimiento: preflight de 580 scripts privados → análisis de dependencias en docs/tools/tests/perfiles y carpetas anidadas → exclusión de `__file__` e importaciones locales → lote con SHA256 y sin escritura reciente → movimiento con manifiesto → verificador completo. Quedaron **453 scripts Python sueltos** en vez de 553; el historial se organiza así:
+
+| Ruta privada | Historial |
+| --- | --- |
+| `.local/profiles/history/scripts/cfg-phase14/` | 57 scripts de experimentos CFG14 |
+| `.local/profiles/history/scripts/cpu-phases/` | 34 scripts de fases CPU anteriores |
+| `.local/profiles/history/scripts/oneoff-edits/` | 7 parches puntuales históricos |
+| `.local/profiles/history/scripts/tecno/` | 2 scripts de screenshots TECNO con serial fijo, reemplazados operativamente por `tools/local_capture.py` |
+
+**Restauración:** `python tools/organize_legacy_scripts.py --restore` verifica hash y que el destino anterior esté libre antes de cada retorno. No ejecutar una segunda tanda usando el mismo manifiesto. El primer archivo está en `.local/catalog/archived_legacy_scripts_2026-10-15.json` (privado, no subido a Git).
+
+**Verificación repetible desde la raíz del repositorio:**
+
+```powershell
+python tools/local_workspace.py refresh
+python tools/verify_local_artifacts.py --save
+python tools/refresh_doc_catalog.py --check-only
+python -m unittest discover -s tests
+ctest --test-dir build --output-on-failure
+```
+
+El verificador guarda `.local/catalog/verification_report.json` y controla tamaños/SHA archivados, índice, carpetas por sesión y privacidad de Git. Preflight inicial de **580 scripts**: **579 válidos**. La verificación extendida de carpetas WSA/TECNO y catálogo inspecciona **626 scripts: 625 AST válidos y uno histórico con sintaxis inválida**, `.local/profiles/phase14d_fix_cmake_winpaths.py`. Se conserva sin ejecutarlo ni alterarlo. Un error en un script viejo no implica que la APK o el motor fallen. **Suite comprobada:** 412 pruebas Python (6 omitidas) y 38/38 CTest tras corregir los imports de tres tests nuevos. La auditoría no se equipara a una compilación/medición nueva en un dispositivo.
+
+**Límite:** un análisis estático no garantiza descubrir rutas construidas dinámicamente. No mover arbitrariamente los 453 scripts restantes; tratar cada tanda como una operación reversible con evidencias.

@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Primera tanda de scripts históricos archivada y auditada
+
+- Se analizaron dependencias y sintaxis antes de mover archivos. Preflight de 580 scripts (579 válidos), revisión de referencias directas/anidadas, imports locales y `__file__`, y ampliación del verificador a 626 scripts privados, de los que **625 parsean correctamente**. Un parche CFG14 inválido queda intacto y declarado.
+- **100 scripts** archivados bajo `.local/profiles/history/scripts/`: 57 CFG14, 34 CPU históricos, 7 modificaciones puntuales y 2 capturas TECNO con serial fijo; 453 scripts permanecen sueltos. No se ejecutó ningún script experimental.
+- Cada traslado verifica SHA256 y queda en `.local/catalog/archived_legacy_scripts_2026-10-15.json` para restauración segura. `tools/verify_local_artifacts.py` comprobó 100/100 scripts, 33/33 PNG antiguos, 7/7 builds, índice local, nueva sesión de auditoría y 0 archivos privados indexados por Git.
+- Suite Python completa: **412 pruebas, 6 omitidas, 0 fallos**; **38/38 CTest** en segunda ejecución. La primera ejecución falló al importar `tools` desde el directorio de compilación; se corrigió el `sys.path` de los tests nuevos y la repetición pasó. Scripts del motor, APK, partidas y perfiles físicos del TECNO sin modificación.
+
 ### 2026-10-15 — Convención de artefactos privados y reutilización de scripts
 
 - Inventario de `.local/profiles/`: 4.448 archivos bajo recorrido filtrado, 948 ficheros sueltos en la raíz y 553 scripts Python sueltos. Catálogo estructurado privado actualizado.

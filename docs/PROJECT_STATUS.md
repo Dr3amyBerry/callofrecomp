@@ -47,6 +47,12 @@ La raíz de `.local/profiles/` tenía **948 archivos sueltos**, incluidos 553 sc
 
 Se agregaron [reglas de sesión y reutilización](guides/LOCAL_ARTIFACTS.md), un índice local consultable sin búsquedas recursivas y capturadores reutilizables sin serial ADB fijo. El análisis de similitud inspeccionó **734 scripts Python** sin errores AST, detectó un par idéntico y varios pares similares que preservan variantes A/B, ELF, entradas y condiciones. Validación: **6/6 pruebas unitarias**, **120 Markdown sin enlaces locales rotos**, compilación sintáctica y `git diff --check` correctos. No se ha ejecutado una captura real de dispositivo ni un benchmark nuevo; **no son mediciones FPS**. TECNO ARM64 sigue en espera de nueva validación física, no obsoleto.
 
+## Auditoría completa de scripts y archivo seguro — 2026-10-15
+
+Se verificaron **626 scripts Python privados** entre la raíz, perfiles anidados y archivos históricos: **625 con sintaxis válida y uno de parche CFG14 con error identificado** (conservado, no ejecutado). Se archivó una **tanda de 100 scripts** antes sueltos: 57 CFG14, 34 CPU, 7 ajustes puntuales y 2 capturadores TECNO obsoletos *como herramientas*, no sus perfiles de rendimiento. La raíz pasó de 553 a **453 scripts Python**. [Protocolo y restauración](guides/LOCAL_ARTIFACTS.md).
+
+La herramienta `tools/verify_local_artifacts.py --save` revisó sin errores: **100/100 hashes de scripts**, **33/33 capturas**, **7/7 directorios de builds** históricos, directorios de nueva sesión, índice de rutas y **0 archivos privados rastreados en Git**. Clasifica explícitamente el script con error como advertencia y conserva manifiestos reversibles en `.local/catalog/`. Las **412 pruebas Python** de la suite local pasaron (6 omitidas) y el **CTest completo 38/38** también pasó. La primera ejecución CTest detectó un error de importaciones en tests nuevos; se corrigió y la repetición completa terminó con 0 fallos. Estas cifras **no son mediciones FPS** y no modifican la meta TECNO de 60 FPS.
+
 ## Qué existe y qué falta
 
 | Área | Estado comprobado | Límite o pendiente |

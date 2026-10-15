@@ -80,3 +80,6 @@ Se conservan en su lugar y se accede a ellas también desde `.local/builds/` y
 se borraron archivos para forzar el movimiento.
 
 **Capturas, mediciones y scripts privados:** [convención obligatoria para ChatGPT y MCP](guides/LOCAL_ARTIFACTS.md). La ruta nueva es `.local/profiles/runs/`; la herramienta `tools/local_workspace.py` crea sesiones y consulta un índice, y `tools/local_capture.py` guarda PNG persistentes. Las rutas antiguas se conservan para reproducir estudios y no interrumpir a otra IA.
+
+
+**Lote de scripts privados 2026-10-15:** 100 scripts antiguos reclasificados físicamente bajo `.local/profiles/history/scripts/`; quedan 453 sueltos en la raíz. El inventario y la auditoría SHA están en `.local/catalog/`, junto con `verification_report.json`. [Procedimiento y criterios de restauración](guides/LOCAL_ARTIFACTS.md). Para ejecutar de nuevo: `python tools/local_workspace.py refresh` y `python tools/verify_local_artifacts.py --save`.

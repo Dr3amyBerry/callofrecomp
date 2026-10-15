@@ -2,6 +2,13 @@
 
 > **Prioridad actual: misión WSA 120 FPS.** [Perfil de la acumulativa anterior](performance/wsa/WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) y [aplicación medida sobre ella](performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md); la cola TECNO sigue vigente, pero su revalidación está suspendida únicamente por falta del dispositivo. No extrapolar sus perfiles a WSA.
 
+## Mantenimiento privado de scripts — tras primera tanda
+
+- **Hecho:** 100 scripts históricos Python movidos a `.local/profiles/history/scripts/` por función con manifiesto SHA256; 33 capturas WSA y 7 builds anteriores ya verificados en sus archivos históricos. [Reglas canónicas para todas las IAs](guides/LOCAL_ARTIFACTS.md).
+- **Hecho:** auditoría estática de 580 scripts privados; 579 sintácticamente válidos y uno de parche puntual defectuoso, **no ejecutado**. La validación completa se puede repetir con `tools/verify_local_artifacts.py --save`.
+- **Pendiente:** revisar por subfamilias los **453 scripts todavía sueltos**, clasificar entradas/salidas y eliminar duplicación de funcionalidad **mediante herramientas probadas**, no borrando snapshots A/B o antiguos perfiles TECNO. Cambios físicos siempre con nuevo manifiesto, sin romper rutas de scripts aún referenciados.
+- **No confundir:** el objetivo TECNO 60 FPS sigue vigente y pendiente de nueva medición; organizar el historial no lo da por cerrado.
+
 ## Cola WSA vigente — actualizada con perfil de la APK B instalada
 
 El [perfil post-acumulativo](performance/wsa/WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) **ya se completó** en la APK acumulativa anterior: **12.695 muestras CPU** y **5.074 con stacks**, **67,2 FPS / 14,89 ms CPU/frame**. Ahora está instalada la candidata de enlace local; no resolver aquellos PC contra su nuevo ELF. La región binary80 `0x005061B0` **ya se integró en el preset experimental**; no presentarla nuevamente como no implementada. Continúan sin certificar recuperación SEH de excepciones sin máscara y pruebas prolongadas.
