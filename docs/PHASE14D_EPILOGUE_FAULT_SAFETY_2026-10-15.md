@@ -4,6 +4,11 @@
 
 **Estado de la fase:** *auditoría del epílogo y de excepciones finalizada parcialmente; optimización CFG aún NO elegible para ejecución en el juego*. El constructor Android rechaza el flag inseguro. No se ha instalado una APK con el cambio ni medido FPS nuevos.
 
+## Actualización 14E — recuperación verificada offline, versión Android aún bloqueada
+
+El diagnóstico 14D de **15/18 puntos de fallo inseguros** sigue correspondiendo al código cacheado original. Un nuevo generador experimental offline obtuvo **120/120** reanudaciones precisas desde el PC fallido con el x86 original y el traductor A sin caché. Aunque la corrección conserva RAM/R/PC y evita repetir STORE, **no se ha integrado la captura de señales del SO Android** y la versión segura tiene mayor coste de código ARM64. El flag CMake y builder permanecen BLOQUEADOS. [Informe 14E](PHASE14E_PRECISE_CHECKPOINTS_AND_RESUME_2026-10-15.md).
+
+
 ## 1. Oráculo original x86: éxito, error y primera llamada del manejador
 
 Herramienta nueva: `tools/recomp/diagnostics/verify_shared_epilogue_paths_unicorn.py`. Usa los bytes **originales** de CoDSP.exe 1.5 verificados mediante PE y Capstone; el control es independiente del p-code y utiliza Unicorn x86 de 32 bits. El lado traducido compila en DLL privada la semántica de `pcode2c.Gen` sin escribir código propietario en Git. Hash del PE y del p-code fijados por la versión auditada.

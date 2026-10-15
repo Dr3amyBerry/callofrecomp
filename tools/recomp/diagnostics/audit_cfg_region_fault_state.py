@@ -23,7 +23,7 @@ from diagnostics.verify_geometry_region_original_x86 import (
     START,EXIT,COUNT,FULL_RAM,REG_SIZE,ALIASES,prepare_case,pe_code_and_edges)
 from diagnostics.benchmark_cfg_region import run
 from pcode2c import parse
-from cfg_region_lab import select_block
+from cfg_region_lab import select_block,generate_runtime_region_c
 from diagnostics.analyze_cfg_regions import verify_inputs
 from unicorn import Uc,UC_ARCH_X86,UC_MODE_32,UC_HOOK_CODE,UC_HOOK_MEM_READ,UC_HOOK_MEM_WRITE
 from unicorn import UC_HOOK_MEM_READ_UNMAPPED,UC_HOOK_MEM_WRITE_UNMAPPED,UcError
@@ -94,6 +94,64 @@ def case_fault(before,flags,regs,page:int):
             "eflags":uc.reg_read(X.UC_X86_REG_EFLAGS),
             "instructions_reached":len(visited)}
 
+def case_fault_at_instruction(before,flags,regs,page:int,at_pc:int):
+    """Unmap a 4KiB guest page on entry to the precise original x86 insn.
+
+    Unlike unmapping before function entry, this also tests later uses of
+    pages already read or written by PREVIOUS COMPLETED instructions. The
+    memory page is copied at fault time and restored for an exact final RAM
+    differential. Missing/unmapped is a real Unicorn guest page failure.
+    """
+    uc=emulator(before,flags,regs)
+    missed=[]
+    visited=[]
+    page_image=[]
+    def code(cpu,pc,_length,_):
+        visited.append(pc)
+        if pc==at_pc:
+            page_image.append(bytes(cpu.mem_read(page,PAGE)))
+            cpu.mem_unmap(page,PAGE)
+        if pc==EXIT:
+            cpu.emu_stop()
+    def missing(_cpu,kind,address,size,_value,_):
+        missed.append((kind,address,size))
+        return False
+    uc.hook_add(UC_HOOK_CODE,code)
+    uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED|UC_HOOK_MEM_WRITE_UNMAPPED,missing)
+    try:
+        uc.emu_start(START,0,count=COUNT+3,timeout=500000)
+    except UcError as exc:
+        if not missed:raise OracleError(
+            "Unicorn failed before target memory exception") from exc
+    else:
+        raise OracleError("Expected at-instruction unmapped page never faulted")
+    if (len(page_image)!=1 or not missed or
+        uc.reg_read(X.UC_X86_REG_EIP)!=at_pc or
+        (missed[0][1]//PAGE)*PAGE!=page):
+        raise OracleError("Original x86 at-instruction fault boundary mismatch")
+    original_regs={name:uc.reg_read(reg)&0xffffffff
+                   for name,reg in ARCH_IDS.items()}
+    original_flags=uc.reg_read(X.UC_X86_REG_EFLAGS)
+    uc.mem_map(page,PAGE)
+    uc.mem_write(page,page_image[0])
+    return {
+        "fault_pc":at_pc,"fault_address":missed[0][1],
+        "gpr":original_regs,"eflags":original_flags,
+        "ram":bytes(uc.mem_read(0x1000,FULL_RAM-0x1000)),
+        "visited_instructions":len(visited),
+    }
+
+
+def complete_expected_R(initial:bytes,guest:dict)->bytes:
+    """Architectural bytes other than eight GPR + five modelled flags stay."""
+    expected=bytearray(initial)
+    for name,off in REG_OFFSETS.items():
+        expected[off:off+4]=guest["gpr"][name].to_bytes(4,"little")
+    for name,(bit,off) in FLAG_BITS.items():
+        expected[off]=(guest["eflags"]>>bit)&1
+    return bytes(expected)
+
+
 INSTRUMENTED_DECL=r"""
 #include "recomp_rt.h"
 #include <setjmp.h>
@@ -107,8 +165,10 @@ static uint32_t hit_index;
 static uint32_t access_counter;
 static uint32_t fault_address;
 static uint32_t trapped;
+static uint32_t logged_access[128];
 static uint8_t *checked_addr(uint32_t address) {
   ++access_counter;
+  if (access_counter<=128) logged_access[access_counter-1]=address;
   if (access_counter==hit_index) {
     trapped=1;
     fault_address=address;
@@ -142,6 +202,9 @@ API uint32_t probe_fault_address(void){return fault_address;}
 API uint32_t probe_visited_count(void){return access_counter;}
 API uint32_t probe_guest_pc(void){return PC;}
 API uint32_t probe_trapped(void){return trapped;}
+API uint32_t probe_access_address(uint32_t index) {
+ return index<access_counter && index<128 ? logged_access[index] : 0xffffffffu;
+}
 """
 
 def instrument_helper(private_src:Path, output:Path):
@@ -165,24 +228,36 @@ def instrument_helper(private_src:Path, output:Path):
     for name in ("probe_fault_address","probe_visited_count",
                  "probe_guest_pc","probe_trapped"):
         getattr(lib,name).restype=ctypes.c_uint32
+    lib.probe_access_address.argtypes=(ctypes.c_uint32,)
+    lib.probe_access_address.restype=ctypes.c_uint32
     return lib
 
-def run_faults(case:int,private_code:bytes,lib,original_boundaries:set):
+def run_faults(case:int,private_code:bytes,lib,original_boundaries:set,
+               *,all_memory_ops:bool=False):
     before,state,flags,regs=prepare_case(case,private_code)
     timeline=trace_all(before,flags,regs,original_boundaries)
-    # Only pages FIRST seen at this memory access are eligible for a true
-    # Unicorn unmapped guest page fault at the selected instruction.
+    # Legacy mode audits the first use of each page. Expanded mode
+    # unmaps on entry to EACH original x86 memory instruction, including
+    # revisits to stack pages after earlier committed STOREs.
     first={}
     for i,access in enumerate(timeline,1):
         first.setdefault((access["address"]//PAGE)*PAGE,(i,access))
-    chosen=[]
-    for page,(access_number,item) in first.items():
-        if page not in (START&~0xfff,):
-            chosen.append((access_number,page,item))
-    # Explicitly reach a mixture of early and late memory accesses.
+    chosen=( [(i,(access["address"]//PAGE)*PAGE,access)
+             for i,access in enumerate(timeline,1)]
+            if all_memory_ops else
+            [(index,page,access) for page,(index,access) in first.items()])
+    chosen=[(i,page,item) for i,page,item in chosen
+            if page!=(START&~0xfff)]
+    if all_memory_ops:
+        from collections import Counter
+        pcs=Counter(item["pc"] for _i,_page,item in chosen)
+        if any(n!=1 for n in pcs.values()):
+            raise OracleError("multiple memory accesses inside a single x86 instruction; "
+                              "safe-at-instruction unmap cannot distinguish them")
     tested=[]
     for access_number,page,item in chosen:
-        guest=case_fault(before,flags,regs,page)
+        guest=(case_fault_at_instruction(before,flags,regs,page,item["pc"])
+               if all_memory_ops else case_fault(before,flags,regs,page))
         state_c=ctypes.create_string_buffer(state,REG_SIZE)
         mem_c=ctypes.create_string_buffer(bytes(before),FULL_RAM)
         lib.run_fault_probe(state_c,mem_c,access_number)
@@ -201,11 +276,28 @@ def run_faults(case:int,private_code:bytes,lib,original_boundaries:set):
                 divergent.append(name)
         if lib.probe_guest_pc()!=guest["fault_pc"]:
             divergent.append("PC")
+        ram_match=True
+        full_R_match=True
+        access_order_match=True
+        if all_memory_ops:
+            access_order_match=all(
+                lib.probe_access_address(i)==timeline[i]["address"]
+                for i in range(access_number))
+            if not access_order_match:divergent.append("guest_memory_access_order")
+            # Compare all bytes written before the fault: restarting the
+            # failing x86 instruction must NOT replay earlier STOREs.
+            ram_match=mem_c.raw[0x1000:]==guest["ram"]
+            full_R_match=state_c.raw==complete_expected_R(state,guest)
+            if not full_R_match:divergent.append("full_R")
+            if not ram_match:divergent.append("committed_RAM")
         tested.append({
             "case":case,"memory_access":access_number,
             "fault_pc":f"0x{guest['fault_pc']:08x}",
             "fault_page":f"0x{page:08x}",
             "guest_memory_address_same":True,
+            "guest_memory_prefix_order_matched":access_order_match if all_memory_ops else None,
+            "full_R_matched":full_R_match if all_memory_ops else None,
+            "earlier_guest_STORES_preserved":ram_match if all_memory_ops else None,
             "dirty_fields_on_fault":divergent,
             "safely_maintains_arch_state":not divergent,
         })
@@ -231,6 +323,12 @@ def main(argv=None):
     ap.add_argument("--pe",required=True,type=Path)
     ap.add_argument("--out",required=True,type=Path)
     ap.add_argument("--cases",type=int,default=2)
+    ap.add_argument("--all-memory-ops",action="store_true",
+                    help="unmap page at EVERY original memory instruction "
+                         "and compare full R plus earlier committed guest RAM")
+    ap.add_argument("--candidate",choices=("legacy","checkpoint"),
+                    default="legacy",
+                    help="use ignored standalone recompiled helper with guest-memory checkpoints")
     ap.add_argument("--require-safe",action="store_true",
                     help="return exit 4 when any original x86 fault-state differs")
     args=ap.parse_args(argv)
@@ -251,10 +349,18 @@ def main(argv=None):
         source=ROOT/"recomp_out/codsp_cfg14_geom_41c017.c"
         if not source.is_file():raise OracleError("private original-derived helper missing")
         args.out.mkdir(parents=True,exist_ok=False)
+        if args.candidate=="checkpoint":
+            derived,_selected=generate_runtime_region_c(
+                block,cache_count=5,fault_policy="checkpoint")
+            source=args.out/"private_checkpoint_helper_source.c"
+            source.write_text(derived,encoding="utf-8")
         instrument=instrument_helper(source,args.out)
         rows=[]
         for case in range(args.cases):
-            rows.extend(run_faults(case,original,instrument,{pc for pc,_n,_ops in block.instructions}))
+            rows.extend(run_faults(
+                case,original,instrument,
+                {pc for pc,_n,_ops in block.instructions},
+                all_memory_ops=args.all_memory_ops))
         failures=[x for x in rows if not x["safely_maintains_arch_state"]]
         report={
             "schema":"phase14c-x86-page-fault-architectural-state-audit-v1",
@@ -264,6 +370,10 @@ def main(argv=None):
             "strict_fault_safety_gate":"PASS" if strict_fault_safety_gate(rows) else "FAIL",
             "source_private_helper_sha256":hashlib.sha256(source.read_bytes()).hexdigest(),
             "region":"0x0041c017",
+            "candidate":args.candidate,
+            "all_original_memory_instructions_tested":args.all_memory_ops,
+            "full_R_and_RAM_at_fault_compared":args.all_memory_ops,
+            "checkpoint_policy_is_offline_only":True,
             "unsafe_for_exception_sensitive_guest_code":bool(failures),
             "default_and_production_fastpath_recommended":False,
             "original_reference":"Unicorn x86 UC_ERR_*_UNMAPPED real 4KiB page",

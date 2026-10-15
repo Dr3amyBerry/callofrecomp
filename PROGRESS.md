@@ -9,6 +9,18 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Fase 14E: checkpoints x86 de memoria y reentrada sin repetir escrituras (OFFLINE)
+
+- [x] **24 accesos a RAM guest:** 16 LOAD, 6 STORE y 2 lecturas absolutas `m` en el bloque `0x0041C017` de 29 instrucciones; antes de cada memoria se vuelcan a R los registros modificados y se actualiza el PC original del x86.
+- [x] `0x0041C073`: diferir CF/OF constantes cero hasta después del LOAD; rechazar escrituras arquitectónicas prematuras, micro-CFG, STORE anterior a otro acceso que pueda fallar y demás reordenaciones sin prueba.
+- [x] Unicorn x86 original: **24/24** puntos de fallo con R 8192 B, RAM, 8 GPR, 5 flags y PC equivalentes, **40/40** ejecuciones normales, **120/120** reentradas desde cada PC fallido usando el **x86 original** y el **traductor A de `pcode2c.Gen` sin caché**; se conservan las **6 STORE** una sola vez.
+- [x] ARM64 estático: fast path inseguro **404 B / 32 loads / 22 stores**; checkpoint ingenuo **820 / 33 / 143**; checkpoint incremental **652 / 32 / 62**. Sigue costando +248 B y +40 escrituras frente al código sin checkpoint, sin información de FPS.
+- [x] Alternativa sin memoria: **68 bloques y 158 instrucciones**, máximo 5 instrucciones. Dos candidatos (geometría `0x0041BAB6` y visibilidad `0x004D6FD0`) pasaron 120/120 A/B por variante, pero **no disminuyeron cargas, escrituras ni tamaño ARM64**.
+- [x] El helper original privado de compilación conserva **los mismos bytes y SHA256**. No se cambiaron `pcode2c.py`, runtime/Android, CMake, renderizador ni APK. El flag `CODRECOMP_CFG14_GEOM_REGION` permanece **BLOQUEADO**, sin handler de señales Android.
+- [x] Suite final: **355 tests Python**, 4 omitidos y ninguna falla; **35/35 CTest**; regresión del helper C privado original SHA-256 idéntico.
+- [ ] Deoptimización de señales real con todas las garantías (páginas, threading, estado completo) o superregiones CFG sin RAM; A/B físico TECNO pendiente. [Informe 14E](docs/PHASE14E_PRECISE_CHECKPOINTS_AND_RESUME_2026-10-15.md).
+
+
 ### 2026-10-15 — Fase 14D: epílogo original y FALLO de seguridad por excepciones
 
 - [x] Oráculo Unicorn sobre el epílogo `0x00523CD9` (PE CoDSP original, Capstone y `pcode2c.Gen`): **128/128** retornos con cookie correcta y **128/128** saltos con cookie incorrecta verificados en 8 GPR, cinco EFLAGS materializados, R completo, PC, pila y RAM. `RET` también modifica `R+0x284` (EIP sombra), confirmado.

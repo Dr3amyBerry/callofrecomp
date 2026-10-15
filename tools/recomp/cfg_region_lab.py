@@ -132,9 +132,74 @@ def cache_candidates(region: Region) -> tuple:
     return tuple(eligible)
 
 
+
+
+def may_fault_guest_memory(mn: str, out, inputs) -> bool:
+    """Count BOTH p-code LOAD/STORE and direct original guest 'm' operands.
+
+    Ghidra represents absolute-address x86 loads as e.g. COPY R,[m:...].
+    pcode2c.Gen.rd() uses G(...) for those; ignoring them would leave
+    PC/cache stale on faults despite all LOAD/STORE boundaries being correct.
+    Only branch target varnodes in 'm' are not guest data accesses.
+    """
+    if mn in BRANCH_OPS:
+        return False
+    return (mn in {"LOAD","STORE"} or
+            any(v and v[0]=="m" for v in
+                ([out] if out else [])+list(inputs)))
+
+
+def exception_atomic_memory_ops(ops: list, pc: int) -> list:
+    """Conservatively relocate early constant flag resets past guest LOAD.
+
+    Checked original x86 exception boundary is BEFORE any effects of the
+    faulting instruction. Ghidra occasionally emits cleared OF/CF before
+    the source LOAD (e.g. XOR ECX,[ESP+0x4c] at 0x0041C073). Such clears
+    may execute only AFTER the memory read succeeds. Refuse other cases:
+    unsupported micro-ops/aliasing cannot silently restart after a fault.
+
+    The rewrite is only an experimental verifier mode. Normal pcode2c and
+    shipped runtime remain completely unchanged.
+    """
+    memory=[i for i,(mn,out,args) in enumerate(ops)
+            if may_fault_guest_memory(mn,out,args)]
+    if not memory:
+        return list(ops)
+    if any(ops[i][0]=="STORE" for i in memory[:-1]):
+        raise CFGError(f"partial guest STORE before later fault at 0x{pc:08x}")
+    last_access=memory[-1]
+    delayed=[]
+    for i,(mn,out,args) in enumerate(ops[:last_access]):
+        if not out or out[0]!="r":
+            continue
+        if (mn!="COPY" or len(args)!=1 or args[0][0]!="c" or
+                out[2]!=1 or out[1] not in (0x200,0x20b) or
+                args[0][1]!=0):
+            raise CFGError(f"unsafe architectural write before guest memory at 0x{pc:08x}")
+        if any(v and v[0]=="r" and
+                v[1]<out[1]+out[2] and out[1]<v[1]+v[2]
+                for _name,_dest,inputs in ops[i+1:last_access+1]
+                for v in inputs):
+            raise CFGError(f"early flag consumed before guest memory at 0x{pc:08x}")
+        delayed.append(i)
+    if not delayed:
+        return list(ops)
+    # Relative p-code CBRANCH/BRANCH targets are micro-operation indexes.
+    # Moving even constant writes would invalidate offsets unless ALL
+    # such edges are remapped. Refuse rather than silently change CFG.
+    if any(mn in BRANCH_OPS for mn,_out,_args in ops):
+        raise CFGError(f"cannot reorder flag resets across micro-CFG at 0x{pc:08x}")
+    # Only audited reordering of constant CF/OF resets; all other
+    # operations remain in exactly the same guest p-code order.
+    adjusted=[item for i,item in enumerate(ops) if i not in delayed]
+    position=last_access+1-sum(i<last_access for i in delayed)
+    return adjusted[:position]+[ops[i] for i in delayed]+adjusted[position:]
+
+
 def generate_region_c(region: Region, *, cache_count: int=0,
                       entry_policy: str="all_entries",
-                      memory_model: str="folded64k") -> tuple[str,tuple]:
+                      memory_model: str="folded64k",
+                      fault_policy: str="legacy") -> tuple[str,tuple]:
     """Return generated, PRIVATE A/B C source and selected cached varnodes.
 
     A single exported execute_region supports an arbitrary guest start PC
@@ -147,6 +212,8 @@ def generate_region_c(region: Region, *, cache_count: int=0,
         raise CFGError("unsupported region entry policy")
     if memory_model not in {"folded64k","exact"}:
         raise CFGError("unsupported guest RAM model")
+    if fault_policy not in {"legacy","checkpoint"}:
+        raise CFGError("unsupported fault boundary policy")
     selected=tuple(item[0] for item in cache_candidates(region)[:cache_count])
     names={v:f"reg_{v[1]:x}_{v[2]}" for v in selected}
     written={v for v,_score,wrote in cache_candidates(region) if wrote}
@@ -206,8 +273,26 @@ def generate_region_c(region: Region, *, cache_count: int=0,
 
     g=Gen({})
     g.reg_cache=names
+    dirty_checkpoint=set()
     for index,(pc,size,ops) in enumerate(insns):
+        if fault_policy=="checkpoint":
+            ops=exception_atomic_memory_ops(ops,pc)
         lines.append(f"B_{pc:x}: {{")
+        if fault_policy=="checkpoint" and any(
+                may_fault_guest_memory(mn,out,args) for mn,out,args in ops):
+            # BEFORE any part of the original memory-bearing x86
+            # instruction, R reflects ALL effects of preceding completed
+            # guest instructions, and PC points to the faultable guest PC.
+            # If a fault happens, the dispatcher may resume ORIGINAL code
+            # at PC without replaying earlier guest instructions/STORES.
+            # Flush ONLY registers modified since the previous memory
+            # boundary. Other fields in R already contain the right guest
+            # value: redundant R writes erase the expected ARM64 benefit.
+            lines.extend(
+                f" wr(R+0x{v[1]:x},{v[2]},{names[v]});"
+                for v in selected if v in dirty_checkpoint)
+            dirty_checkpoint.clear()
+            lines.append(f" PC=0x{pc:x}u;")
         offsets=temporary_layout(ops)
         if offsets is None:
             raise CFGError("no safe per-instruction unique layout")
@@ -243,6 +328,9 @@ def generate_region_c(region: Region, *, cache_count: int=0,
         if len(ops) in rel_targets:
             lines.append(f" U_{pc:x}_{len(ops)}:;")
         lines.append("}")
+        if fault_policy=="checkpoint":
+            dirty_checkpoint.update(
+                out for _mn,out,_args in ops if out in names)
         following=pc+size
         lines.append(" "+direct(following))
     if g.unsupported:
@@ -264,7 +352,8 @@ def generate_region_c(region: Region, *, cache_count: int=0,
     return source,selected
 
 
-def generate_runtime_region_c(region: Region, *, cache_count: int=5) -> tuple[str,tuple]:
+def generate_runtime_region_c(region: Region, *, cache_count: int=5,
+                              fault_policy: str="legacy") -> tuple[str,tuple]:
     """Generate a PRIVATE opt-in CoDSP helper, using EXACT 4GiB guest G().
 
     Entrypoint = 0x0041C017 exclusively. If called at any other PC, returns
@@ -283,7 +372,8 @@ def generate_runtime_region_c(region: Region, *, cache_count: int=5) -> tuple[st
         raise CFGError("original shared-epilogue JMP p-code changed")
 
     source,selected=generate_region_c(region,cache_count=cache_count,
-                                      entry_policy="start_only",memory_model="exact")
+                                      entry_policy="start_only",memory_model="exact",
+                                      fault_policy=fault_policy)
     replacements=(
         ('#undef G\n#define G(a) (MEM + (uint32_t)(a))\n',""),
         ("uint8_t *MEM;\nuint8_t R[0x2000];\nuint8_t U[0x400000];\nuint32_t PC;\nint recomp_miss;\n",""),
