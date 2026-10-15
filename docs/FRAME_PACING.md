@@ -1,5 +1,42 @@
 # Desktop and Android frame pacing
 
+## Reversible runtime selection
+
+Android reads the private profile file `files/profile/frame_limit` once at
+startup. Accepted contents are `original`, `60`, `120`, and `unlimited` (or
+`0`), with optional surrounding ASCII whitespace. Missing, invalid, oversized
+or embedded-NUL input selects the original 60-FPS behavior. No settings or
+game assets are rewritten by reading this file. Restart to apply changes.
+
+The native launcher supplies the same selected value to guest `com_maxfps`
+and host pacing, overriding the Java launcher's legacy 60. The clocks used
+by simulation, audio and input are unchanged. This does not prove all original
+engine physics remain independent of frame rate; gameplay validation is still
+required before recommending higher limits.
+
+Example for the explicitly identified WSA (verify its serial before use):
+
+```sh
+adb -s 127.0.0.1:58526 shell "run-as org.callofrecomp sh -c 'echo 120 > files/profile/frame_limit'"
+```
+
+Write `60` or `original`, or remove only `files/profile/frame_limit`, to
+restore normal pacing. Write `unlimited` to request no software cap. This
+does not disable driver/compositor synchronization, produce more unique
+frames than the display can present, or speed up CPU work. On an old
+`--wsa-uncap-bench` diagnostic build, a missing file preserves its legacy
+uncapped host behavior; an explicit `original`/`60` overrides that build default.
+
+Positive driver VSync on a display at or below the selected limit replaces
+the software wait. Higher/unknown/adaptive refresh retains the host limit;
+unlimited never adds a host wait. Fractional periods round upward and each
+deadline starts at the previous actual swap, without catch-up debt.
+
+The implementation is being tested for the WSA 120-FPS mission; no FPS gain
+or complete gameplay fidelity is certified by the configuration tests alone.
+
+## Original default behavior
+
 Real-time rendering requests swap interval zero and applies a monotonic host
 cap before presenting each frame. The target period is rounded up to clock
 ticks, so an integer-millisecond clock does not turn 60 FPS into 62.5 FPS.

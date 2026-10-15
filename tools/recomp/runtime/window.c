@@ -507,12 +507,22 @@ K(SwapBuffers) {
             if (display >= 0 && SDL_GetCurrentDisplayMode(display, &mode) == 0)
                 refresh = mode.refresh_rate;
         }
-        int use_vsync = frame_vsync_caps_60(interval, refresh);
+        static int target_limit = -1;
+        if (target_limit < 0) {
+            const char *setting = getenv("CODRECOMP_FRAME_LIMIT");
+#ifdef CODRECOMP_WSA_UNCAP_BENCH
+            target_limit = setting ? frame_limit_parse(setting, strlen(setting)) : 0;
+#else
+            target_limit = setting ? frame_limit_parse(setting, strlen(setting)) : 60;
+#endif
+            fprintf(stderr, "Frame pacing: host target=%d FPS (0=unlimited); actual presentation may be slower\n", target_limit);
+        }
+        int use_vsync = frame_vsync_caps_limit(interval, refresh, target_limit);
         static int last_interval, last_refresh;
         if (interval != 0 && (interval != last_interval || refresh != last_refresh)) {
-            fprintf(stderr, "Frame pacing: effective swap interval=%d display=%d Hz; %s\n",
-                interval, refresh, use_vsync ? "using VSync alone (at most 60 FPS)"
-                : "WARNING: retaining strict host cap; driver VSync may reduce FPS");
+            fprintf(stderr, "Frame pacing: effective swap interval=%d display=%d Hz target=%d; %s\n",
+                interval, refresh, target_limit, use_vsync ? "using VSync alone"
+                : "driver VSync may reduce FPS");
         }
         last_interval = interval; last_refresh = refresh;
         Uint64 frequency = SDL_GetPerformanceFrequency();
@@ -522,15 +532,14 @@ K(SwapBuffers) {
          * game's normal 60 FPS pacing. SDL/EGL or 75-Hz WSA VSync may
          * still constrain presentation. NEVER enable in production. */
         static int warned_uncap;
-        if (!warned_uncap) {
+        if (!warned_uncap && target_limit == 0) {
             fprintf(stderr, "EXPERIMENTAL WSA BENCH: 60 FPS host cap disabled; "
                     "GPU/display VSync and frame-time still limit throughput\n");
             warned_uncap = 1;
         }
-        Uint64 delay = 0;
-#else
-        Uint64 delay = use_vsync ? 0 : frame_delay_ticks(previous, now, frequency);
 #endif
+        Uint64 delay = use_vsync ? 0 : frame_delay_ticks_limit(previous, now, frequency,
+            (unsigned)target_limit);
         Uint64 deadline = now + delay;
         while (delay) {
             Uint64 ms = delay * 1000 / frequency;

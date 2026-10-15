@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Control reversible de FPS y seis corridas WSA con Alta
+
+- Archivo privado `frame_limit`: original/60/120/unlimited, coordinando `com_maxfps` y host sin cambiar relojes. Sin archivo conserva launcher/diagnóstico anterior. Pruebas de entrada inválida, redondeo y stalls; ejecutable nativo aprobado en WSA.
+- APK completa compilada/verificada e instalada conservando datos. Seis corridas válidas con Alta, misma partida y 45 ventanas cada una: 52,2–56,6 FPS y 17,65–19,01 ms CPU/frame. No se demuestra mejora causal CPU; controles también variaron. Presentación real ~51–55 Hz y modo virtual de 75 Hz.
+- Capturas con cobertura completa y partidas intactas; una B2 de briefing fue rechazada. Restaurado el límite normal y retirado el archivo de override. No se habilitaron fast paths incompatibles.
+- [Informe completo y próximo objetivo](docs/WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md): perfil ELF exacto de renderer/x87, bloqueo `5ebe4cd`, límites de evidencia. 120 FPS, GPU time y validación compleja/prolongada siguen abiertos.
+
 ### 2026-10-15 — Bloqueo independiente de precisión en transformaciones x87
 
 - Perfil WSA nuevo con ELF exacto: el renderer `0x005061B0` reúne 717/3.992 muestras (~17,96 %), candidato de impacto real.

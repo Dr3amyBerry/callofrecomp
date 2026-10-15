@@ -2,6 +2,23 @@
 
 > **Prioridad actual: misión WSA 120 FPS.** Seguir el [bloque de diagnóstico e implementación WSA](WSA120_BASELINE_2026-10-15.md#siguiente-bloque). La cola TECNO de abajo queda como referencia; no extrapolar sus perfiles a WSA.
 
+## Cola WSA vigente
+
+1. Investigar una ruta binary80 exacta para conversiones y transformaciones
+   calientes. Termina con un candidato que preserve estado y fallos frente al
+   x86 original y reduzca trabajo nativo suficiente para justificar A/B.
+2. Medir ese candidato con Alta y misma partida en A/B/A/B; separar CPU,
+   presentación, GPU y variación entre controles. Rechazar regresiones.
+3. Ampliar a combate/escenas complejas, movimiento, audio, guardado/carga y
+   sesiones prolongadas. Conseguir tiempo GPU si el driver lo permite.
+4. El modo virtual actual ofrece 75 Hz: identificar otra modalidad real antes
+   de prometer 120 presentaciones visibles/s. No simularlas con un contador.
+
+Implementado: configuración reversible de topes y capturador de presentación.
+CI reparado. [Evidencia y resultados](WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md).
+
+## Cola TECNO conservada
+
 **Revisada:** 2026-10-15. [Estado actual](PROJECT_STATUS.md) · [Estrategia y política](PERFORMANCE_STRATEGY_CURRENT.md) · [Índice](INDEX.md).
 
 | Orden | Trabajo | Termina cuando | Dependencia |

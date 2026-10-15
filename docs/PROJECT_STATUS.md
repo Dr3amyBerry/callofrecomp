@@ -1,9 +1,18 @@
 # Estado actual de CallofRecomp
 
 > **Nueva misión (2026-10-15): 120 FPS reales en WSA mediante desarrollo local.**
-> [Línea base actual y trabajo abierto](WSA120_BASELINE_2026-10-15.md).
+> [Control de FPS, perfil exacto del renderer y resultados actuales](WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md).
 > El corte TECNO y el estado de CI descritos abajo siguen como antecedentes;
 > no son mediciones nuevas ni la prioridad de rendimiento de esta misión.
+
+**Continuación WSA:** límites original/60/120/sin límite implementados y probados
+en la misma escena con Alta; no hay ahorro CPU demostrado por retirarlos.
+La pantalla virtual sigue en 75 Hz. El perfil exacto prioriza conversión/copia
+x87 y la transformación `0x005061B0`. Su helper antiguo queda **BLOQUEADO**
+por diferencias float32 frente al x86 original (commit `5ebe4cd`). El siguiente
+bloque debe preservar binary80. GPU time y sesiones complejas/prolongadas
+siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
+de métricas y límites de estas pruebas.
 
 **Corte:** 2026-10-15. **Código revisado:** `bda83a6532b7cbf6489740f42830eb9f55fdff98` (fase 15). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
 

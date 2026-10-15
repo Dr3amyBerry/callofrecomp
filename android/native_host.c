@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "../tools/recomp/runtime/widescreen.h"
+#include "../tools/recomp/runtime/frame_pacing.h"
 #define main engine_main
 #include "../tools/recomp/hosts/engine_host.c"
 #undef main
@@ -29,6 +30,27 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     int fd = open(log, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if (fd >= 0) { dup2(fd, STDOUT_FILENO); dup2(fd, STDERR_FILENO); close(fd); }
     setvbuf(stdout, NULL, _IOLBF, 0);
+    /* One bounded private setting owns BOTH guest and host limits. Read once;
+     * no saved cvars, simulation clocks or commercial resources are edited. */
+    char limit_path[4096], limit_text[32];
+    int selected_limit = 60, limit_override = 0;
+    unsetenv("CODRECOMP_FRAME_LIMIT");
+    int limit_path_size = snprintf(limit_path, sizeof limit_path, "%s/frame_limit", argv[2]);
+    FILE *limit_file = limit_path_size > 0 && (size_t)limit_path_size < sizeof limit_path
+        ? fopen(limit_path, "rb") : NULL;
+    if (limit_file) {
+        limit_override = 1;
+        size_t length = fread(limit_text, 1, sizeof limit_text, limit_file);
+        selected_limit = ferror(limit_file) ? 60 : frame_limit_parse(limit_text, length);
+        fclose(limit_file);
+        setenv("CODRECOMP_FRAME_LIMIT", selected_limit == 120 ? "120"
+            : selected_limit == 0 ? "0" : "60", 1);
+    }
+    char limit_value[4];
+    snprintf(limit_value, sizeof limit_value, "%d", selected_limit);
+    printf("codrecomp: frame limit guest=%s host=%s (restart to change; clocks unchanged)\n",
+        limit_override ? limit_value : "launcher default",
+        getenv("CODRECOMP_FRAME_LIMIT") ? getenv("CODRECOMP_FRAME_LIMIT") : "build default");
     /* Opt-in local diagnostics; absent in normal play to avoid log I/O. */
     char frame_stats[4096];
     snprintf(frame_stats, sizeof frame_stats, "%s/frame_stats", argv[2]);
@@ -86,12 +108,13 @@ __attribute__((visibility("default"))) int SDL_main(int argc, char **argv) {
     snprintf(fov, sizeof fov, "%.6f", display.fov);
     char *extra[] = {"+set", "r_mode", "-1", "+set", "r_customwidth", width,
                     "+set", "r_customheight", height, "+set", "r_customaspect", aspect,
-                    "+set", "cg_fov", fov, "+set", "r_fullscreen", "0"};
-    const int extra_count = (int)(sizeof extra / sizeof *extra);
+                    "+set", "cg_fov", fov, "+set", "r_fullscreen", "0",
+                    "+set", "com_maxfps", limit_value};
+    const int extra_count = (int)(sizeof extra / sizeof *extra) - (limit_override ? 0 : 3);
     char **args = calloc((size_t)argc + extra_count + 1, sizeof *args);
     if (!args) return 3;
     memcpy(args, argv, (size_t)argc * sizeof *args);
-    memcpy(args + argc, extra, sizeof extra);
+    memcpy(args + argc, extra, (size_t)extra_count * sizeof *extra);
     fprintf(stdout, "codrecomp: widescreen %dx%d aspect=%s horizontal FOV=%s\n",
         display.width, display.height, aspect, fov);
     int result = engine_main(argc + extra_count, args);

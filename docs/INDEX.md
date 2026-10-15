@@ -4,6 +4,8 @@
 
 **Misión activa:** [120 FPS reales en WSA: línea base, límites y siguiente bloque](WSA120_BASELINE_2026-10-15.md). [Reglas de eficiencia](../AGENTS.md).
 
+**Último bloque:** [Limitador configurable, comparación física y perfil del renderer](WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md).
+
 ## Responsabilidad de cada documento
 
 | Documento | Qué mantener aquí |
