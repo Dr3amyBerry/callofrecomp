@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Dependencias de oráculos declaradas para CI
+
+- El run `38691095500` fallaba al importar dos suites CFG por ausencia de Unicorn.
+- `tests/requirements.txt` fija Unicorn 2.1.4 y Capstone 5.0.6, versiones instaladas localmente; el workflow las instala antes de ejecutar CTest. No se ocultan tests ni se cambian oráculos.
+- La confirmación final de esta reparación depende del nuevo run remoto; no equivale a una mejora de FPS.
+
 ### 2026-10-15 — Nueva misión WSA 120 FPS y reglas de eficiencia
 
 - Instrucción actual: desarrollo local autónomo para 120 FPS reales en WSA, sin reducir calidad ni precisión; el objetivo TECNO anterior queda como antecedente independiente.
