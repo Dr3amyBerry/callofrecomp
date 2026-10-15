@@ -14,9 +14,9 @@ bloque debe preservar binary80. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
-**CI del código actual:** `f389f2d`, [run 38734909191 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38734909191).
+**CI del código actual:** `d68e164`, [run 38737576358 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38737576358).
 Componente binary80 nativo aislado y probado en Windows/WSA O0/O2/O3;
-36/36 CTest finales. Sigue fuera del juego hasta resolver el contrato guest
+37/37 CTest finales. Sigue fuera del juego hasta resolver el contrato guest
 y medir una APK integrada. [Detalle y siguiente bloque](superpowers/plans/2026-10-15-wsa-native-binary80.md).
 
 **Continuación local:** [adaptador de estado y oráculo nativo x86](WSA120_NATIVE_X87_STATE_2026-10-15.md),
