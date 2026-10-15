@@ -14,6 +14,8 @@ bloque debe preservar binary80. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
+**CI del código actual:** `234065c`, [run 38732364851 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38732364851).
+
 **Corte:** 2026-10-15. **Código revisado:** `bda83a6532b7cbf6489740f42830eb9f55fdff98` (fase 15). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
 
 [Documentación completa](INDEX.md) · [Próximo trabajo](ROADMAP.md) · [Estrategia 60 FPS](PERFORMANCE_STRATEGY_CURRENT.md) · [Bitácora](../PROGRESS.md)

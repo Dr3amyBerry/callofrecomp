@@ -129,6 +129,8 @@ Los siguientes catálogos enumeran toda la documentación versionada y la añadi
 
 ## Planes e historial
 
+- [2026-10-15-wsa-frame-limit.md](superpowers/plans/2026-10-15-wsa-frame-limit.md) — Plan y verificación del control reversible WSA.
+
 - [PROGRESS.md](../PROGRESS.md) — Project Progress
 - [PROJECT_STATUS_CHECKPOINT_2026-10-14.md](PROJECT_STATUS_CHECKPOINT_2026-10-14.md) — Estado consolidado y continuación — CallofRecomp (2026-10-14)
 - [RELEASE_NOTES_v0.2.0.md](RELEASE_NOTES_v0.2.0.md) — Instalar

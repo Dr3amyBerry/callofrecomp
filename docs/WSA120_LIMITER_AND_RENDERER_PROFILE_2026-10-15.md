@@ -113,9 +113,22 @@ Investigar una ruta **binary80 nativa o exacta** para el trabajo transversal
 de conversión/materialización y el cuerpo del renderer que domina el perfil.
 Primero comprobar formato/precisión del compilador x86_64 y contratos CW/SW,
 TOP/tag, alias y fallos; no reutilizar la matemática double del helper bloqueado.
+La consulta real al NDK r30 (`--target=x86_64-linux-android26 -dM -E`)
+confirmó `__LDBL_MANT_DIG__=113`, `__SIZEOF_LONG_DOUBLE__=16`: **long double
+es binary128, no binary80**. No basta sustituir el tipo C; la próxima prueba
+debe usar formato binary80 explícito y redondeo/estado x87 comprobables.
 Una sola función de ~18 % tampoco basta por sí sola para llegar a 8,33 ms.
 Solo integrar con oráculo original, pruebas de estado y A/B/A/B completo.
 Tiempo GPU, escenas complejas y estabilidad prolongada siguen pendientes.
 
 Datos crudos y scripts de conducción permanecen privados bajo
 `.local/profiles/wsa120_20261015/`; no se publican PE, APK, p-code ni trazas.
+
+## Verificación final del bloque
+
+Host: **386 tests Python, 4 omitidos, 35/35 CTest**. La CI detectó después
+un selector antiguo ligado al texto de un comentario CMake; se reprodujo y
+se cambió por límites de opciones, conservando todas sus aserciones.
+Código final `234065c`: [CI 38732364851 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38732364851).
+El capturador previo también tuvo CI aprobada. Límite normal restaurado,
+override privado retirado y hashes finales de partidas sin cambios.
