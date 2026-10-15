@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 14C/D — Guard CFG en el dispatcher, OFF hasta ensayo físico
+
+**40/40** comparaciones Unicorn originales del bloque de geometría `0x0041C017` de 29 instrucciones, más **40/40** usando el helper final compatible con el runtime; RAM exacta de 24 MiB, 8 GPR, cinco EFLAGS materializados, R completo y salto a epílogo original coinciden. Alias de memoria read-after-write ejercitado, control negativo sin flush de ESP rechazado. CMake/Ninja ARM64 **ON/OFF** verificado: apagado no hay helper ni macro; encendido compilación de dos objetos y símbolo `codsp_cfg14_geom_41c017` enlazable; el dispatcher solo intercepta el líder y deja los PC interiores al código antiguo. **Ninguna APK ON construida ni FPS medido**; no habilitar por defecto ante riesgos pendientes de page faults, AF/estado no modelado y epílogo completo. [Informe 14C](PHASE14C_REAL_X86_GUARDED_RUNTIME_2026-10-15.md).
+
 ## Fase 14C: arquitectura de caché de R por bloque original con fallback (prototipo offline)
 
 **227 bloques** de los siete cuerpos calientes son candidatos a pruebas integer-only, sin FPU/opacos (855 instrucciones). En dos prototipos completos CFG compilados a ARM64, un único líder de entrada rápida con cache de registros disjuntos redujo código/cargas/escrituras estáticas: geometría **976→804 bytes .text, 51→40 cargas, 48→31 escrituras** y recorrido **648→616 bytes, 39→31 cargas, 37→33 escrituras**. La variante genérica que permite entrar en **todos** los PC dentro de la función rápida **provocó regresiones**, descartada. Un simulador de dispatcher delegó las entradas interiores al traductor original; diferencias host **696/696** y **360/360** estados iguales con RAM plegada de 64 KiB, no un oráculo x86 independiente. Sin prueba de alias real, integración productiva, nuevo ahorro en ms/frame ni mejora de FPS. **No se ha activado ninguna optimización de la APK.** [Plan](PHASE14C_CFG_REGION_EXPERIMENT_PLAN_2026-10-15.md) · [Resultados A/B](PHASE14C_CFG_AB_OFFLINE_RESULTS_2026-10-15.md).

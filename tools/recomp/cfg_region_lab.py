@@ -133,7 +133,8 @@ def cache_candidates(region: Region) -> tuple:
 
 
 def generate_region_c(region: Region, *, cache_count: int=0,
-                      entry_policy: str="all_entries") -> tuple[str,tuple]:
+                      entry_policy: str="all_entries",
+                      memory_model: str="folded64k") -> tuple[str,tuple]:
     """Return generated, PRIVATE A/B C source and selected cached varnodes.
 
     A single exported execute_region supports an arbitrary guest start PC
@@ -144,6 +145,8 @@ def generate_region_c(region: Region, *, cache_count: int=0,
         raise CFGError("cache_count must be in [0,12]")
     if entry_policy not in {"all_entries","start_only"}:
         raise CFGError("unsupported region entry policy")
+    if memory_model not in {"folded64k","exact"}:
+        raise CFGError("unsupported guest RAM model")
     selected=tuple(item[0] for item in cache_candidates(region)[:cache_count])
     names={v:f"reg_{v[1]:x}_{v[2]}" for v in selected}
     written={v for v,_score,wrote in cache_candidates(region) if wrote}
@@ -156,7 +159,8 @@ def generate_region_c(region: Region, *, cache_count: int=0,
         "/* PRIVATE DERIVED PCODE OUTPUT. DO NOT COMMIT. */",
         '#include "recomp_rt.h"',
         "#undef G",
-        "#define G(a) (MEM + ((uint32_t)(a) % UINT32_C(65520)))",
+        ("#define G(a) (MEM + (uint32_t)(a))" if memory_model=="exact" else
+         "#define G(a) (MEM + ((uint32_t)(a) % UINT32_C(65520)))"),
         "uint8_t *MEM;",
         "uint8_t R[0x2000];",
         "uint8_t U[0x400000];",
@@ -257,4 +261,54 @@ def generate_region_c(region: Region, *, cache_count: int=0,
     source="\n".join(lines)+"\n"
     if "U+" in source or " U[" not in source:
         raise CFGError("unsafe unproven global temporary read/write")
+    return source,selected
+
+
+def generate_runtime_region_c(region: Region, *, cache_count: int=5) -> tuple[str,tuple]:
+    """Generate a PRIVATE opt-in CoDSP helper, using EXACT 4GiB guest G().
+
+    Entrypoint = 0x0041C017 exclusively. If called at any other PC, returns
+    zero without changing R, U, MEM, PC. A successful run flushes R, sets
+    guest PC to shared epilogue and returns 1. No changes to normal generated
+    CoDSP chunks; their labels remain the dispatcher fallback.
+    """
+    if (region.function_entry,region.start)!=(0x0041B8F0,0x0041C017):
+        raise CFGError("runtime helper only allowed for audited geometry CFG leader")
+    if len(region.instructions)!=29 or cache_count!=5:
+        raise CFGError("runtime helper requires exact 29-instruction five-field candidate")
+    if region.instructions[-1][0]+region.instructions[-1][1]!=0x0041C07F:
+        raise CFGError("original shared-epilogue JMP boundary changed")
+    last_ops=region.instructions[-1][2]
+    if last_ops!=[("BRANCH",None,[("m",0x00523CD9,4)])]:
+        raise CFGError("original shared-epilogue JMP p-code changed")
+
+    source,selected=generate_region_c(region,cache_count=cache_count,
+                                      entry_policy="start_only",memory_model="exact")
+    replacements=(
+        ('#undef G\n#define G(a) (MEM + (uint32_t)(a))\n',""),
+        ("uint8_t *MEM;\nuint8_t R[0x2000];\nuint8_t U[0x400000];\nuint32_t PC;\nint recomp_miss;\n",""),
+        ('#if defined(_WIN32)\n#define REGION_API __declspec(dllexport)\n#else\n'
+         '#define REGION_API __attribute__((visibility("default")))\n#endif\n',""),
+        ('REGION_API uint32_t result_pc(void){return PC;}\n',""),
+        ('REGION_API __attribute__((noinline))\n',""),
+        ('void execute_region(uint8_t *regs, uint8_t *memory, uint32_t guest_pc) {\n'
+         ' MEM=memory;\n memcpy(R,regs,0x2000);\n PC=guest_pc;\n goto dispatch;\n',
+         'int codsp_cfg14_geom_41c017(void) {\n goto dispatch;\n'),
+        (" default: goto finished;\n"," default: return 0;\n"),
+        ("finished:\n memcpy(regs,R,0x2000);\n}",
+         "finished:\n return 1;\n}"),
+    )
+    for original,updated in replacements:
+        if source.count(original)!=1:
+            raise CFGError("experimental C wrapper shape changed; refuse runtime export")
+        source=source.replace(original,updated,1)
+    if ("uint8_t R[0x2000]" in source or "MEM=memory" in source or
+        "% UINT32_C" in source or "execute_region(" in source or
+        "memcpy(regs,R" in source or "U+" in source):
+        raise CFGError("runtime helper still carries laboratory-only memory/globals")
+    if len(selected)!=5 or source.count("int codsp_cfg14_geom_41c017(void)")!=1:
+        raise CFGError("unexpected register caching or runtime helper identity")
+    source=source.replace(
+        "/* PRIVATE DERIVED PCODE OUTPUT. DO NOT COMMIT. */",
+        "/* PRIVATE CoDSP 1.5 DERIVED CFG CODE. DO NOT COMMIT. */",1)
     return source,selected

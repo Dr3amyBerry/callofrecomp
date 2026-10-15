@@ -47,6 +47,9 @@
 - [x] **Experimento parcial 14C:** 227 bloques sin x87/opaque; generar C A/B aislado de cada bloque CFG original con cache arquitectónica por campo disjunto, guardar estado a cada salida y probar entradas interiores. Con la política `start_only` y fallback simulado: **696+360** comparaciones A/B host iguales, junto con reducción de código y cargas ARM64 estáticos en dos bloques. Variante `all_entries` rechazada por regresiones de loads. [Resultados](PHASE14C_CFG_AB_OFFLINE_RESULTS_2026-10-15.md).
 - [ ] **NO APROBADO PARA PRODUCCIÓN:** el A/B usa RAM sintética plegada, no sustituye Unicorn x86/alias real; el dispatcher Android aún no tiene guardia start_only ni fallback instalado. No afirmar mejora FPS.
 
+- [x] **Avance 14C adicional:** oráculo independiente x86 original de bloque `0x0041C017` con direcciones guest exactas, **40/40** casos iniciales y otros **40/40** del helper final, incluyendo read-after-write real; con la versión de laboratorio antigua no se podían detectar estos alias. Guard de dispatcher por líder, fallback a código original, CMake ARM64 OFF default con hashes y builder explícito; CMake/Ninja ON/OFF y símbolos NDK verificados. **No se probó APK ni CPU/frame**, por tanto no es cierre de 14C de producción. [Informe](PHASE14C_REAL_X86_GUARDED_RUNTIME_2026-10-15.md).
+- [ ] PENDIENTE: memoria fuera de la región mapeada, equivalencia bajo excepciones y epílogo completo, link integrado completo, juego real y A/B físico. No integrar en default.
+
 **Aceptación 14C:** diferencial completo frente al traductor original y oráculo independiente, código ARM64 mejor en las rutas calientes seleccionadas, no solo menor C.
 
 ### 14D — Reemplazo funcional guiado por identificación de algoritmos

@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Fase 14C/D: oráculo original x86 y guard CFG productivo opt-in (OFF por defecto)
+
+- [x] Nuevo oráculo independiente Unicorn sobre **29 instrucciones x86 originales** del bloque caliente de geometría `0x0041C017`, con direcciones invitadas **exactas** y **24 MiB de RAM**: **40/40** escenarios A y B coincidieron en 8 GPR, cinco flags materializados, R completo, memoria mapeada y salida `0x00523CD9`. **Cinco escenarios**, dos con alias read-after-write realmente ejecutado. Se conserva el epílogo original.
+- [x] Helper derivado de `pcode2c.Gen` **en archivo privado ignorado** `recomp_out/codsp_cfg14_geom_41c017.c`, con cinco campos R cacheados, flush en salida, sin memoria plegada; 40 casos originales adicionales verificados con la forma final del helper. Control negativo: quitar el flush de ESP fue **detectado**.
+- [x] Dispatcher en `runtime/guest.c` con guard por PC líder y módulo CoDSP, opción de CMake **`CODRECOMP_CFG14_GEOM_REGION=OFF`**, builder `--cfg14-geom-region` y fallback intacto a `dispatch_index_find/all_chunks` para el resto. Bloquea versión no verificada por SHA p-code, mapa y C privado.
+- [x] **CMake/Ninja real ARM64 ON/OFF** en carpetas aisladas: OFF no enlaza helper ni define macro; ON compila `guest.c.o` y helper privado, símbolos `U/T` compatibles; `llvm-nm` confirma ausencia de referencia experimental en OFF. **NO se ha vinculado un .so o APK de juego completa con flag ON**.
+- [x] Pruebas sintéticas y negativas de evidencia, firma SHA, memoria exacta, opción OFF y fallback. Suite Python **331 tests ejecutados, 4 omitidos, 0 fallidos** y **35/35 CTest** aprobados, además de smoke real del CLI con combinaciones inseguras rechazadas.
+- [ ] Todavía pendiente: oráculo x86 del **epílogo completo** y efectos de excepciones/page faults durante cache R; prueba completa de APK ON y medida A/B de **ms de CPU/frame** en TECNO. Ninguna mejora FPS declarada. [Informe](docs/PHASE14C_REAL_X86_GUARDED_RUNTIME_2026-10-15.md).
+
 ### 2026-10-15 — Fase 14C: primeras regiones CFG A/B verificadas OFFLINE (NO integradas)
 
 - [x] Detección estricta de **227 bloques básicos / 855 instrucciones x86 / 4.469 microoperaciones** elegibles para experimentos de región integer-only entre siete funciones calientes. Se excluye x87 completo y metadata, CALL/RETURN, indirectos, CALLOTHER, divisiones peligrosas y ausencia de p-code.

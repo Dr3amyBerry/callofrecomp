@@ -143,6 +143,51 @@ if(CODRECOMP_CORE_HOT_O2)
   endforeach()
 endif()
 
+# Phase14C/D: original 29-instruction integer-only geometry CFG region.
+# Default and fallback are the UNMODIFIED CoDSP p-code generated partitions.
+# Only ARM64 experimental builds may link this privately generated helper.
+# The helper is emitted after 40+ independent Unicorn-original x86 state
+# comparisons: tools/recomp/diagnostics/emit_verified_cfg_region.py
+# No C derived from a commercial game is added to public Git.
+option(CODRECOMP_CFG14_GEOM_REGION
+  "OFFLINE-VERIFIED EXPERIMENT: guarded CoDSP 1.5 0x0041C017 CFG region, OFF" OFF)
+if(CODRECOMP_CFG14_GEOM_REGION)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "CFG14 CoDSP geometry experiment is ARM64 only")
+  endif()
+  if(NOT RECOMP_OPTIMIZATION STREQUAL "1")
+    message(FATAL_ERROR "CFG14 CoDSP geometry requires RECOMP_OPTIMIZATION=1")
+  endif()
+  set(cfg14_pcode "${RECOMP_SOURCE_DIR}/codsp.pcode")
+  set(cfg14_map "${RECOMP_SOURCE_DIR}/codsp_function_map_v2.json")
+  set(cfg14_source "${RECOMP_SOURCE_DIR}/codsp_cfg14_geom_41c017.c")
+  foreach(required_file IN ITEMS "${cfg14_pcode}" "${cfg14_map}" "${cfg14_source}")
+    if(NOT EXISTS "${required_file}")
+      message(FATAL_ERROR "CFG14 requires verified PRIVATE CoDSP file: ${required_file}")
+    endif()
+  endforeach()
+  file(SHA256 "${cfg14_pcode}" cfg14_pcode_hash)
+  file(SHA256 "${cfg14_map}" cfg14_map_hash)
+  file(SHA256 "${cfg14_source}" cfg14_source_hash)
+  if(NOT cfg14_pcode_hash STREQUAL
+      "36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e")
+    message(FATAL_ERROR "CFG14 p-code CoDSP 1.5 provenance mismatch")
+  endif()
+  if(NOT cfg14_map_hash STREQUAL
+      "f6d56b4d167df2fb66a9f18ff8624e6b48fd363eadcbd05e62fa2598cd03ab4c")
+    message(FATAL_ERROR "CFG14 original-body Ghidra B map provenance mismatch")
+  endif()
+  if(NOT cfg14_source_hash STREQUAL
+      "dfd2655e497bbf8fa83ad434244f6a33d1afcccca5308bd413c523919cd19899")
+    message(FATAL_ERROR "CFG14 generated private helper fingerprint mismatch; run the verified emitter")
+  endif()
+  target_sources(main PRIVATE "${cfg14_source}")
+  set_property(SOURCE "${cfg14_source}" APPEND PROPERTY COMPILE_OPTIONS
+    "-O1;-ffp-contract=off")
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND
+    PROPERTY COMPILE_DEFINITIONS CODRECOMP_CFG14_GEOM_REGION)
+endif()
+
 # Opt-in ARM64 experiment, disabled in normal APKs. Only guest.c changes.
 option(CODRECOMP_HOT_X87_FASTPATH "Use validated CoDSP 1.5 transform fast path" OFF)
 if(CODRECOMP_HOT_X87_FASTPATH)

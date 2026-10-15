@@ -12,6 +12,9 @@
 #if defined(CODRECOMP_HOT_X87_FASTPATH)
 #include "hot_x87_transform.h"
 #endif
+#if defined(CODRECOMP_CFG14_GEOM_REGION)
+#include "cfg_hot_regions.h"
+#endif
 
 #include <errno.h>
 #include <stdarg.h>
@@ -735,6 +738,18 @@ void guest_run(void) {
                 mem32(esp) == 0x3001cf40u && mem32(esp + 4u) == 0x4bu)
                 guest_project_compass_marker(esp, 8u, 4u, 1);
         }
+#endif
+#ifdef CODRECOMP_CFG14_GEOM_REGION
+        // Phase14C: this sole CFG LEADER has passed the independent original
+        // CoDSP 1.5 x86 oracle. Interior PCs, unrecognized modules and any
+        // rejected entry fall through to the UNCHANGED chunk dispatcher.
+        // The helper flushes R then sets PC=0x00523CD9; do not inline, bypass
+        // or rewrite the original shared cookie-check epilogue.
+        // OFF in every normal Android build; guarded by verified CMake hashes.
+        if (PC == UINT32_C(0x0041c017) &&
+            module_loaded_at(UINT32_C(0x00400000)) &&
+            codsp_cfg14_geom_41c017())
+            continue;
 #endif
 #ifdef CODRECOMP_HOT_X87_FASTPATH
         // Verified only for the exact CoDSP 1.5 guest function entry.

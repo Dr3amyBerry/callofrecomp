@@ -52,6 +52,9 @@ def main():
     parser.add_argument("--core-hot-o2", action="store_true",
                         help="ARM64 offline-profile-guided CoDSP p0/p1/p4 compilation "
                              "at strict-FP -O2; OFF by default")
+    parser.add_argument("--cfg14-geom-region", action="store_true",
+                        help="EXP: verified CoDSP 1.5 geometry block start-only native "
+                             "CFG cache with original dispatcher fallback; OFF by default")
     parser.add_argument("--render-o2", action="store_true",
                         help="experiment: compile CoDSP renderer partitions p10 and p11 with -O2")
     parser.add_argument("--hot-x87-transform", action="store_true",
@@ -81,6 +84,10 @@ def main():
     args = parser.parse_args()
     if args.core_hot_o2 and args.abi != "arm64-v8a":
         parser.error("--core-hot-o2 is ARM64-only")
+    if args.cfg14_geom_region and args.abi != "arm64-v8a":
+        parser.error("--cfg14-geom-region is ARM64-only")
+    if args.cfg14_geom_region and args.recomp_opt != "1":
+        parser.error("--cfg14-geom-region requires --recomp-opt 1")
     if args.core_hot_o2 and args.recomp_opt != "1":
         parser.error("--core-hot-o2 requires --recomp-opt 1")
     if args.wsa_uncap_bench and args.abi != "x86_64":
@@ -193,6 +200,7 @@ def main():
             f"-DCODRECOMP_GL_VK_STATE_CAPTURE={'ON' if args.gl_vk_state_capture else 'OFF'}",
             f"-DCODRECOMP_WSA_UNCAP_BENCH={'ON' if args.wsa_uncap_bench else 'OFF'}",
             f"-DCODRECOMP_CORE_HOT_O2={'ON' if args.core_hot_o2 else 'OFF'}",
+            f"-DCODRECOMP_CFG14_GEOM_REGION={'ON' if args.cfg14_geom_region else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
             f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",
