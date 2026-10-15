@@ -1,6 +1,8 @@
 # TECNO ARM64 — objetivo vigente de 60 FPS, pendiente de revalidación
 
-**Estado:** VIGENTE / EN ESPERA DEL DISPOSITIVO. **No es obsoleto, no está abandonado ni se considera una línea cerrada.** El desarrollo experimental actual se realiza en WSA x86_64 porque TECNO CK6n no está disponible. Una vez vuelva, la tarea prioritaria será comprobar en ese equipo el rendimiento del código ARM64 más reciente y de las mejoras portables que superen los oráculos.
+**Corte actualizado 2026-10-15: DISPOSITIVO DISPONIBLE / PRIMERA REVALIDACION COMPLETADA.** [TECNO 0.2.4 A/B/A/B](performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md). 0.2.4: 22,025 FPS frente a 25,975 de referencia experimental insegura; partidas intactas, 60 FPS pendientes. Los apartados de espera siguientes describen el estado previo y el protocolo; falta perfilar ARM64 actual y aislar cambios.
+
+**Estado:** dispositivo recuperado y primera prueba de la release completada. Objetivo 60 FPS vigente; la siguiente tarea es perfilar la APK ARM64 actual y aislar los cambios. Las evidencias anteriores se conservan por separado.
 
 ## Dos plataformas, dos líneas base
 

@@ -1,5 +1,7 @@
 # Estado actual de CallofRecomp
 
+**TECNO recuperado y medido (2026-10-15):** [TECNO 0.2.4 A/B/A/B](performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md): 25,975 -> 22,025 FPS (-15,21 %), CPU 37,145 -> 43,680 ms/frame frente a la APK experimental previa con transform double inseguro. 0.2.4 instalada, partidas intactas; 60 FPS pendientes. Este corte sustituye las menciones de dispositivo ausente de los antecedentes siguientes.
+
 **Web:** [GitHub Pages](https://dr3amyberry.github.io/callofrecomp/), con despliegue desde `web/dist`.
 
 **Entrega 0.2.4:** [notas y descargas](history/releases/RELEASE_NOTES_v0.2.4.md), con APK ARM64 y WSA separadas y empaquetador público simplificado. El preset de release WSA activa las mejoras medidas y límite120 sin archivos privados; ARM64 conserva 60 y excluye el atajo double inseguro. La nueva build TECNO sigue sin medición física.

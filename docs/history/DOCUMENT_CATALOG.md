@@ -41,6 +41,7 @@
 - [RELEASE_NOTES_v0.2.0.md](releases/RELEASE_NOTES_v0.2.0.md) — RELEASE_NOTES_v0.2.0
 - [RELEASE_NOTES_v0.2.1.md](releases/RELEASE_NOTES_v0.2.1.md) — RELEASE_NOTES_v0.2.1
 - [RELEASE_NOTES_v0.2.3.md](releases/RELEASE_NOTES_v0.2.3.md) — RELEASE_NOTES_v0.2.3
+- [RELEASE_NOTES_v0.2.4.md](releases/RELEASE_NOTES_v0.2.4.md) — CallofRecomp 0.2.4
 
 ## Estrategias anteriores
 
@@ -112,6 +113,7 @@
 - [PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md](../performance/tecno/PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md) — Fase 15 — Perfiles TECNO originales, presupuesto por fotograma y oportunidades transversales
 - [README.md](../performance/tecno/README.md) — Investigación TECNO CK6n ARM64 — objetivo vigente
 - [TECNO_CK6N_ARM64_PERF_2026-10-14.md](../performance/tecno/TECNO_CK6N_ARM64_PERF_2026-10-14.md) — TECNO CK6n: medición real de CallofRecomp ARM64 — 2026-10-14
+- [TECNO_RELEASE024_ABAB_2026-10-15.md](../performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md) — TECNO CK6n: revalidación física de 0.2.4
 - [TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md](../performance/tecno/TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md) — TECNO CK6n ARM64 — A/B/A/B de x87 normal f2d y descarte de geometry -O2 (2026-10-14)
 - [README.md](../performance/wsa/README.md) — Investigación WSA x86_64
 - [WSA120_BASELINE_2026-10-15.md](../performance/wsa/WSA120_BASELINE_2026-10-15.md) — WSA 120 FPS: primera línea base y límites comprobados

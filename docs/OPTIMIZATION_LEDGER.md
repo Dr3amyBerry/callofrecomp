@@ -1,5 +1,7 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-04 / REL-024 (2026-10-15): regresivo frente a referencia experimental insegura.** [TECNO 0.2.4 A/B/A/B](performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md): A1/A2 26,05/25,90; B1/B2 22,15/21,90 FPS. Media de medianas -15,21 %, CPU +17,59 %. APK completas; no atribucion causal por bandera. B segura permanece instalada; A contiene transform double bloqueado.
+
 **WEB-01 (2026-10-15):** empaquetador en [GitHub Pages](https://dr3amyberry.github.io/callofrecomp/); workflow con prueba CODPACK y despliegue exclusivo de `web/dist`. Sin cambios de APK ni nuevas medidas FPS.
 
 **Corte:** 2026-10-15. **Misión activa:** 120 FPS de motor en WSA x86_64, sin rebajar calidad o precisión. Meta aún abierta; presentación visible a 120 Hz no es posible demostrarla con el panel WSA observado a 75 Hz. Objetivo TECNO ARM64 de 60 FPS se sigue por separado.

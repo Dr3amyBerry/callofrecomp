@@ -1,6 +1,8 @@
 # Cola de trabajo del proyecto
 
-> **Prioridad actual: misión WSA 120 FPS.** [Perfil de la acumulativa anterior](performance/wsa/WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) y [aplicación medida sobre ella](performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md); la cola TECNO sigue vigente, pero su revalidación está suspendida únicamente por falta del dispositivo. No extrapolar sus perfiles a WSA.
+**Actualizacion TECNO (2026-10-15):** dispositivo disponible y [TECNO 0.2.4 A/B/A/B](performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md) completado. Proximo paso ARM64: perfilar el ELF actual y aislar el coste de retirar el transform double bloqueado. 60 FPS siguen pendientes; no reactivar rutas incorrectas.
+
+> **Prioridad actual: misión WSA 120 FPS.** [Perfil de la acumulativa anterior](performance/wsa/WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) y [aplicación medida sobre ella](performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md); la cola TECNO sigue vigente, pero su primera revalidacion de 0.2.4 ya esta completada (ver corte superior). No extrapolar sus perfiles a WSA.
 
 ## Mantenimiento privado de scripts — tras primera tanda
 
@@ -25,7 +27,7 @@ El [perfil post-acumulativo](performance/wsa/WSA120_OPTIMIZED_APK_CPU_PROFILE_20
 
 **Límites:** muestras estadísticas, no tiempo CPU exclusivo por microoperación. Nada de reducir calidad o desbloquear CFG14/atajos double. Se modificó y midió el enlace de estado; el diagnóstico GL se retiró de la APK normal instalada.
 
-## Cola TECNO vigente, temporalmente pausada por falta del teléfono
+## Cola TECNO vigente: dispositivo disponible
 
 **Revisada:** 2026-10-15. [Estado actual](PROJECT_STATUS.md) · [Estrategia y política](PERFORMANCE_STRATEGY_CURRENT.md) · [Índice](INDEX.md).
 
