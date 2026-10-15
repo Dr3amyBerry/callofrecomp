@@ -9,6 +9,12 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 14: referencias CFG/BSP/colisiones preparadas, sin modificar el motor
+
+- [x] Descargadas y verificadas como clones Git sparse bajo `.local/references` (ignorada): **ioq3**, **KILLTUBE/iocod** y **QEMU/TCG**. Recuperados solo subárboles relevantes, incluyendo `cm_trace.c`, `tr_bsp_cod1.c` y `tcg/optimize.c`; hashes exactos y licencias revisados.
+- [x] **OpenCoD1**, **OpenMoHAA** y **Quake3e** ya existían y fueron reutilizados sin cambiar su revisión. Los seis orígenes y SHAs están en el manifiesto local; no se añade código ajeno al binario ni se publican recursos originales.
+- [ ] CFG regional, análisis de entradas/salidas y reemplazo nativo **no iniciados**; se necesita mapa de funciones real, oráculo x86 independiente y A/B de ARM64 antes de introducir optimización en el motor. **60 FPS pendientes**. [Inventario y plan](docs/PHASE14_CFG_REFERENCE_SOURCES_2026-10-14.md).
+
 ### 2026-10-14 — Fase 13: grandes bloques CoDSP geometry/traversal, ARM64 OFFLINE
 
 - [x] Dos perfiles Simpleperf del TECNO archivados, sin usar el teléfono. A/B de **chunks completos de 1.500 instrucciones**: geometría chunk18: -1.186 cargas y -2.135 escrituras ARM64 estáticas; estructuras chunk88: -899 cargas y -1.528 escrituras usando `-O2` con FP estricto en vez de `-O1`.
