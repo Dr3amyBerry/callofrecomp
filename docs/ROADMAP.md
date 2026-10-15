@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**TECNO ARM64, siguiente prioridad tras WSA local-state (2026-10-15):**
+[A/B aislado y estado del oraculo numeric binary80](performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md): enlace local R/MEM/U/PC portado y probado, media bruta +13.03% FPS NO atribuible a la optimización por A1 anómala; veredicto INCONCLUSO POR VARIACION DE ESCENA/TIEMPO. Continuar con renderer/dispatch **una bandera por APK** y un backend de software binary80 completo (CW/SW/TOP/tags, excepciones, PC y fallos) verificado contra x86 original; no usar el helper double bloqueado.
+
 **Actualizacion TECNO (2026-10-15):** dispositivo disponible y [TECNO 0.2.4 A/B/A/B](performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md) completado. Proximo paso ARM64: perfilar el ELF actual y aislar el coste de retirar el transform double bloqueado. 60 FPS siguen pendientes; no reactivar rutas incorrectas.
 
 > **Prioridad actual: misión WSA 120 FPS.** [Perfil de la acumulativa anterior](performance/wsa/WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) y [aplicación medida sobre ella](performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md); la cola TECNO sigue vigente, pero su primera revalidacion de 0.2.4 ya esta completada (ver corte superior). No extrapolar sus perfiles a WSA.

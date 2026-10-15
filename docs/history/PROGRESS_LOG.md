@@ -1,5 +1,12 @@
 # Project Progress
 
+### 2026-10-15 — Port WSA local state a ARM64, A/B/A/B y referencia binary80
+- Adaptada la misma version-script R/MEM/U/PC con bandera ARM64 propia OFF; 490->486 exports, ningun otro cambio ABI, recursos iguales, C generado SHA intacto.
+- A/B/A/B fisico: 19.575->22.125 FPS (+13.03%), CPU 49.703->43.420 (-12.64%). **Veredicto INCONCLUSO POR VARIACION DE ESCENA/TIEMPO**; no activar por defecto.
+- Oráculo numérico rational binary80 finito, CW=0x037f, offline con 10 tests; sin excepciones/estado/fallos, no se enlaza al juego.
+- [Analisis y limites](../performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md).
+
+
 > Living project log for the Call of Duty 1.5 PC → Android ARM64 recompilation effort.
 >
 > **Rule:** this file must be updated whenever a meaningful phase starts, completes, changes direction, discovers a blocker, or requires a new external tool.

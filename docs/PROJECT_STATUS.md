@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**Adaptacion ARM64 de la mejora WSA de enlace local (2026-10-15):**
+[informe y limite binary80](performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md). ELF 490->486 exportaciones; solo R/MEM/U/PC locales, fuentes y recursos intactos. A/B/A/B, medias brutas 19.57->22.12 FPS (+13.03 %) y CPU 49.70->43.42 ms (-12.64 %); **no son ganancias atribuibles** porque A1 cayó 22.5->16.1 FPS en 40 ventanas; INCONCLUSO. 0.2.4 sigue como APK segura; x87 exacto ARM64 no implementado: oraculo numerico offline probado, sin estado/fallos. No activar por defecto.
+
 **TECNO recuperado y medido (2026-10-15):** [TECNO 0.2.4 A/B/A/B](performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md): 25,975 -> 22,025 FPS (-15,21 %), CPU 37,145 -> 43,680 ms/frame frente a la APK experimental previa con transform double inseguro. 0.2.4 instalada, partidas intactas; 60 FPS pendientes. Este corte sustituye las menciones de dispositivo ausente de los antecedentes siguientes.
 
 **Web:** [GitHub Pages](https://dr3amyberry.github.io/callofrecomp/), con despliegue desde `web/dist`.

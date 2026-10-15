@@ -37,6 +37,19 @@ if(CODRECOMP_LOCAL_GUEST_STATE)
   target_link_options(main PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/guest_state.map")
   set_property(TARGET main APPEND PROPERTY LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/guest_state.map")
 endif()
+# ARM64 port of the WSA linker experiment: only the same four internal guest
+# data objects become DSO-local. This is not native x87, not a register cache,
+# and makes NO changes to generated C, FPU arithmetic, memory or game assets.
+# Keep it separate from the WSA control to preserve platform-specific rollout.
+option(CODRECOMP_ARM64_LOCAL_GUEST_STATE
+  "ARM64 experiment: local linkage of R/MEM/U/PC only, OFF by default" OFF)
+if(CODRECOMP_ARM64_LOCAL_GUEST_STATE)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "ARM64 local guest state requires arm64-v8a")
+  endif()
+  target_link_options(main PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/guest_state.map")
+  set_property(TARGET main APPEND PROPERTY LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/guest_state.map")
+endif()
 option(CODRECOMP_NATIVE_X87_REGION "Experimental original binary80 WSA region" OFF)
 option(CODRECOMP_WSA_RELEASE_DEFAULTS "WSA release: native x87 on, 120 FPS limit" OFF)
 if(CODRECOMP_WSA_RELEASE_DEFAULTS)

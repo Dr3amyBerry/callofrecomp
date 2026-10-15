@@ -54,3 +54,19 @@ Los primeros 200 scripts de `.local/profiles/history/scripts/` ya tienen [catál
 5. No borrar, deduplicar ni ejecutar automáticamente los 200 scripts históricos. `python tools/review_archived_scripts.py --check` debe confirmar que su clasificación y hashes siguen válidos.
 
 El criterio es **función e identidad de entradas**, no solo nombre o antigüedad. La clasificación estática sirve para orientar mantenimiento; no garantiza que un viejo parche sea seguro.
+
+## Seguridad de la portabilidad ARM64 / WSA, 2026-10-15
+
+
+WSA y TECNO **no comparten** codigo nativo x87. La ganancia
+`--local-guest-state` de WSA no garantiza nada en ARM64; en TECNO
+`--arm64-local-guest-state` es una variante separada OFF por defecto,
+auditada para ocultar exclusivamente R/MEM/U/PC, y documentada en
+`docs/performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md`.
+No habilitarla ni combinarla con renderer/copy/dispatch sin A/B independiente,
+calidad y partidas iguales, temperaturas razonables y verificacion ABI.
+
+La referencia `tools/recomp/diagnostics/binary80_arithmetic_reference.py`
+es SOLO laboratorio numerico de operandos finitos y CW=0x037f; nunca conectarla
+al motor porque no implementa SW/C1/TOP/tags, excepciones, fallos ni CW completos.
+`--hot-x87-transform` sigue BLOQUEADO por divergencia con el x86 original.

@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-05 / WSA-POR-01 (2026-10-15):**
+[Port del enlace local WSA + A/B/A/B TECNO](performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md), exactamente 4 simbolos ocultos y 486 exports preservados; FPS brutos 19.57->22.12 (+13.03%), **no ganancia confirmada** por A1 anómala; INCONCLUSO. R/RAM/FPU invariantes por codigo fuente; no equivale a prueba total de estado ni a native x87 ARM64. Ruta OFF por defecto.
+
 **ARM64-04 / REL-024 (2026-10-15): regresivo frente a referencia experimental insegura.** [TECNO 0.2.4 A/B/A/B](performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md): A1/A2 26,05/25,90; B1/B2 22,15/21,90 FPS. Media de medianas -15,21 %, CPU +17,59 %. APK completas; no atribucion causal por bandera. B segura permanece instalada; A contiene transform double bloqueado.
 
 **WEB-01 (2026-10-15):** empaquetador en [GitHub Pages](https://dr3amyberry.github.io/callofrecomp/); workflow con prueba CODPACK y despliegue exclusivo de `web/dist`. Sin cambios de APK ni nuevas medidas FPS.
@@ -18,6 +21,7 @@ Este es un **mapa de decisiones, no otra bitácora**. El detalle numérico y los
 | ARM64-01: `--x87-normal-f2d` p1/p8 | Código y bandera disponibles, OFF por defecto | **Beneficio físico opt-in histórico, no equivalente x87 completo** | [A/B/A/B TECNO](performance/tecno/TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md): +3,31 % FPS respecto a su propia referencia. No atribuirlo a WSA ni activar sin compatibilidad. |
 | ARM64-02: `--fast-copy32` y `--visibility-o2` aislados | Opt-in, OFF generales | **Inconcluso/regresivo según variante física; conservar prueba** | [Ensayos TECNO](performance/tecno/ARM64_PERF_EXPERIMENTS_2026-10-14.md): no ganancia robusta aislada; opciones reutilizadas en preset acumulativo WSA con guards. |
 | ARM64-03: `--x87-normal-f2d-p4-profiled`, superregiones pequeñas y POPCOUNT especializado | Pruebas offline/opt-in según línea | **Sin ganancia validada; no priorizar sin hipótesis nueva** | [Fase 10](performance/tecno/CPU_PHASE10_TECNO_P4_PROFILED_ABA_2026-10-14.md), [Fase 14F](performance/cfg/PHASE14F_MEMORY_FREE_SUPERREGIONS_2026-10-15.md) y [Fase 15](performance/tecno/PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md). No borrar evidencia ni convertir ruido en éxito. |
+| ARM64-05: WSA local guest state, ARM64 | Si, opt-in ARM64 y OFF por defecto | **INCONCLUSO POR VARIACION DE ESCENA/TIEMPO** | [A/B/A/B TECNO](performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md): 19.57->22.12 FPS, CPU 49.70->43.42 ms; ABI: cuatro objetos locales, 486 exports sin cambios; sin x87 nativo ARM. |
 | SEG-01: `--cfg14-geom-region` y `--hot-x87-transform` antiguo | Código protegido por validaciones del builder | **BLOQUEADOS por corrección** | Original x86 muestra fallos de R/PC en CFG y errores binary80→double; no desbloquear por ganar FPS. [Análisis CFG](performance/cfg/PHASE14D_EPILOGUE_FAULT_SAFETY_2026-10-15.md), [x87](performance/wsa/WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md). |
 | GFX-01: ANGLE/Vulkan, GL4ES VBO modos 2/3 | Ensayados como alternativas o diagnósticos | **No integrados como optimización** | [ANGLE](performance/graphics/ANGLE_WSA_GAMEPLAY_ABA_2026-10-14.md) y [GL4ES](guides/ANDROID_PERFORMANCE.md). Hubo controles sin ganancia o con regresiones; no confundir mejora potencial con mejora demostrada. |
 

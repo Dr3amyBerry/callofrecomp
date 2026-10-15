@@ -92,6 +92,7 @@
 - [WSA_VULKAN_TEXTURE_2026-10-14.md](../performance/graphics/WSA_VULKAN_TEXTURE_2026-10-14.md) — Vulkan WSA: subida real de texturas RGBA8 con staging y sampler
 - [ARM64_PERF_EXPERIMENTS_2026-10-14.md](../performance/tecno/ARM64_PERF_EXPERIMENTS_2026-10-14.md) — TECNO CK6n ARM64: experimentos posteriores a x87 — 14 de octubre de 2026
 - [ARM64_RENDERER_CPU_FCOM_2026-10-14.md](../performance/tecno/ARM64_RENDERER_CPU_FCOM_2026-10-14.md) — CPU del renderizador en TECNO: auditoría GL4ES y comparaciones x87 (2026-10-14)
+- [ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md](../performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md) — TECNO ARM64: primera adaptación del enlace local de WSA y referencia numérica binary80 — 2026-10-15
 - [ARM64_X87_NAN_BITS_2026-10-14.md](../performance/tecno/ARM64_X87_NAN_BITS_2026-10-14.md) — CoDSP ARM64: detección binaria x87 NaN — 14 de octubre de 2026
 - [ARM64_X87_NORMAL_F2D_2026-10-14.md](../performance/tecno/ARM64_X87_NORMAL_F2D_2026-10-14.md) — CoDSP ARM64: fast path de conversión x87 normal a double — 2026-10-14
 - [CPU_PHASE10_TECNO_P4_PROFILED_ABA_2026-10-14.md](../performance/tecno/CPU_PHASE10_TECNO_P4_PROFILED_ABA_2026-10-14.md) — Fase 10 — Validación física A/B/A de la conversión x87 perfilada de p4

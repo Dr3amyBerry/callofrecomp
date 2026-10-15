@@ -85,6 +85,8 @@ def main():
     parser.add_argument("--wsa-cumulative", action="store_true",
                         help="WSA bundle: native x87, copy32, strict renderer/visibility O2, NaN/f2d/FCOM and dispatch cache; requires --native-x87-region PE")
     parser.add_argument("--local-guest-state", action="store_true", help="WSA experiment: link R/MEM/U/PC locally without changing generated instructions")
+    parser.add_argument("--arm64-local-guest-state", action="store_true",
+                        help="ARM64 experiment: local R/MEM/U/PC ELF binding, same WSA 4-symbol map; OFF by default")
     parser.add_argument("--wsa-release", action="store_true", help="WSA cumulative + local-state release; default native x87 on and frame limit 120")
     args = parser.parse_args()
     if args.wsa_release:
@@ -93,6 +95,8 @@ def main():
         args.wsa_cumulative=args.local_guest_state=True
     if args.local_guest_state and args.abi != 'x86_64':
         parser.error('--local-guest-state requires --abi x86_64')
+    if args.arm64_local_guest_state and args.abi != "arm64-v8a":
+        parser.error("--arm64-local-guest-state requires --abi arm64-v8a")
     if args.wsa_cumulative:
         if args.abi != "x86_64" or not args.native_x87_region:
             parser.error("--wsa-cumulative requires --abi x86_64 --native-x87-region PE")
@@ -239,6 +243,7 @@ def main():
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
             f"-DCODRECOMP_NATIVE_X87_REGION={'ON' if args.native_x87_region else 'OFF'}",
             f"-DCODRECOMP_LOCAL_GUEST_STATE={'ON' if args.local_guest_state else 'OFF'}",
+            f"-DCODRECOMP_ARM64_LOCAL_GUEST_STATE={'ON' if args.arm64_local_guest_state else 'OFF'}",
             f"-DCODRECOMP_WSA_RELEASE_DEFAULTS={'ON' if args.wsa_release else 'OFF'}",
             f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",
             f"-DCODRECOMP_VISIBILITY_O2={'ON' if args.visibility_o2 else 'OFF'}",
