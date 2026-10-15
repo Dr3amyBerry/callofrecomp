@@ -21,7 +21,7 @@
 | Renderer | GL4ES/GLES de referencia; ANGLE 3D WSA ensayado sin mejora | Vulkan propio incompleto; WSA no certifica rendimiento ARM64/Mali |
 | GPU física | No hay tiempo GPU Mali fiable en la evidencia revisada | No atribuir todo el frame a CPU por un swap corto |
 | Regresión local previa | Fase 15 registra 382 Python (4 omitidas) y 35/35 CTest | Son resultados históricos del autor de esa fase, no ejecuciones nuevas de esta revisión |
-| GitHub CI | Último run del código revisado **falló**; 32/33 CTest | `static_analysis_python`: dos errores de importación por `unicorn` ausente en Linux |
+| GitHub CI | Reparado en `fbbf074`: [run 38727099017 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38727099017) | Se instalaron dependencias pinneadas; el fallo anterior de 32/33 queda como antecedente |
 
 ## Decisión para avanzar hacia 60 FPS
 
@@ -33,7 +33,7 @@ La referencia separada de 38,895 ms CPU/frame exigiría bajar a 16,667 ms (−57
 
 El 2026-10-15 se verificó mediante el conector GitHub y después Git HTTPS fuera del sandbox: `main` remoto coincide con el SHA indicado. No había PR ni issues abiertos en esa consulta. `gh auth status` funciona fuera del sandbox; dentro, el acceso al keyring de Windows falla y puede aparentar token inválido. No se modificó SSH ni el remoto.
 
-Último run inspeccionado: [tools-ci 38691095500](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38691095500), job `116276942932`. El log muestra `ModuleNotFoundError: No module named 'unicorn'` en `test_cfg_exception_checkpoint` y `test_cfg_region_fault_state`. Los dos runs anteriores también fallaron; se verificó la causa del último. El paso Python quedó en 367 tests, 2 errores y 5 omitidos; CTest en 32/33. **Próxima prioridad operativa: reparar dependencias de CI antes de integrar otra optimización.** Esta revisión no modifica el workflow ni declara ese fallo resuelto.
+Fallo histórico: [tools-ci 38691095500](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38691095500), job `116276942932`: `ModuleNotFoundError: No module named 'unicorn'` al importar dos suites CFG. **Reparado y verificado** por el [run 38727099017](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38727099017) del commit `fbbf074`: el workflow instala Unicorn 2.1.4 y Capstone 5.0.6 desde `tests/requirements.txt`, sin ocultar tests. Los nuevos cambios de rendimiento requieren su propia CI.
 
 Al retomar: comprobar `main` remoto, diff local, último run y evidencia; actualizar esta página y la cola cuando cambien. «Mantenerse al día» describe ese protocolo durante el trabajo; no hay monitor permanente configurado.
 

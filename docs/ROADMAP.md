@@ -6,7 +6,7 @@
 
 | Orden | Trabajo | Termina cuando | Dependencia |
 | --- | --- | --- | --- |
-| P0 | Reparar entorno de CI: falta Unicorn al importar dos tests CFG | Run Linux completo aprobado, sin ocultar tests por omisión | Dependencias de pruebas declaradas y verificadas |
+| P0 completado | Dependencias de oráculos de CI reparadas en `fbbf074` | Run 38727099017 aprobado | Mantener regresión en cada cambio posterior |
 | P1 | Atribuir coste nativo transversal de mantenimiento x87 | Un patrón repetido en varias funciones, ELF/Build ID comprobado, ensamblador y cobertura, con límites explícitos | Perfiles y ELF privados ya archivados; no requiere teléfono |
 | P2 | Candidata con ahorro ARM64 plausible | Diferencial contra A y oráculo original, estados/fallos cubiertos, fallback y OFF | P1; corregir o aislar divergencias x87 conocidas |
 | P3 | A/B/A/B en TECNO y perfil simultáneo | Ganancia repetida de CPU/frame sobre ruido, sin regresión funcional/visual | P2 y dispositivo físico disponible |

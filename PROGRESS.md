@@ -13,7 +13,14 @@
 
 - El run `38691095500` fallaba al importar dos suites CFG por ausencia de Unicorn.
 - `tests/requirements.txt` fija Unicorn 2.1.4 y Capstone 5.0.6, versiones instaladas localmente; el workflow las instala antes de ejecutar CTest. No se ocultan tests ni se cambian oráculos.
-- La confirmación final de esta reparación depende del nuevo run remoto; no equivale a una mejora de FPS.
+- Verificado: commit `fbbf074`, [CI 38727099017 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38727099017). No equivale a una mejora de FPS.
+
+### 2026-10-15 — Captura automática de presentación WSA
+
+- `capture_wsa_presentation.py`: timestamps reales de la SurfaceView, deduplicación de buffers, detección de huecos, p95/p99 de intervalos individuales y captura simultánea de ventanas CPU/FPS del motor. Guarda trazas únicamente bajo `.local/profiles/`.
+- Tres tests sintéticos aprobados; validación real de 15,16 s: 587 intervalos y ningún hueco. Esta validación coincidió con compilación y **no es una línea base de rendimiento**. Suite Python integrada en CTest aprobada tras añadir los tests.
+- Perfil con stacks independiente: 4.045 muestras, ninguna perdida; aparecen envío de atributos y copias del transporte gráfico. No sumar tiempos inclusivos ni usar el ELF local distinto para inventar atribuciones de código original.
+- Control configurable de FPS en desarrollo; pruebas host y ejecutable de pacing en WSA aprobados, APK completa todavía compilándose. Sin aceleración demostrada.
 
 ### 2026-10-15 — Nueva misión WSA 120 FPS y reglas de eficiencia
 
