@@ -9,8 +9,8 @@ CMAKE=ROOT/"android/CMakeLists.txt"
 class HotCoreCompilePolicyTests(unittest.TestCase):
     def policy_block(self):
         text=CMAKE.read_text(encoding="utf-8")
-        begin=text.index("# Phase 13: whole-hot-chunk compilation")
-        end=text.index("# Opt-in ARM64 experiment, disabled in normal APKs.",begin)
+        begin=text.index("option(CODRECOMP_CORE_HOT_O2")
+        end=text.index("option(CODRECOMP_HOT_X87_FASTPATH",begin)
         return text[begin:end]
 
     def test_coDSP_hot_windows_only_not_visibility(self):

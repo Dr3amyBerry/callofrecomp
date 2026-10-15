@@ -15,6 +15,7 @@
 - APK completa compilada/verificada e instalada conservando datos. Seis corridas válidas con Alta, misma partida y 45 ventanas cada una: 52,2–56,6 FPS y 17,65–19,01 ms CPU/frame. No se demuestra mejora causal CPU; controles también variaron. Presentación real ~51–55 Hz y modo virtual de 75 Hz.
 - Capturas con cobertura completa y partidas intactas; una B2 de briefing fue rechazada. Restaurado el límite normal y retirado el archivo de override. No se habilitaron fast paths incompatibles.
 - [Informe completo y próximo objetivo](docs/WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md): perfil ELF exacto de renderer/x87, bloqueo `5ebe4cd`, límites de evidencia. 120 FPS, GPU time y validación compleja/prolongada siguen abiertos.
+- CI del bloqueo detectó dos errores en un selector de pruebas ligado a un comentario CMake renombrado. Reproducidos localmente y corregidos usando límites por nombres de opciones; 2/2 tests específicos aprobados sin quitar ninguna aserción. La verificación remota del arreglo se registra en el run del commit siguiente.
 
 ### 2026-10-15 — Bloqueo independiente de precisión en transformaciones x87
 
