@@ -196,13 +196,10 @@ if(CODRECOMP_CFG14_GEOM_REGION)
     PROPERTY COMPILE_DEFINITIONS CODRECOMP_CFG14_GEOM_REGION)
 endif()
 
-# Opt-in ARM64 experiment, disabled in normal APKs. Only guest.c changes.
-option(CODRECOMP_HOT_X87_FASTPATH "Use validated CoDSP 1.5 transform fast path" OFF)
+# Legacy transform experiment: output-precision failure against original x86.
+option(CODRECOMP_HOT_X87_FASTPATH "BLOCKED: legacy transform fails original x87 precision" OFF)
 if(CODRECOMP_HOT_X87_FASTPATH)
-  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND PROPERTY
-    COMPILE_DEFINITIONS CODRECOMP_HOT_X87_FASTPATH)
-  set_property(SOURCE "${ROOT}/tools/recomp/runtime/guest.c" APPEND PROPERTY
-    COMPILE_OPTIONS "-ffp-contract=off")
+  message(FATAL_ERROR "ORIGINAL_X87_PRECISION_UNSAFE: independent original-x86 cancellation outputs differ; do not enable the legacy double transform")
 endif()
 # Opt-in targeted compiler experiment for the original 1.5 0x004Dxxxx
 # frustum/visibility traversal group. All four hottest visibility functions

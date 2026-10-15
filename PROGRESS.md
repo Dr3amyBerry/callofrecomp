@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Bloqueo independiente de precisión en transformaciones x87
+
+- Perfil WSA nuevo con ELF exacto: el renderer `0x005061B0` reúne 717/3.992 muestras (~17,96 %), candidato de impacto real.
+- Unicorn ejecutó sus 58 instrucciones originales y RET con CW `0x037f`; el helper double divergió en salida float32 en **20/23 casos**, incluidos diez casos con entradas entre 0 y 1. GPR/PC coincidentes no compensan la diferencia numérica; no se declara equivalencia FPU completa.
+- Builder y CMake ahora rechazan el fast path antiguo con `ORIGINAL_X87_PRECISION_UNSAFE`; no se habilitó durante las pruebas WSA. Tests CLI de ambas ABI pasaron tras fallo esperado; CMake/NDK aislado ON rechazado por ese motivo y OFF configurado correctamente.
+- Regresión del árbol de trabajo: **386 Python (4 omitidas), 35/35 CTest**. Datos originales y DLL de auditoría quedan privados. El siguiente diseño debe mantener binary80 y semántica de estado/fallos.
+
 ### 2026-10-15 — Dependencias de oráculos declaradas para CI
 
 - El run `38691095500` fallaba al importar dos suites CFG por ausencia de Unicorn.

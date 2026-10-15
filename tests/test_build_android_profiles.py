@@ -8,6 +8,17 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER = ROOT / 'tools/recomp/build_android.py'
 
 class ProfileBuildFlagsTest(unittest.TestCase):
+    def test_legacy_transform_cannot_bypass_original_x87_precision_gate(self):
+        for abi in ('arm64-v8a', 'x86_64'):
+            with self.subTest(abi=abi):
+                result = subprocess.run([
+                    sys.executable, str(BUILDER), '--abi', abi,
+                    '--sdk', str(ROOT / '.local/nonexistent-oracle-sdk'),
+                    '--java', str(ROOT / '.local/nonexistent-oracle-java'),
+                    '--hot-x87-transform'], capture_output=True, text=True, timeout=15)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('ORIGINAL_X87_PRECISION_UNSAFE', result.stderr)
+
     def test_help_offers_opt_in_cpu_and_gl_diagnostics(self):
         proc = subprocess.run([sys.executable, str(BUILDER), '--help'],
                               capture_output=True, text=True, check=True)

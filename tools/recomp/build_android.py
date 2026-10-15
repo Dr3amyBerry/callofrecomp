@@ -58,7 +58,7 @@ def main():
     parser.add_argument("--render-o2", action="store_true",
                         help="experiment: compile CoDSP renderer partitions p10 and p11 with -O2")
     parser.add_argument("--hot-x87-transform", action="store_true",
-                        help="experiment: native CoDSP 1.5 vector transform; default OFF")
+                        help="BLOCKED: legacy double transform fails original x87 precision")
     parser.add_argument("--fast-copy32", action="store_true",
                         help="experiment: accelerate CoDSP 1.5 32-byte copy loop; default OFF")
     parser.add_argument("--visibility-o2", action="store_true",
@@ -82,6 +82,10 @@ def main():
                         help="experiment: fuse verified CoDSP p1/p8 x87 compare/status/pop blocks; default OFF")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
+    if args.hot_x87_transform:
+        parser.error("ORIGINAL_X87_PRECISION_UNSAFE: legacy transform loses binary80 "
+                     "cancellation results; independent original-x86 outputs differ. "
+                     "Do not enable until full precision/state/fault equivalence is proven.")
     if args.core_hot_o2 and args.abi != "arm64-v8a":
         parser.error("--core-hot-o2 is ARM64-only")
     if args.cfg14_geom_region and args.abi != "arm64-v8a":

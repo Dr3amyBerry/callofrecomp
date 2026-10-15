@@ -4,6 +4,9 @@
 // generic x87 emulator and must never run for a different guest entry point.
 // Regression evidence: private full-R/RAM differential against generated
 // p-code on a real ARM64 device. Fallback handles aliases and nonfinite data.
+// BLOCKED 2026-10-15: independent original-x86 cancellation audit differs in
+// final float32 RAM (20/23 cases, including inputs <=1). P-code is not an oracle.
+// Retained only as historical/test evidence; CMake and builder reject enabling.
 #pragma once
 #include <math.h>
 #include <stdint.h>
