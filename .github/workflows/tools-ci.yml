@@ -37,7 +37,7 @@ jobs:
       - name: Compile analysis tools
         run: python -m compileall -q tools
 
-      - name: Install x86 oracle test dependencies
+      - name: Install oracle and scene test dependencies
         run: python -m pip install -r tests/requirements.txt
 
       - uses: actions/setup-java@v4

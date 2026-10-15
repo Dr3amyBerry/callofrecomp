@@ -1,5 +1,7 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-MET-02 / CI:** el run `38814719518` fallo por seis imports de PIL ausente. Se declara `Pillow==11.3.0`, la version usada en las pruebas locales, en `tests/requirements.txt`; se conserva la comprobacion de escenas en CI sin omitirla.
+
 **ARM64-06 / trabajo offline vigente:** [safe ICF y copias x87](performance/tecno/ARM64_SAFE_ICF_2026-10-15.md). Candidata experimental OFF: -13.620 bytes de codigo sobre los mismos objetos; 12.000 llamadas AArch64 equivalentes. APK privada compilada, sin nuevos FPS ni ADB. Helpers externos descartados por aumentar instrucciones. Siguiente: coste dinamico de estado/dispatch, luego A/B/A/B fisico cuando se autorice.
 
 **ARM64-MET-02:** comparador offline `scene_fingerprint.py`, seis pruebas aprobadas. Una imagen por pasada y comparacion automatica de encuadre; no mide estado 3D ni FPS. Complementa la guarda temporal, no la sustituye.

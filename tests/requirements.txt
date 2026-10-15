@@ -1,3 +1,4 @@
-# Versions used by the local x86 equivalence tooling and synthetic CFG tests.
+# Versions used by equivalence, synthetic CFG and scene-comparison tests.
 capstone==5.0.6
 unicorn==2.1.4
+Pillow==11.3.0
