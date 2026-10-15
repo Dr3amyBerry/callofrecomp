@@ -4,6 +4,11 @@
 
 **Estado: PROTOTIPO OFFLINE VERIFICADO; NO IMPLEMENTADO COMO RECUPERACIÓN ANDROID.** El flag `CODRECOMP_CFG14_GEOM_REGION` permanece **bloqueado** tanto en CMake como en `build_android.py`. No se ha instalado ninguna APK experimental ni se han medido FPS nuevos.
 
+## Actualización 14F: alternativas memory-free verificadas, sin ganancia estática
+
+Se ampliaron los bloques sin RAM a **superregiones originales multi-CFG** y se verificaron tres entradas reales frente a Capstone/Unicorn x86 y A/B nativo ARM64. Las versiones con caché de cinco registros **no reducen** ni cargas ni escrituras, y aumentan código. Esta evidencia refuerza que los checkpoints del presente informe **no deberían activarse sin una mejora dinámica mensurable**. La recuperación real Android sigue sin implementación y CMake ON bloqueado. Véase [fase 14F](PHASE14F_MEMORY_FREE_SUPERREGIONS_2026-10-15.md) y [contrato Android](PHASE14F_ANDROID_FAULT_RECOVERY_CONTRACT_2026-10-15.md).
+
+
 ## 1. Hallazgo y solución
 
 El bloque de geometría original `0x0041C017` (29 instrucciones) contiene **24 accesos a RAM invitada**, incluyendo 16 p-code LOAD, 6 STORE y 2 lecturas directas absolutas desde varnodes `m` (`0x0041C044` y `0x0041C05A`). Una excepción puede ocurrir en cualquiera. La versión anterior tenía **15 de 18** fronteras de fallo con R/PC divergente por escrituras x86 retenidas en la caché, pese a aprobar las ejecuciones normales.

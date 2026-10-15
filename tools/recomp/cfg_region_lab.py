@@ -1,10 +1,10 @@
-"""Phase14C offline CFG-region A/B compiler: NEVER modifies the game build.
+"""Phase14C/F offline original CFG-region A/B compiler: no runtime changes.
 
-Uses existing Ghidra original-body ownership and pcode2c.Gen lowering.
-For one original x86 basic block (2+ instructions) generate two PRIVATE C
-implementations: baseline (per-instruction R reads/writes), and a bounded
-register-cache implementation that retains disjoint architectural varnodes
-across the *whole basic block*.
+Uses Ghidra original-body ownership and pcode2c.Gen lowering. Accepts
+either one audited basic block (select_block) or a verified forward-only
+subgraph of whole memory-free blocks (cfg_superregion). For such a Region,
+generate PRIVATE baseline (R reads/writes) and cached C implementations
+that retain disjoint architectural varnodes across the selected blocks.
 
 All entry PCs have a separate reload label (L_pc), followed by an internal
 continuation label (B_pc). Exits flush cached registers BEFORE setting guest PC.

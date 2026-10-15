@@ -9,6 +9,18 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Fase 14F: superregiones multi-CFG sin RAM + contrato Android de faltas
+
+- [x] Herramienta `cfg_superregion.py` descubre solo **bloques completos originales Ghidra B** unidos mediante aristas CFG reales hacia delante, con entrada única líder, salida a **dispatcher original**, excluyendo memoria guest (incluye varnodes `m`), x87, CALL, RETURN, CALLOTHER, microbranches ambiguos, overlaps y loops nativos no verificados.
+- [x] Entre siete funciones calientes, **9 candidatos multi-bloque**, máximo **8 instrucciones x86 en tres bloques**; bloques sin memoria en fase 14E: 68 / 158 instrucciones.
+- [x] `benchmark_cfg_superregion.py`: originales PE/p-code/mapa con SHA fijados, Capstone límites/aristas x86, Unicorn x86 original y versiones C A/B. **Tres regiones reales x 96 = 288 casos** coinciden en 8 GPR, 5 flags materializados, **R 8192 B** y PC, sin lecturas/escrituras de memoria guest. Se contabilizan ramas **realmente visitadas**: geometría `0x0041BAB2` dos caminos (un salto incompleto); geometría `0x0041BC6D` solo un camino; visibilidad `0x004D78B6` ambos resultados de sus dos saltos (tres salidas).
+- [x] Objetos Android NDK `-O1`/`-O2`: cache5 versus sin caché en geometría 8ins **332→348 B, stores 22→25**; geometría 7ins **224→240 B, 17→20**; visibilidad 7ins **360→368 B, 22→25**. Ninguna reduce cargas; **no integrar** ni atribuir FPS.
+- [x] Contrato concreto de falla/reentrada Android documentado (verificar dirección/ancho/permiso de cada página con overflow 4GiB; snapshot R y PC antes de MEM; no reejecutar STORE, hilo/carreras, ART/JNI, x87/SEH, fallo nativo versus guest, pruebas reales). `audit_cfg_runtime_recovery.py` confirma guardias de CMake y builder, reporte **no apto para producción**; los guardias continúan.
+- [x] No se cambió `pcode2c.py`, `guest.c`, CMake, el helper privado pinneado, gráficos ni la APK. Solo diagnósticos, tests sintéticos y documentación. [Informe superregiones](docs/PHASE14F_MEMORY_FREE_SUPERREGIONS_2026-10-15.md) · [Contrato Android](docs/PHASE14F_ANDROID_FAULT_RECOVERY_CONTRACT_2026-10-15.md).
+- [x] Regresión final: **369 tests Python ejecutados, 4 omitidos, 0 fallidos** y **35/35 CTest** después de compilar el host; `py_compile` de las herramientas nuevas y `git diff --check` sin errores.
+- [ ] Medir perfiles originales para regiones/lazos más grandes y encontrar ahorro CPU comprobable. La recuperación Android real sigue **pendiente y bloqueada**; TECNO y FPS no medidos.
+
+
 ### 2026-10-15 — Fase 14E: checkpoints x86 de memoria y reentrada sin repetir escrituras (OFFLINE)
 
 - [x] **24 accesos a RAM guest:** 16 LOAD, 6 STORE y 2 lecturas absolutas `m` en el bloque `0x0041C017` de 29 instrucciones; antes de cada memoria se vuelcan a R los registros modificados y se actualiza el PC original del x86.

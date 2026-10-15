@@ -2,6 +2,11 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 14F — Superregiones completas sin memoria: equivalencia x86 sí, ganancia no
+
+Las siete funciones calientes permiten solo **9 superregiones** de bloques originales seguros, máximo **8 instrucciones / 3 bloques**. Tres candidatos pasaron **96/96** casos cada uno contra Unicorn original x86, p-code sin caché y caché de tres/cinco registros, comparando R completo, PC, GPR y cinco flags; se dejó registrada la cobertura **parcial** de dos de las tres regiones. ARM64 `-O1`: bytes de texto base→cache5 **332→348**, **224→240**, **360→368**, con más stores en las tres y sin menos loads. **No incorporar** optimizaciones sin mejora estática ni evidencia dinámica. Se añadió un **contrato de recuperación de faltas Android** y auditoría de fuente (ART/JNI no admite un reemplazo global de SIGSEGV sin garantías, R/PC son globales); CMake y builder ON siguen bloqueados. El motor no cambió; sin APK nueva y sin FPS. [Superregiones](PHASE14F_MEMORY_FREE_SUPERREGIONS_2026-10-15.md) · [Contrato de fallos](PHASE14F_ANDROID_FAULT_RECOVERY_CONTRACT_2026-10-15.md).
+
+
 ## Fase 14E — Checkpoints precisos y fallback original, laboratorio exclusivamente
 
 El generador experimental preserva el estado x86 antes de cada acceso a memoria guest y difiere dos escrituras CF/OF anteriores a LOAD. Se verificaron **24/24 fronteras con fallo** y **120/120 reanudaciones** desde PC original mediante **Unicorn x86 y el traductor A sin caché**, incluidas 6 escrituras únicas. No se ha conectado un handler de señales Android. El objeto ARM64 incremental pesa **652 B / 32 cargas / 62 stores**, frente a **404 B / 32 / 22** en el helper original inseguro; no implica mejora de FPS. En siete funciones calientes hay **68 bloques sin memoria / 158 instrucciones**, máximo cinco por bloque; dos candidatos no redujeron código ni accesos ARM64. **El flag Android sigue bloqueado.** [Resultados 14E](PHASE14E_PRECISE_CHECKPOINTS_AND_RESUME_2026-10-15.md).
