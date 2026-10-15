@@ -1,5 +1,7 @@
 # CallofRecomp — entrada rápida de conocimiento
 
+- [ARM64: safe ICF, equivalencia AArch64 y APK experimental](performance/tecno/ARM64_SAFE_ICF_2026-10-15.md).
+
 **Regla para todas las IAs:** leer primero este índice y los documentos de estado, no buscar recursivamente `.local/`, builds, Ghidra, fuentes generadas o repos externos. Los informes fechados preservan evidencia, **no son instrucciones operativas vigentes**.
 
 ## Catálogo funcional de scripts archivados

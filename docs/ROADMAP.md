@@ -1,5 +1,7 @@
 # Cola de trabajo del proyecto
 
+**ARM64-06 / trabajo offline vigente:** [safe ICF y copias x87](performance/tecno/ARM64_SAFE_ICF_2026-10-15.md). Candidata experimental OFF: -13.620 bytes de codigo sobre los mismos objetos; 12.000 llamadas AArch64 equivalentes. APK privada compilada, sin nuevos FPS ni ADB. Helpers externos descartados por aumentar instrucciones. Siguiente: coste dinamico de estado/dispatch, luego A/B/A/B fisico cuando se autorice.
+
 **Siguiente objetivo TECNO: pequenas ganancias reproducibles (2026-10-15):**
 Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. Repetir por separado la optimizacion x87 de copias y enlace local ARM64 con el protocolo de docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md antes de acumular otras variantes.
 

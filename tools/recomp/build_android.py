@@ -87,8 +87,16 @@ def main():
     parser.add_argument("--local-guest-state", action="store_true", help="WSA experiment: link R/MEM/U/PC locally without changing generated instructions")
     parser.add_argument("--arm64-local-guest-state", action="store_true",
                         help="ARM64 experiment: local R/MEM/U/PC ELF binding, same WSA 4-symbol map; OFF by default")
+    parser.add_argument("--arm64-safe-icf", action="store_true",
+                        help="ARM64 experiment: safe linker folding of address-insignificant identical code; OFF")
+    parser.add_argument("--arm64-icf-metadata", action="store_true",
+                        help="ARM64 ICF A/B reference: emit address-significance metadata without enabling folding; OFF")
     parser.add_argument("--wsa-release", action="store_true", help="WSA cumulative + local-state release; default native x87 on and frame limit 120")
     args = parser.parse_args()
+    if args.arm64_safe_icf and args.abi != 'arm64-v8a':
+        parser.error('--arm64-safe-icf requires arm64-v8a')
+    if args.arm64_icf_metadata and args.abi != 'arm64-v8a':
+        parser.error('--arm64-icf-metadata requires arm64-v8a')
     if args.wsa_release:
         if args.abi!='x86_64' or not args.native_x87_region:
             parser.error('--wsa-release requires --abi x86_64 --native-x87-region PE')
@@ -253,6 +261,8 @@ def main():
             f"-DCODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE={'ON' if args.x87_normal_f2d_p4_selective else 'OFF'}",
             f"-DCODRECOMP_X87_NORMAL_F2D_P4_PROFILED={'ON' if args.x87_normal_f2d_p4_profiled else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_LAST_CACHE={'ON' if args.dispatch_last_cache else 'OFF'}",
+            f"-DCODRECOMP_ARM64_SAFE_ICF={'ON' if args.arm64_safe_icf else 'OFF'}",
+            f"-DCODRECOMP_ARM64_ICF_METADATA={'ON' if args.arm64_icf_metadata else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")
         run("cmake", "--build", native, "--parallel", args.jobs)

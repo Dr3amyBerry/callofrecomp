@@ -8,6 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER = ROOT / 'tools/recomp/build_android.py'
 
 class ProfileBuildFlagsTest(unittest.TestCase):
+    def test_safe_icf_is_arm64_only(self):
+        for flag in ('--arm64-safe-icf','--arm64-icf-metadata'):
+            proc=subprocess.run([sys.executable,str(BUILDER),'--abi','x86_64',flag],capture_output=True,text=True)
+            self.assertNotEqual(proc.returncode,0)
+            self.assertIn(flag+' requires arm64-v8a',proc.stderr)
+
     def test_release_defaults_require_wsa_and_original_pe(self):
         for options in (['--wsa-release'],['--abi','x86_64','--wsa-release']):
             proc=subprocess.run([sys.executable,str(BUILDER),*options],capture_output=True,text=True)
