@@ -34,7 +34,7 @@ Retirar el atajo inseguro puede cambiar el rendimiento frente a builds anteriore
 
 ## Recursos y descargas
 
-La [página pública](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
+La [página pública](https://dr3amyberry.github.io/callofrecomp/)
 queda en tres pasos: descargar APK, seleccionar carpeta y crear `.codpack`.
 Sin logo, cabecera de marca, eslogan ni tarjetas extra. El empaquetado sigue
 siendo local, sin subir los archivos.

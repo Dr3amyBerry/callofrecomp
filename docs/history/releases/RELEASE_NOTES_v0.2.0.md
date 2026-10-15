@@ -5,7 +5,7 @@ APK pública **sin archivos del juego**. Necesitas tu instalación propia y comp
 ## Instalar
 
 1. Descarga `callofrecomp-arm64.apk` para un teléfono Android ARM64. `callofrecomp-x86_64-wsa.apk` es para WSA x86_64.
-2. Abre [el empaquetador web](https://callofrecomp-packager.mauvezebra128.chatgpt.site) en Chrome o Edge en tu PC.
+2. Abre [el empaquetador web](https://dr3amyberry.github.io/callofrecomp/) en Chrome o Edge en tu PC.
 3. Selecciona la carpeta del juego, crea el archivo `.codpack` y cópialo al teléfono.
 4. En CallofRecomp, pulsa **Importar paquete .codpack**. Al terminar, pulsa **Jugar**.
 

@@ -1,5 +1,7 @@
 # Estado actual de CallofRecomp
 
+**Web:** [GitHub Pages](https://dr3amyberry.github.io/callofrecomp/), con despliegue desde `web/dist`.
+
 **Entrega 0.2.4:** [notas y descargas](history/releases/RELEASE_NOTES_v0.2.4.md), con APK ARM64 y WSA separadas y empaquetador público simplificado. El preset de release WSA activa las mejoras medidas y límite120 sin archivos privados; ARM64 conserva 60 y excluye el atajo double inseguro. La nueva build TECNO sigue sin medición física.
 
 > **Nueva misión (2026-10-15): 120 FPS reales en WSA mediante desarrollo local.**

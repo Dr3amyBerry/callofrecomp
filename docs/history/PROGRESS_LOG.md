@@ -1842,3 +1842,8 @@ Update at least one of:
 - scope changes.
 
 The log should reflect what actually exists in the repository, not what is merely planned.
+
+
+## 2026-10-15 ? GitHub Pages
+
+El empaquetador pasa a https://dr3amyberry.github.io/callofrecomp/ con despliegue automatico desde `web/dist` y prueba CODPACK previa. README y enlaces de releases actualizados; sin recompilar APK. La publicacion anterior en Sites queda como antecedente historico.

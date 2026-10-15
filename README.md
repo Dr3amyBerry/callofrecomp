@@ -10,7 +10,7 @@
 
 **Estado del proyecto:** [Estado actual](docs/PROJECT_STATUS.md) · [Índice documental](docs/INDEX.md) · [Optimización acumulativa](docs/OPTIMIZATION_LEDGER.md).
 
-**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.4) · [Empaquetador web / Packager](https://callofrecomp-packager.mauvezebra128.chatgpt.site) · [Registro de mejoras / Optimization ledger](docs/OPTIMIZATION_LEDGER.md) · [Estado técnico / Progress](PROGRESS.md) · [Investigación WSA](docs/performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md) · [Panorámico y HUD](docs/performance/graphics/HUD_WIDESCREEN_2026-10-14.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
+**Enlaces / Links:** [Descargar APK / Download](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.4) · [Empaquetador web / Packager](https://dr3amyberry.github.io/callofrecomp/) · [Registro de mejoras / Optimization ledger](docs/OPTIMIZATION_LEDGER.md) · [Estado técnico / Progress](PROGRESS.md) · [Investigación WSA](docs/performance/wsa/WSA_POSTOPT_APPLICATION_2026-10-15.md) · [Panorámico y HUD](docs/performance/graphics/HUD_WIDESCREEN_2026-10-14.md) · [Reportar errores / Issues](https://github.com/Dr3amyBerry/callofrecomp/issues)
 
 **Call of Duty clásico para Android, mediante recompilación estática de la versión PC 1.5.**
 
@@ -21,13 +21,13 @@ límite de 60 FPS en teléfonos. La APK experimental WSA usa límite 120 y las
 optimizaciones medidas por separado. Necesitas tu propia copia del juego.
 
 [**Descargar APK**](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.4)
-· [**Preparar archivos del juego**](https://callofrecomp-packager.mauvezebra128.chatgpt.site)
+· [**Preparar archivos del juego**](https://dr3amyberry.github.io/callofrecomp/)
 · [**Desarrollo y evidencia técnica**](docs/INDEX.md)
 
 ## Empezar en Android
 
 1. Descarga `callofrecomp-arm64.apk` del release e instálalo en tu teléfono.
-2. En tu PC, abre el [empaquetador web](https://callofrecomp-packager.mauvezebra128.chatgpt.site).
+2. En tu PC, abre el [empaquetador web](https://dr3amyberry.github.io/callofrecomp/).
 3. Selecciona la carpeta de tu instalación **Call of Duty 1.5** y crea el archivo `.codpack`.
 4. Copia ese archivo al teléfono. Abre CallofRecomp y pulsa **Importar paquete .codpack**.
 5. Espera a que termine la importación y pulsa **Jugar**. Empieza por el entrenamiento.

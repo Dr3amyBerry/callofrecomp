@@ -5,6 +5,6 @@
 - `callofrecomp-arm64.apk`: teléfonos Android ARM64.
 - `callofrecomp-x86_64-wsa.apk`: Windows Subsystem for Android (x86_64).
 
-**Requisitos:** Android 8+, OpenGL ES 2.0 y tu propia instalación de Call of Duty PC 1.5. [Preparar archivos con el empaquetador web](https://callofrecomp-packager.mauvezebra128.chatgpt.site/).
+**Requisitos:** Android 8+, OpenGL ES 2.0 y tu propia instalación de Call of Duty PC 1.5. [Preparar archivos con el empaquetador web](https://dr3amyberry.github.io/callofrecomp/).
 
 **Versión de prueba:** las APK no incluyen archivos del juego; la campaña completa todavía no está verificada.

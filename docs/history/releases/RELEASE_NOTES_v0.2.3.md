@@ -17,4 +17,4 @@ Versión Android **0.2.3**, código **5**. El APK ARM64 ocupa aproximadamente **
 
 Este release publica únicamente la nueva build ARM64. La build anterior de WSA x86_64 está en [v0.2.2](https://github.com/Dr3amyBerry/callofrecomp/releases/tag/v0.2.2).
 
-**No incluye los archivos comerciales del juego ni el APK privado con recursos.** Prepara tu instalación con el [empaquetador web](https://callofrecomp-packager.mauvezebra128.chatgpt.site) e importa el archivo `.codpack` en la aplicación.
+**No incluye los archivos comerciales del juego ni el APK privado con recursos.** Prepara tu instalación con el [empaquetador web](https://dr3amyberry.github.io/callofrecomp/) e importa el archivo `.codpack` en la aplicación.
