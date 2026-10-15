@@ -5,6 +5,8 @@
 > El corte TECNO y el estado de CI descritos abajo siguen como antecedentes;
 > no son mediciones nuevas ni la prioridad de rendimiento de esta misión.
 
+**Perfil nuevo de la APK instalada (2026-10-15, sin cambios de código):** [informe de CPU y renderizador](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md). Misma APK acumulativa B verificada por SHA-256 y ELF Build ID; nueva captura sin profiler simultáneo **67,2 FPS / 14,89 ms CPU/frame** en Alta, 35,47 s, presentación 63,48/s, modo 75 Hz. Dos capturas CPU distintas: **12.695 muestras** y **5.074 con stacks DWARF**. Predominan zonas de `libmain.so` con transferencias de estado virtual y conversiones x87, además de empaquetado GL4ES/GLES y transporte de GPU. El gasto no está descompuesto causalmente en ms exclusivos; GPU sin contador. Siguiente trabajo: analizar ensamblador realmente caliente y tasas de empaquetado de buffers, no volver a medir el viejo ELF A.
+
 **Continuación WSA:** límites original/60/120/sin límite implementados y probados
 en la misma escena con Alta; no hay ahorro CPU demostrado por retirarlos.
 La pantalla virtual sigue en 75 Hz. El perfil exacto prioriza conversión/copia
@@ -24,7 +26,7 @@ son antecedentes; el oráculo de 22.344 casos se repitió con el adaptador final
 y con el alias CW real del juego sin diferencias. La reanudación SEH, excepciones
 sin máscara, estabilidad larga y 120 FPS sostenidos siguen sin certificarse.
 
-**Corte:** 2026-10-15. **Código revisado:** `bda83a6532b7cbf6489740f42830eb9f55fdff98` (fase 15). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
+**Corte:** 2026-10-15. **Código base de la revisión de CPU WSA:** `d6d6f8e174a24f259978fd30885ece63fc14902b` (solo documentación; APK acumulativa B integrada en `8401f29`). Esta página es la fuente de estado actual; los informes fechados conservan evidencia histórica.
 
 [Documentación completa](INDEX.md) · [Próximo trabajo](ROADMAP.md) · [Estrategia 60 FPS](PERFORMANCE_STRATEGY_CURRENT.md) · [Bitácora](../PROGRESS.md)
 

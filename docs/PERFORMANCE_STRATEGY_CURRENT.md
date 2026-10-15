@@ -12,6 +12,10 @@
 
 [Estado actual](PROJECT_STATUS.md) · [Cola de trabajo](ROADMAP.md) · [Índice documental](INDEX.md)
 
+## Evidencia nueva WSA B (2026-10-15, investigación sin implementación)
+
+[Perfil exacto de la APK optimizada instalada](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md): mediana de **67,2 FPS / 14,89 ms CPU/frame** durante 35 s de gameplay sin profiler simultáneo; **12.695 muestras** CPU con Build ID nativo y 28/28 fuentes verificadas, más **5.074** muestras con stacks DWARF. El nuevo perfil vincula `rd/wr`, `f2d/d2f` y el empaque `glUtilsPackPointerData` / `GL2Encoder::sendVertexAttributes` / `AddressSpaceStream` con puntos calientes específicos, **sin convertir esos samples en tiempos CPU exclusivos**. Prioridad WSA: inspeccionar ensamblador del código generado y cuantificar empaque de arrays antes de proponer otra transformación. Para 120 FPS faltan unos **6,56 ms/frame** y el modo visible continúa en **75 Hz**; no se midió GPU. Las prioridades TECNO que siguen son históricas.
+
 ## Decisión actual
 
 Priorizar una investigación transversal del coste de **materializar, copiar y convertir el estado x87 en ARM64**, apoyada en las dos capturas físicas verificadas de TECNO. La unidad inicial debe ser un patrón repetido en varias funciones, con una frontera original comprobable. No seguir ampliando cachés de pequeñas regiones enteras que ya dieron resultados nulos o regresivos.

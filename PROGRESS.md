@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — APK B actual: perfil reproducible del CPU y GL4ES; sin cambios de código
+
+- [x] APK instalada recuperada desde WSA y cotejada por SHA-256 **a19ea65e…da1702**, Build ID ELF binario/archivo Simpleperf **23df3b5f…b2e4** y **28/28** fuentes generadas verificadas por hash. `main` base: `d6d6f8e`.
+- [x] Gameplay Alta/1280×720/límite 120: **35 ventanas / 35,47 s** sin profiler simultáneo: **67,2 FPS**, **14,89 ms CPU/frame**, p10 **60,3**, presentación **63,48/s**, p99 **32,29 ms**, pacing **0**, modo WSA **75 Hz**, cobertura completa.
+- [x] Simpleperf app UID **12.695 muestras /25 s**; perfil DWARF adicional **5.074/25 s**, ambos 0 pérdidas. `libmain.so` **9.465** (74,6 %), `libc` **1.292**, OpenGL encoder/transporte con coste significativo. 5.788 muestras de libmain atribuidas a cuerpo Ghidra B único; restantes sin inventar propietarios.
+- [x] Zonas concretas: `recomp_rt.h:19–20,84,115` (rd/wr/f2d/d2f); hotspots `0x004196F0`, `0x0041B8F0`, `0x0041CD60`, `0x0042B100` (copia32), `0x004CC6E9`; `gl_thunks.c:1187–1191` y rutas `glUtilsPackPointerData` / `AddressSpaceStream`. La familia inline memcpy de libmain suma **3.337 muestras**, f2d **1.769**, d2f **857**, **sin convertirlas a ms exclusivos**.
+- [x] Informe nuevo [Perfil de la APK optimizada instalado](docs/WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md), evidencia original en `.local/profiles/wsa120_20261015/postopt_reprofile_20261015/` ignorado. **No se alteró código, APK, saves, calidad ni configuración**; solo documentación.
+- [ ] Prioridad: estudiar ensamblador nativo de la materialización R/U/x87 y medir empaque de arrays GL con instrumentación controlada; no implementar una supuesta ganancia de FPS antes de probar oráculo y A/B. Meta 120 FPS abierta, margen de **~6,56 ms/frame** respecto de la captura nueva.
+
 ### 2026-10-15 — Integración acumulativa y ganancia física WSA
 
 - Región x87 binary80 integrada en el APK y preset `--wsa-cumulative` con opciones compatibles existentes. Corregidas compatibilidades de parches, guarda copy32 de páginas y alias CW fijo observado en el juego.

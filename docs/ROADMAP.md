@@ -1,21 +1,18 @@
 # Cola de trabajo del proyecto
 
-> **Prioridad actual: misión WSA 120 FPS.** Seguir el [bloque de diagnóstico e implementación WSA](WSA120_BASELINE_2026-10-15.md#siguiente-bloque). La cola TECNO de abajo queda como referencia; no extrapolar sus perfiles a WSA.
+> **Prioridad actual: misión WSA 120 FPS.** Perfil nuevo de la [APK optimizada B instalada](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md); la cola TECNO de abajo queda como referencia histórica. No extrapolar sus perfiles a WSA.
 
-## Cola WSA vigente
+## Cola WSA vigente — actualizada con perfil de la APK B instalada
 
-1. Investigar una ruta binary80 exacta para conversiones y transformaciones
-   calientes. Termina con un candidato que preserve estado y fallos frente al
-   x86 original y reduzca trabajo nativo suficiente para justificar A/B.
-2. Medir ese candidato con Alta y misma partida en A/B/A/B; separar CPU,
-   presentación, GPU y variación entre controles. Rechazar regresiones.
-3. Ampliar a combate/escenas complejas, movimiento, audio, guardado/carga y
-   sesiones prolongadas. Conseguir tiempo GPU si el driver lo permite.
-4. El modo virtual actual ofrece 75 Hz: identificar otra modalidad real antes
-   de prometer 120 presentaciones visibles/s. No simularlas con un contador.
+El [perfil post-acumulativo](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) **ya se completó** en el mismo APK B que está instalado: **12.695 muestras CPU** y **5.074 con stacks**, **67,2 FPS / 14,89 ms CPU/frame**. La región binary80 `0x005061B0` **ya se integró en el preset experimental**; no presentarla nuevamente como no implementada. Continúan sin certificar recuperación SEH de excepciones sin máscara y pruebas prolongadas.
 
-Implementado: configuración reversible de topes y capturador de presentación.
-CI reparado. [Evidencia y resultados](WSA120_LIMITER_AND_RENDERER_PROFILE_2026-10-15.md).
+1. **P1 — coste transversal real de CPU:** examinar ensamblador nativo en PC muestreados con etiquetas `memcpy`, `f2d`, `d2f`, vincularlo a las operaciones `rd/wr`, estados x87 y cuerpos Ghidra B. Separar copias escalares, slots binary80 y memoria guest; encontrar una transformación comprobable con oráculo x86 antes de desarrollar.
+2. **P2 — renderer y transferencia de geometría:** medir número de draw calls, atributos/índices empaquetados, estado/VBO y tiempo CPU de transacciones. Considerar buffers persistentes solo con demostración de invalidación correcta para cada geometría, efectos y animación. Aún no se implementó esta propuesta.
+3. **P3 — frontera x87 nativa:** investigar las muestras en `nx87_5061b0_0`, `nx87_5061b0_56` y `codsp_native_x87_region_try`; optimizar guardas, FNSAVE/FRSTOR o retorno solo si no se pierde R/PC, CW/SW/TOP/tag, metadatos ni seguridad ante faltas.
+4. **P4 — prueba de impacto físico:** si se desarrolla una candidata segura, comparar A/B/A/B en Alta/misma partida y medir CPU/frame, presentación, FPS de motor y valores gráficos. Revertir ganancias que no se reproduzcan.
+5. **P5 — escenario complejo y plataforma:** validar combate, rendimiento largo y corrección visual/sonora, investigar tiempo GPU y comprobar un modo real ≥120 Hz antes de afirmar 120 presentaciones visibles/s.
+
+**Límites:** muestras estadísticas, no tiempo CPU exclusivo por microoperación. Nada de optimizaciones especulativas, reducir calidad o desbloquear CFG14/atajos double. **En esta investigación no se modificó código ni APK.**
 
 ## Cola TECNO conservada
 
