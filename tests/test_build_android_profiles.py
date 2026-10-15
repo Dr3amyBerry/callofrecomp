@@ -16,6 +16,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--gl-time-profile', proc.stdout)
         self.assertIn('--gl-vk-state-capture', proc.stdout)
         self.assertIn('--wsa-uncap-bench', proc.stdout)
+        self.assertIn('--core-hot-o2', proc.stdout)
         self.assertIn('--render-o2', proc.stdout)
         self.assertIn('--hot-x87-transform', proc.stdout)
         self.assertIn('--fast-copy32', proc.stdout)
@@ -90,6 +91,17 @@ class ProfileBuildFlagsTest(unittest.TestCase):
                                        text=True,capture_output=True)
                 self.assertNotEqual(process.returncode,0)
                 self.assertIn(phrase,process.stderr)
+
+    def test_core_hot_o2_requires_arm64_and_optimized_generated_code(self):
+        for flags,phrase in [
+            (['--abi','x86_64','--core-hot-o2'], 'ARM64-only'),
+            (['--core-hot-o2','--recomp-opt','0'], 'requires --recomp-opt 1'),
+        ]:
+            with self.subTest(flags=flags):
+                result=subprocess.run([sys.executable,str(BUILDER),*flags],
+                                      capture_output=True,text=True)
+                self.assertNotEqual(result.returncode,0)
+                self.assertIn(phrase,result.stderr)
 
     def test_wsa_uncap_is_rejected_for_arm64(self):
         proc = subprocess.run(

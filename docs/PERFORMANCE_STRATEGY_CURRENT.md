@@ -2,6 +2,12 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 13: compilación A/B de bloques calientes completos (nueva opción OFF)
+
+Se compararon tres chunks completos (1.500 instrucciones p-code cada uno) en ARM64 por compilación NDK, usando dos perfiles CPU físicos antiguos y ninguna prueba nueva en TECNO. `-O2` con `-ffp-contract=off` reduce cargas/escrituras ARM64 **estáticas** en geometría chunk18 y recorrido chunk88. Sobre **p4 completa**: `.text` **1.998.764→1.979.316 B**, cargas **82.258→77.931**, escrituras **68.537→54.388**. **No** es una reducción medida de tiempo por frame ni FPS; el compilador puede afectar cada ruta de manera distinta.
+
+**Visibilidad chunk152 se excluyó tras regresiones estáticas** en tamaño y cargas; tampoco se incorporaron los prototipos de escalarizar temporales, caché GPR de chunks ni DCE extra, al comprobar que LLVM ya los optimizaba o que empeoraban el nativo. Se añadió `CODRECOMP_CORE_HOT_O2` (flag Android `--core-hot-o2`) **solo p0/p1/p4, ARM64, hash verificado, OFF por defecto**, sin retirar renderizado ni alterar configuración gráfica. CMake/Ninja de Android verificó `-O2` efectivo para esos tres archivos; p8/p10 siguen `-O1`. Tests aprobados: **272 Python (4 omitidos), 35/35 CTest**. La referencia física continúa alrededor de **26 FPS**, **60 FPS todavía no demostrados**. [Análisis completo](CPU_PHASE13_HOT_BLOCK_COMPILER_AB_OFFLINE_2026-10-14.md).
+
 ## Fase 12 offline: fusión de siete movimientos x87 por llamada nativa compartida
 
 Los perfiles Simpleperf archivados sitúan costes importantes en geometría, visibilidad y movimientos arquitectónicos; sus muestras no son tiempos exclusivos por función ni medidas nuevas de FPS. En el p-code CoDSP 1.5 se localizaron **18.194 secuencias** completas de siete copias x87 de 10 bytes con paso de 16. La transformación revisa los saltos al interior y consolida el grupo en un helper nativo `noinline`, conservando el padding observable. La herramienta optativa está implementada en el generador y constructor ARM64, con verificaciones de SHA-256 y restauración byte a byte en los 12 archivos generados; **OFF por defecto**.

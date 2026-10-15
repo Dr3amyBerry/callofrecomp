@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 13: grandes bloques CoDSP geometry/traversal, ARM64 OFFLINE
+
+- [x] Dos perfiles Simpleperf del TECNO archivados, sin usar el teléfono. A/B de **chunks completos de 1.500 instrucciones**: geometría chunk18: -1.186 cargas y -2.135 escrituras ARM64 estáticas; estructuras chunk88: -899 cargas y -1.528 escrituras usando `-O2` con FP estricto en vez de `-O1`.
+- [x] **p4 completa** AArch64: `.text` 1.998.764→1.979.316 B (−19.448); cargas 82.258→77.931 (−4.327); escrituras 68.537→54.388 (−14.149). Recuentos estáticos, **NO ciclos ni FPS medidos**.
+- [x] Compilación alternativa en visibilidad chunk152 **descartada** por más código (+17.636 B) y cargas (+2.310). `-Os`, temporales escalares, DCE y caché de registros de chunk no justificaron conservar cambios; prototipos retirados.
+- [x] Opción opt-in `--core-hot-o2` / `CODRECOMP_CORE_HOT_O2=ON`, ARM64 y SHA de p-code verificado, únicamente CoDSP p0/p1/p4, con `-ffp-contract=off`, **OFF por defecto**; CMake aislado y orden de flags comprobados. **P8 excluida**. 35/35 CTest aprobados, suite Python **272 tests (4 omitidos, 0 fallidos)** y tests del constructor ampliados.
+- [ ] Sin APK experimental instalada ni prueba A/B/A física; **60 FPS pendientes**, rendimiento jugable sin mejora verificada. [Informe](docs/CPU_PHASE13_HOT_BLOCK_COMPILER_AB_OFFLINE_2026-10-14.md).
+
 ### 2026-10-14 — Fase 12: fusión estructural de pila x87, ARM64 offline
 
 - [x] Identificados 18.194 grupos de siete copias exactas de registros x87 en 333.208 instrucciones CoDSP; nueva transformación optativa, con control de saltos internos y copia exclusiva de diez bytes por ranura.

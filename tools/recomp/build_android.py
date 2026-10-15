@@ -49,6 +49,9 @@ def main():
                         help="compile opt-in GL->Vulkan typed state observer, NOT a Vulkan game backend; default OFF")
     parser.add_argument("--wsa-uncap-bench", action="store_true",
                         help="DIAGNOSTIC WSA x86_64 ONLY: bypass host 60 FPS cap; default OFF")
+    parser.add_argument("--core-hot-o2", action="store_true",
+                        help="ARM64 offline-profile-guided CoDSP p0/p1/p4 compilation "
+                             "at strict-FP -O2; OFF by default")
     parser.add_argument("--render-o2", action="store_true",
                         help="experiment: compile CoDSP renderer partitions p10 and p11 with -O2")
     parser.add_argument("--hot-x87-transform", action="store_true",
@@ -76,6 +79,10 @@ def main():
                         help="experiment: fuse verified CoDSP p1/p8 x87 compare/status/pop blocks; default OFF")
     parser.add_argument("--package-only", action="store_true")
     args = parser.parse_args()
+    if args.core_hot_o2 and args.abi != "arm64-v8a":
+        parser.error("--core-hot-o2 is ARM64-only")
+    if args.core_hot_o2 and args.recomp_opt != "1":
+        parser.error("--core-hot-o2 requires --recomp-opt 1")
     if args.wsa_uncap_bench and args.abi != "x86_64":
         parser.error("--wsa-uncap-bench is for --abi x86_64 WSA only")
     if args.x87_normal_f2d_p4 and args.abi != "arm64-v8a":
@@ -185,6 +192,7 @@ def main():
             f"-DCODRECOMP_GL_TIMING={'ON' if args.gl_time_profile else 'OFF'}",
             f"-DCODRECOMP_GL_VK_STATE_CAPTURE={'ON' if args.gl_vk_state_capture else 'OFF'}",
             f"-DCODRECOMP_WSA_UNCAP_BENCH={'ON' if args.wsa_uncap_bench else 'OFF'}",
+            f"-DCODRECOMP_CORE_HOT_O2={'ON' if args.core_hot_o2 else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
             f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",

@@ -108,6 +108,41 @@ if(CODRECOMP_RENDER_O2)
     endif()
   endforeach()
 endif()
+# Phase 13: whole-hot-chunk compilation, NOT operation-by-operation tuning.
+# Covers historical TECNO hotspots in geometry p0/p1 and traversal p4.
+# Visibility p8 is intentionally excluded after its ARM64 -O2 regression.
+# This never changes guest assets, graphics quality or source semantics, but
+# Clang code generation can still affect CPU timing. OFF without device A/B.
+option(CODRECOMP_CORE_HOT_O2
+  "EXPERIMENT: -O2 (strict FP) for physical-profiled CoDSP geometry/traversal p0/p1/p4 only" OFF)
+if(CODRECOMP_CORE_HOT_O2)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "CODRECOMP_CORE_HOT_O2 is ARM64-only")
+  endif()
+  if(NOT RECOMP_OPTIMIZATION STREQUAL "1")
+    message(FATAL_ERROR "CODRECOMP_CORE_HOT_O2 requires RECOMP_OPTIMIZATION=1")
+  endif()
+  set(profile_pcode "${RECOMP_SOURCE_DIR}/codsp.pcode")
+  if(NOT EXISTS "${profile_pcode}")
+    message(FATAL_ERROR "Missing original CoDSP p-code for hot-chunk -O2")
+  endif()
+  file(SHA256 "${profile_pcode}" profile_pcode_hash)
+  if(NOT profile_pcode_hash STREQUAL
+      "36f9093b386e03b4bcdc489cff2a708f7c0b8012e9a0fa78a7001bd3f125da1e")
+    message(FATAL_ERROR "Hot-chunk -O2 requires verified CoDSP.exe 1.5 p-code")
+  endif()
+  foreach(part p0 p1 p4)
+    set(hot_source "${RECOMP_SOURCE_DIR}/codsp_recomp_${part}.c")
+    if(NOT EXISTS "${hot_source}")
+      message(FATAL_ERROR "Missing profiled CoDSP partition: ${hot_source}")
+    endif()
+    # Keep IEEE operation order and x87 results; no global -ffast-math,
+    # no feature/geometry/visibility pruning or image-quality compromise.
+    set_property(SOURCE "${hot_source}" APPEND PROPERTY
+      COMPILE_OPTIONS "-O2;-ffp-contract=off")
+  endforeach()
+endif()
+
 # Opt-in ARM64 experiment, disabled in normal APKs. Only guest.c changes.
 option(CODRECOMP_HOT_X87_FASTPATH "Use validated CoDSP 1.5 transform fast path" OFF)
 if(CODRECOMP_HOT_X87_FASTPATH)
