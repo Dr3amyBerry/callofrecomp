@@ -230,6 +230,18 @@ if(CODRECOMP_BUILD_TESTS)
     # Experimental p-code runtime requires compiler support for 128-bit integers.
     # These fixtures use synthetic inputs and do not require proprietary binaries.
     include(CheckCSourceCompiles)
+    check_c_source_compiles("
+        #if !defined(__x86_64__) || (!defined(__GNUC__) && !defined(__clang__))
+        #error Native x87 lab requires GNU-style x86_64 assembly
+        #endif
+        int main(void) { __asm__ volatile(\"fnop\"); return 0; }"
+        CODRECOMP_HAS_NATIVE_X87)
+    if(CODRECOMP_HAS_NATIVE_X87)
+        # Isolated binary80 primitive only; never enables a guest fast path.
+        add_executable(codrecomp_x87_native_math_smoke tests/x87_native_math_smoke.c)
+        target_include_directories(codrecomp_x87_native_math_smoke PRIVATE tools/recomp)
+        add_test(NAME x87_native_math_smoke COMMAND codrecomp_x87_native_math_smoke)
+    endif()
     check_c_source_compiles("int main(void) { unsigned __int128 x = 1; return (int)(x - 1); }"
         CODRECOMP_HAS_INT128)
     if(CODRECOMP_HAS_INT128)

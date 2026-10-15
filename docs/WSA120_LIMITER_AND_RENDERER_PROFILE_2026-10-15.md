@@ -161,6 +161,14 @@ Evidencia privada: `native_x87_probe_v3/summary.json`, `android_result.json`
 y scripts `probe_native_x87.py` / `run_android_x87_probe.py`, bajo la carpeta
 local de esta sesión. No se publican instrucciones originales ni binarios.
 
+**Componente desarrollado después:** [binary80 nativo y contrato pendiente](superpowers/plans/2026-10-15-wsa-native-binary80.md).
+Cuatro operaciones con estado de operación explícito, aisladas del runtime
+guest; pruebas host/WSA O0/O2/O3 aprobadas. El ensayo privado alternado de la
+transformación dio 435,083 ns generados y 135,617 ns nativos aislados de mediana.
+No incluye exportación de estado guest en la candidata y solo usa un input
+finito: no convertir esta relación en FPS ni considerarla una optimización
+integrada. Los ~18 ms/frame medidos en juego siguen siendo la referencia.
+
 Host: **386 tests Python, 4 omitidos, 35/35 CTest**. La CI detectó después
 un selector antiguo ligado al texto de un comentario CMake; se reprodujo y
 se cambió por límites de opciones, conservando todas sus aserciones.

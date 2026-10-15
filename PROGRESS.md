@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Operaciones binary80 nativas, todavía sin integración guest
+
+- Implementado `tools/recomp/runtime/x87_native_math.h`: ADD/SUB/MUL/DIV binary80 explícito, CW y estado de operación capturado antes de almacenar. Conserva x87/MXCSR host; rechaza excepciones sin máscara/controles inválidos y soporta alias. No modifica APK ni lowering.
+- Nuevo smoke CMake: 12 controles, precisión/rango extendidos, subnormales, NaN, flags, alias y restauración. Rojo inicial por componente ausente; verde Windows/WSA con O0/O2/O3 y avisos estrictos. Revisión corrigió intercalado posible entre bloques asm; ahora save/cálculo/restore es un bloque único. Regresión final host **36/36**, matriz específica final aprobada.
+- Ensayo privado WSA de la transformación: mediana generada 435,083 ns frente a nativa aislada 135,617 ns, diez rondas alternadas de 300.000. Un input fijo y sin exportar estado guest en la candidata: **no demuestra ahorro por frame ni mejora FPS**.
+- [Diseño, evidencias y contrato pendiente](docs/superpowers/plans/2026-10-15-wsa-native-binary80.md). Sigue pendiente una integración arquitectónica completa y su A/B/A/B; bloqueos de fast paths incompatibles conservados.
+- Escaneo PE/p-code localiza FLDCW/FNSTCW en `R+0x10a0` y FNSTSW/FNCLEX en `R+0x10a2`; validar esos campos y FRSTOR antes de introducir estado paralelo. El lowering matemático actual no usa ese CW.
+
 ### 2026-10-15 — Viabilidad x87 nativa comprobada en WSA
 
 - Prototipo privado aislado de la transformación caliente: 123 entradas × 12 controles de precisión/redondeo = **1.476 casos**, sin diferencias en las seis salidas frente al original ejecutado con Unicorn.
