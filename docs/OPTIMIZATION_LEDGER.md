@@ -1,5 +1,7 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-08 / shifts estrechos:** [helper, oracle y APK A/B](performance/tecno/ARM64_NARROW_RIGHT_SHIFT_2026-10-15.md). Opt-in OFF; `.text` neta -16 bytes, cambios mixtos por chunk y ninguna ganancia FPS demostrada. 8.192 casos AArch64 por variante; 494 pruebas Python y 40 CTest. Siguiente: preparar comparaciones fisicas de candidatas y continuar segun el coste real, sin activar rutas inseguras.
+
 **ARM64-07 / dispatch:** [cache de entrada completa](performance/tecno/ARM64_DISPATCH_ENTRY_CACHE_2026-10-15.md), opt-in OFF. APK ARM64 A/B y oracle AArch64 preparados; menos instrucciones con localidad, mas con fallos frecuentes. Sin nuevos FPS. Siguiente: estado/memoria en chunks calientes y A/B/A/B fisico pendiente.
 
 **ARM64-MET-02 / CI:** el run `38814719518` fallo por seis imports de PIL ausente. Se declara `Pillow==11.3.0`, la version usada en las pruebas locales, en `tests/requirements.txt`; se conserva la comprobacion de escenas en CI sin omitirla. Corregido en `f279fb1`; [run 38818087031 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38818087031), 38/38 CTest Linux.

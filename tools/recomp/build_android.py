@@ -78,6 +78,8 @@ def main():
                              "shifts; generated C restored in normal builds (OFF)")
     parser.add_argument("--dispatch-last-cache", action="store_true",
                         help="experiment: per-guest-run last-chunk dispatch hint; default OFF")
+    parser.add_argument("--arm64-narrow-right-shift", action="store_true",
+                        help="ARM64 experiment: specialize provably narrow logical right shifts; OFF")
     parser.add_argument("--arm64-dispatch-entry-cache", action="store_true",
                         help="ARM64 experiment: cache last chunk range and callback with layout invalidation; OFF")
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
@@ -95,6 +97,8 @@ def main():
                         help="ARM64 ICF A/B reference: emit address-significance metadata without enabling folding; OFF")
     parser.add_argument("--wsa-release", action="store_true", help="WSA cumulative + local-state release; default native x87 on and frame limit 120")
     args = parser.parse_args()
+    if args.arm64_narrow_right_shift and args.abi != 'arm64-v8a':
+        parser.error('--arm64-narrow-right-shift requires arm64-v8a')
     if args.arm64_dispatch_entry_cache and args.abi != 'arm64-v8a':
         parser.error('--arm64-dispatch-entry-cache requires arm64-v8a')
     if args.arm64_dispatch_entry_cache and args.dispatch_last_cache:
@@ -268,6 +272,7 @@ def main():
             f"-DCODRECOMP_X87_NORMAL_F2D_P4_PROFILED={'ON' if args.x87_normal_f2d_p4_profiled else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_LAST_CACHE={'ON' if args.dispatch_last_cache else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_ENTRY_CACHE={'ON' if args.arm64_dispatch_entry_cache else 'OFF'}",
+            f"-DCODRECOMP_ARM64_NARROW_RIGHT_SHIFT={'ON' if args.arm64_narrow_right_shift else 'OFF'}",
             f"-DCODRECOMP_ARM64_SAFE_ICF={'ON' if args.arm64_safe_icf else 'OFF'}",
             f"-DCODRECOMP_ARM64_ICF_METADATA={'ON' if args.arm64_icf_metadata else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",

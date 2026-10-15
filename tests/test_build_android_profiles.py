@@ -8,6 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER = ROOT / 'tools/recomp/build_android.py'
 
 class ProfileBuildFlagsTest(unittest.TestCase):
+    def test_narrow_right_shift_is_arm64_only(self):
+        proc=subprocess.run([sys.executable,str(BUILDER),'--abi','x86_64',
+                             '--arm64-narrow-right-shift'],capture_output=True,text=True)
+        self.assertNotEqual(proc.returncode,0)
+        self.assertIn('requires arm64-v8a',proc.stderr)
+
     def test_entry_dispatch_is_arm64_only_and_excludes_last_hint(self):
         for options,message in (
             (['--abi','x86_64','--arm64-dispatch-entry-cache'], 'requires arm64-v8a'),

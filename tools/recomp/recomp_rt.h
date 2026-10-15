@@ -32,7 +32,16 @@ static inline s128 sx(u128 v, int n) {
     return ((s128)(v << sh)) >> sh;
 }
 static inline u128 shl(u128 a, u128 b) { return b >= 128 ? 0 : a << (int)b; }
-static inline u128 shr(u128 a, u128 b) { return b >= 128 ? 0 : a >> (int)b; }
+static inline u128 shr(u128 a, u128 b) {
+#ifdef CODRECOMP_ARM64_NARROW_RIGHT_SHIFT
+    /* Specialize only when the compiler proves that the high half is zero.
+       Unknown/wide operands keep the original path without a runtime test.
+       Preserve p-code overshift semantics; C shifts by 64 would be undefined. */
+    if (__builtin_constant_p(a >> 64) && (a >> 64) == 0)
+        return b >= 64 ? 0 : (uint64_t)a >> (unsigned)b;
+#endif
+    return b >= 128 ? 0 : a >> (int)b;
+}
 static inline u128 sar(u128 a, u128 b, int n) { s128 s = sx(a, n); return (u128)(b >= 128 ? (s < 0 ? -1 : 0) : s >> (int)b); }
 // Intel OF after signed addition/subtraction. Use the compiler's checked
 // arithmetic for common x86 operand sizes; on ARM64 this lowers to native

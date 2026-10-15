@@ -1,5 +1,7 @@
 # Cola de trabajo del proyecto
 
+**ARM64-08 / shifts estrechos:** [helper, oracle y APK A/B](performance/tecno/ARM64_NARROW_RIGHT_SHIFT_2026-10-15.md). Opt-in OFF; `.text` neta -16 bytes, cambios mixtos por chunk y ninguna ganancia FPS demostrada. 8.192 casos AArch64 por variante; 494 pruebas Python y 40 CTest. Siguiente: preparar comparaciones fisicas de candidatas y continuar segun el coste real, sin activar rutas inseguras.
+
 **ARM64-07 / dispatch:** [cache de entrada completa](performance/tecno/ARM64_DISPATCH_ENTRY_CACHE_2026-10-15.md), opt-in OFF. APK ARM64 A/B y oracle AArch64 preparados; menos instrucciones con localidad, mas con fallos frecuentes. Sin nuevos FPS. Siguiente: estado/memoria en chunks calientes y A/B/A/B fisico pendiente.
 
 **ARM64-06 / trabajo offline vigente:** [safe ICF y copias x87](performance/tecno/ARM64_SAFE_ICF_2026-10-15.md). Candidata experimental OFF: -13.620 bytes de codigo sobre los mismos objetos; 12.000 llamadas AArch64 equivalentes. APK privada compilada, sin nuevos FPS ni ADB. Helpers externos descartados por aumentar instrucciones. Siguiente: coste dinamico de estado/dispatch, luego A/B/A/B fisico cuando se autorice.

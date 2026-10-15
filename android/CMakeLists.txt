@@ -98,6 +98,13 @@ endif()
 target_include_directories(main PRIVATE "${ROOT}/tools/recomp" "${ROOT}/tools/recomp/runtime"
   "${SDL2_SOURCE_DIR}/include" "${GL4ES_SOURCE_DIR}/include")
 target_compile_definitions(main PRIVATE SDL_MAIN_HANDLED)
+option(CODRECOMP_ARM64_NARROW_RIGHT_SHIFT "ARM64 experiment: constant narrow logical right shifts" OFF)
+if(CODRECOMP_ARM64_NARROW_RIGHT_SHIFT)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "Narrow right shift requires arm64-v8a")
+  endif()
+  target_compile_definitions(main PRIVATE CODRECOMP_ARM64_NARROW_RIGHT_SHIFT)
+endif()
 # Dispatch last-hit cache is deliberately off in normal APKs until a
 # game-level ARM64 A/B confirms it is faster than the existing page index.
 option(CODRECOMP_DISPATCH_LAST_CACHE
