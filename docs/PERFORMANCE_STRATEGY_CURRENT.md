@@ -2,6 +2,10 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 7 offline: fast path x87 restringido a cuatro cuerpos calientes de p4 (OFF)
+
+Se redujo el experimento anterior a **520 conversiones `f2d(rd(...),10)`** en 276 PCs de 4 funciones originales calientes de CoDSP p4, elegidas mediante muestras físicas archivadas y cuerpo recuperado, con guardas SHA-256 y reversión byte a byte del C privado. Nuevo flag `--x87-normal-f2d-p4-selective`, **OFF por defecto**, excluye el flag de p4 completo y preserva la ruta original para el resto de instrucciones. **24 instrucciones genuinas / 48.000 comparaciones de estado R/RAM/PC** fueron idénticas con Clang `-O1/-O2`. `libmain.so` `.text` creció **+34.196 bytes** frente a A, en vez de **+211.432 bytes** con el p4 completo: ahorro relativo de **177.236 bytes (83,8 %)** del crecimiento previo; solamente 3 chunks nativos cambiaron, frente a 16. La suite terminó con **250 Python (4 omitidas) y 34/34 CTest**. APK solo compilada, nunca instalada; revertida la local a A con hashes idénticos y flag selectivo OFF. **No se ha demostrado ningún incremento de FPS.** [Informe](CPU_PHASE7_P4_SELECTIVE_X87_OFFLINE_2026-10-14.md).
+
 ## Fase 6 offline: ampliar x87 normal-f2d a CoDSP p4, opt-in NO aprobado (0/5)
 
 En perfiles históricos de CPU, p4 reúne **789 muestras** de las funciones originales CoDSP calientes presentes en top-40; p1/p8 tenían 847/827 y ya reciben el helper validado en TECNO. Se añadió el flag ARM64 `--x87-normal-f2d-p4` (**OFF por defecto**), reutilizando la conversión inline bit-equivalente con guardas de hash de CoDSP 1.5. **18 instrucciones FLOAT de p4 / 36.000 oráculos completos de R, PC y RAM** coincidieron con el traductor previo en PC Clang `-O1/-O2`, pero el ejecutable nativo `.text` creció **211.432 bytes** frente a A. Un intento de helper `noinline` quedó **rechazado por una diferencia de estado con valores especiales x87** y fue revertido. Sin uso del TECNO ni FPS nuevos; no aprobar el flag hasta A/B/A físico. [Informe](CPU_PHASE6_X87_P4_OFFLINE_2026-10-14.md).

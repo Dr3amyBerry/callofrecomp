@@ -9,6 +9,15 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 7: conversión x87 SOLO en 520 sitios calientes de p4, OFFLINE (0/5)
+
+- [x] Nuevos parche/reversor privados por hash `tools/recomp/patch_codsp_p4_f2d_selective.py`, `--apply/--restore/--analyze`: **520 conversiones `f2d(rd(...),10)` en 276 etiquetas PC x86** de cuatro funciones calientes recuperadas (517 muestras en un perfil histórico, **no 517 conversiones dinámicas**). El resto de p4 sigue en el convertidor anterior.
+- [x] Nuevo flag ARM64 `--x87-normal-f2d-p4-selective` y CMake `CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE=OFF`, requiere el x87 ya probado, rechaza combinarlo con p4 completo y verifica hashes de p-code y C parcheado. Las compilaciones normales restauran el parche privado byte a byte y no fuerzan hashes de juegos ajenos.
+- [x] Oráculo diferencial **24 instrucciones x87 reales, seis de cada una de las cuatro funciones originales**; **48.000 comparaciones de R completo/RAM/PC** Clang `-O1/-O2` idénticas, incluidos valores especiales. No es ejecución nativa de x86 original ni cobertura de 520 casos.
+- [x] ARM64 compilado/firmado offline: `libmain.so` `.text` A **42.339.912**, B selectivo **42.374.108**: **+34.196 bytes** en vez de los +211.432 de p4 completo, **177.236 bytes (83,8 %) de crecimiento evitado**. Solo **3 chunks nativos** cambiaron, frente a 16 de p4 completo. **Sin FPS nuevos ni TECNO.**
+- [x] **250 tests Python (4 omitidas), 34/34 CTest**. Restauración final de p4 C y libmain nativa/APK **idénticas a A por SHA-256**, selectivo OFF y fast paths p1/p8 preservados. [Informe fase 7](docs/CPU_PHASE7_P4_SELECTIVE_X87_OFFLINE_2026-10-14.md).
+- [ ] Pendiente medir rendimiento real y visuales A/B/A/B en el teléfono solamente cuando se autorice. 60 FPS todavía pendiente.
+
 ### 2026-10-14 — Fase 6: extensión exacta x87 a CoDSP p4, OFFLINE (0/5)
 
 - [x] Perfiles físicos **preexistentes**, sin ADB: entre las 40 funciones CoDSP calientes de un perfil histórico, **p1 847 / p8 827 / p4 789** muestras CPU. P1/p8 ya tenían el conversor x87 comprobado; en p4 hay **4.114 expresiones estáticas `f2d(...,10)`**, no llamadas por frame.
