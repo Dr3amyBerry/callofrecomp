@@ -38,11 +38,14 @@
 
 **Aceptación 14B:** oráculo independiente para las regiones elegidas, mutaciones negativas detectadas, estados finales iguales, rutas irresueltas explícitas.
 
-### 14C — Arquitectura de regiones y SSA
+### 14C — Arquitectura de regiones y SSA (**A/B OFFLINE de bloques con caché, fase productiva pendiente**)
 
 - [ ] Construir región a partir de **subgrafo CFG** cerrado con entradas conocidas, salidas de estado etiquetadas y caminos indirectos como fallbacks.
 - [ ] Usar SSA/análisis de vivacidad sobre bytes arquitectónicos, con selección de caché de registros por región (no 1.500 instrucciones por chunk), guardando estado en cada salida y carga en cada punto de entrada independiente.
 - [ ] Optimizar patrones completos de movimiento de datos, comparación geométrica o recorrido solo cuando la regla sea inequívoca y rentable; siempre mantener la traducción p-code original como fallback reversible.
+
+- [x] **Experimento parcial 14C:** 227 bloques sin x87/opaque; generar C A/B aislado de cada bloque CFG original con cache arquitectónica por campo disjunto, guardar estado a cada salida y probar entradas interiores. Con la política `start_only` y fallback simulado: **696+360** comparaciones A/B host iguales, junto con reducción de código y cargas ARM64 estáticos en dos bloques. Variante `all_entries` rechazada por regresiones de loads. [Resultados](PHASE14C_CFG_AB_OFFLINE_RESULTS_2026-10-15.md).
+- [ ] **NO APROBADO PARA PRODUCCIÓN:** el A/B usa RAM sintética plegada, no sustituye Unicorn x86/alias real; el dispatcher Android aún no tiene guardia start_only ni fallback instalado. No afirmar mejora FPS.
 
 **Aceptación 14C:** diferencial completo frente al traductor original y oráculo independiente, código ARM64 mejor en las rutas calientes seleccionadas, no solo menor C.
 

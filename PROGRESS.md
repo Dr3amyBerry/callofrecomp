@@ -4,10 +4,20 @@
 >
 > **Rule:** this file must be updated whenever a meaningful phase starts, completes, changes direction, discovers a blocker, or requires a new external tool.
 
-**Last updated:** 2026-10-14
+**Last updated:** 2026-10-15
 **Primary branch:** `main`
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
+
+### 2026-10-15 — Fase 14C: primeras regiones CFG A/B verificadas OFFLINE (NO integradas)
+
+- [x] Detección estricta de **227 bloques básicos / 855 instrucciones x86 / 4.469 microoperaciones** elegibles para experimentos de región integer-only entre siete funciones calientes. Se excluye x87 completo y metadata, CALL/RETURN, indirectos, CALLOTHER, divisiones peligrosas y ausencia de p-code.
+- [x] Nuevo generador experimental aislado `cfg_region_lab.py`, basado en `pcode2c.Gen`: caché de vistas R disjuntas durante **bloque CFG completo**, etiqueta de entrada por PC, flush en cada salida y modo `start_only` con fallback simulado al traductor A para todas las entradas interiores. Ningún cambio productivo de runtime o APK.
+- [x] Geometría `0x0041C017` (29 instrucciones): A/B start_only reduce ARM64 `.text 976→804 B`, cargas `51→40` y escrituras `48→31`. Recorrido `0x0047BD40` (15 instrucciones): `648→616 B`, `39→31` cargas y `37→33` escrituras. **Estadísticas de código estático; NO FPS.**
+- [x] **696/696** casos A/B host en geometría (24 fast / 672 delegados), **360/360** en recorrido (24 fast / 336 delegados), comparando R completo, memoria plegada de 64 KiB y PC; se verificaron además **96 entradas rápidas por bloque** en ensayos anteriores. **Solo igualdad del traductor A/B, no independencia x86 ni alias reales.**
+- [x] Estrategia con `all_entries` se **descartó** para los bloques largos por cargas/código ARM64 crecientes, pese a pasar A/B. Control negativo: una DLL privada sin volcado ESP fue rechazada por el diferencial.
+- [x] Validación global: **325 pruebas Python**, 4 omitidas y 0 fallidas; **35/35 CTest** aprobados.
+- [ ] Falta oráculo original Unicorn del bloque de 29 instrucciones completo, alias RAM real, integración guardada por PC y posterior A/B físico con TECNO. **La fase 14C de producción NO está terminada.** [Plan](docs/PHASE14C_CFG_REGION_EXPERIMENT_PLAN_2026-10-15.md) · [Resultados](docs/PHASE14C_CFG_AB_OFFLINE_RESULTS_2026-10-15.md).
 
 ### 2026-10-15 — Fase 14B, checkpoint siguiente: bloqueador binary80 y epílogo compartido
 
