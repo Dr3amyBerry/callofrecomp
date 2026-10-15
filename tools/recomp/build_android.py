@@ -84,7 +84,10 @@ def main():
     parser.add_argument("--native-x87-region", type=Path, help="WSA experiment: verified original PE for private binary80 region")
     parser.add_argument("--wsa-cumulative", action="store_true",
                         help="WSA bundle: native x87, copy32, strict renderer/visibility O2, NaN/f2d/FCOM and dispatch cache; requires --native-x87-region PE")
+    parser.add_argument("--local-guest-state", action="store_true", help="WSA experiment: link R/MEM/U/PC locally without changing generated instructions")
     args = parser.parse_args()
+    if args.local_guest_state and args.abi != 'x86_64':
+        parser.error('--local-guest-state requires --abi x86_64')
     if args.wsa_cumulative:
         if args.abi != "x86_64" or not args.native_x87_region:
             parser.error("--wsa-cumulative requires --abi x86_64 --native-x87-region PE")
@@ -230,6 +233,7 @@ def main():
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",
             f"-DCODRECOMP_NATIVE_X87_REGION={'ON' if args.native_x87_region else 'OFF'}",
+            f"-DCODRECOMP_LOCAL_GUEST_STATE={'ON' if args.local_guest_state else 'OFF'}",
             f"-DCODRECOMP_CODSP_COPY32_FASTPATH={'ON' if args.fast_copy32 else 'OFF'}",
             f"-DCODRECOMP_VISIBILITY_O2={'ON' if args.visibility_o2 else 'OFF'}",
             f"-DCODRECOMP_X87_NAN_BITS={'ON' if args.x87_nan_bits else 'OFF'}",

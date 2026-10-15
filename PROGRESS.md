@@ -9,6 +9,13 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-15 — Perfil aplicado: enlace local de estado y medición GL
+
+- `--local-guest-state`: R/MEM/U/PC locales a libmain, otros 545 exports conservados y 28 fuentes generadas idénticas. El ensamblador elimina cargas GOT sin modificar instrucciones guest, precisión o escrituras.
+- A/B/A/B sobre la acumulativa, x87 activo en ambas: mejora pequeña de FPS/CPU en ambas parejas. [Tabla y límites](docs/WSA_POSTOPT_APPLICATION_2026-10-15.md).
+- Nueva agregación GL ponderada por frames y medición diagnóstica de Draw/índices/buffers; no se implementan cachés sin invalidación demostrada. Desambiguadas las muestras del postámbulo x87.
+- APK normal candidata restaurada, contadores GL retirados y guardados intactos. 120 FPS sostenidos sigue abierto.
+
 ### 2026-10-15 — APK B actual: perfil reproducible del CPU y GL4ES; sin cambios de código
 
 - [x] APK instalada recuperada desde WSA y cotejada por SHA-256 **a19ea65e…da1702**, Build ID ELF binario/archivo Simpleperf **23df3b5f…b2e4** y **28/28** fuentes generadas verificadas por hash. `main` base: `d6d6f8e`.

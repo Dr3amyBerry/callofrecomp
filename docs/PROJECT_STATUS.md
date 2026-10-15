@@ -5,7 +5,9 @@
 > El corte TECNO y el estado de CI descritos abajo siguen como antecedentes;
 > no son mediciones nuevas ni la prioridad de rendimiento de esta misión.
 
-**Perfil nuevo de la APK instalada (2026-10-15, sin cambios de código):** [informe de CPU y renderizador](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md). Misma APK acumulativa B verificada por SHA-256 y ELF Build ID; nueva captura sin profiler simultáneo **67,2 FPS / 14,89 ms CPU/frame** en Alta, 35,47 s, presentación 63,48/s, modo 75 Hz. Dos capturas CPU distintas: **12.695 muestras** y **5.074 con stacks DWARF**. Predominan zonas de `libmain.so` con transferencias de estado virtual y conversiones x87, además de empaquetado GL4ES/GLES y transporte de GPU. El gasto no está descompuesto causalmente en ms exclusivos; GPU sin contador. Siguiente trabajo: analizar ensamblador realmente caliente y tasas de empaquetado de buffers, no volver a medir el viejo ELF A.
+**Aplicación del perfil:** [enlace local del estado guest, A/B/A/B y medición GL](WSA_POSTOPT_APPLICATION_2026-10-15.md). Conjunto anterior conservado; candidata normal instalada con **68,0–68,3 FPS / 14,64–14,71 ms CPU/frame** en ambas B. Mejora pequeña repetida, no 120 FPS sostenidos. Guardados intactos, instrumentación retirada.
+
+**Perfil base conservado:** [CPU y renderizador antes del enlace local](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md), 12.695 muestras y 5.074 con stacks. Corresponde a la APK acumulativa anterior; no resolver sus PC contra el ELF nuevo. Se midieron además draws/índices/buffers y CPU GL sobre una APK diagnóstica separada; GPU y reutilización de geometría siguen sin certificar.
 
 **Continuación WSA:** límites original/60/120/sin límite implementados y probados
 en la misma escena con Alta; no hay ahorro CPU demostrado por retirarlos.

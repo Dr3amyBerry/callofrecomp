@@ -8,7 +8,7 @@
 
 **Última investigación de CPU:** [APK optimizada B real: perfiles Simpleperf, stacks GL4ES, direcciones calientes y prioridades verificadas](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md). Solo documentación; el programa no se modificó.
 
-**Última integración medida:** [Conjunto acumulativo y A/B/A/B WSA](WSA_CUMULATIVE_2026-10-15.md). [Antecedente: estado x87 y oráculo nativo](WSA120_NATIVE_X87_STATE_2026-10-15.md).
+**Última integración medida:** [Aplicación del perfil: enlace de estado guest, A/B/A/B y contadores GL](WSA_POSTOPT_APPLICATION_2026-10-15.md). [Conjunto acumulativo anterior](WSA_CUMULATIVE_2026-10-15.md). [Antecedente x87](WSA120_NATIVE_X87_STATE_2026-10-15.md).
 
 ## Responsabilidad de cada documento
 

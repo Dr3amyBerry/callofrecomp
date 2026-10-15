@@ -1,18 +1,18 @@
 # Cola de trabajo del proyecto
 
-> **Prioridad actual: misión WSA 120 FPS.** Perfil nuevo de la [APK optimizada B instalada](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md); la cola TECNO de abajo queda como referencia histórica. No extrapolar sus perfiles a WSA.
+> **Prioridad actual: misión WSA 120 FPS.** [Perfil de la acumulativa anterior](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) y [aplicación medida sobre ella](WSA_POSTOPT_APPLICATION_2026-10-15.md); la cola TECNO de abajo queda como referencia histórica. No extrapolar sus perfiles a WSA.
 
 ## Cola WSA vigente — actualizada con perfil de la APK B instalada
 
-El [perfil post-acumulativo](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) **ya se completó** en el mismo APK B que está instalado: **12.695 muestras CPU** y **5.074 con stacks**, **67,2 FPS / 14,89 ms CPU/frame**. La región binary80 `0x005061B0` **ya se integró en el preset experimental**; no presentarla nuevamente como no implementada. Continúan sin certificar recuperación SEH de excepciones sin máscara y pruebas prolongadas.
+El [perfil post-acumulativo](WSA120_OPTIMIZED_APK_CPU_PROFILE_2026-10-15.md) **ya se completó** en la APK acumulativa anterior: **12.695 muestras CPU** y **5.074 con stacks**, **67,2 FPS / 14,89 ms CPU/frame**. Ahora está instalada la candidata de enlace local; no resolver aquellos PC contra su nuevo ELF. La región binary80 `0x005061B0` **ya se integró en el preset experimental**; no presentarla nuevamente como no implementada. Continúan sin certificar recuperación SEH de excepciones sin máscara y pruebas prolongadas.
 
-1. **P1 — coste transversal real de CPU:** examinar ensamblador nativo en PC muestreados con etiquetas `memcpy`, `f2d`, `d2f`, vincularlo a las operaciones `rd/wr`, estados x87 y cuerpos Ghidra B. Separar copias escalares, slots binary80 y memoria guest; encontrar una transformación comprobable con oráculo x86 antes de desarrollar.
-2. **P2 — renderer y transferencia de geometría:** medir número de draw calls, atributos/índices empaquetados, estado/VBO y tiempo CPU de transacciones. Considerar buffers persistentes solo con demostración de invalidación correcta para cada geometría, efectos y animación. Aún no se implementó esta propuesta.
-3. **P3 — frontera x87 nativa:** investigar las muestras en `nx87_5061b0_0`, `nx87_5061b0_56` y `codsp_native_x87_region_try`; optimizar guardas, FNSAVE/FRSTOR o retorno solo si no se pierde R/PC, CW/SW/TOP/tag, metadatos ni seguridad ante faltas.
+1. **P1 — coste transversal real de CPU:** [primer cambio aplicado y medido](WSA_POSTOPT_APPLICATION_2026-10-15.md): enlace local R/MEM/U/PC, fuentes guest idénticas, beneficio pequeño repetido. Continuar con conversiones/materialización restantes; distinguir MOV escalares de copias reales y exigir equivalencia x86 a cualquier transformación de instrucciones.
+2. **P2 — renderer y transferencia de geometría:** medición realizada: ~103 draws y 153.365 índices/frame; CPU de Draw ~3,57 ms en APK instrumentada y cero uploads de buffer guest en esas ventanas. Falta cuantificar spans/bytes realmente reempaquetados y demostrar invalidación, especialmente durante Lock/Unlock. No se implementó una caché de geometría.
+3. **P3 — frontera x87 nativa:** aclarada atribución: el símbolo final incluye FXRSTOR64 y postámbulo. Optimizar guardas, guardado/restaurado o retorno solo si no se pierde R/PC, CW/SW/TOP/tag, metadatos host de 64 bits ni seguridad ante faltas.
 4. **P4 — prueba de impacto físico:** si se desarrolla una candidata segura, comparar A/B/A/B en Alta/misma partida y medir CPU/frame, presentación, FPS de motor y valores gráficos. Revertir ganancias que no se reproduzcan.
 5. **P5 — escenario complejo y plataforma:** validar combate, rendimiento largo y corrección visual/sonora, investigar tiempo GPU y comprobar un modo real ≥120 Hz antes de afirmar 120 presentaciones visibles/s.
 
-**Límites:** muestras estadísticas, no tiempo CPU exclusivo por microoperación. Nada de optimizaciones especulativas, reducir calidad o desbloquear CFG14/atajos double. **En esta investigación no se modificó código ni APK.**
+**Límites:** muestras estadísticas, no tiempo CPU exclusivo por microoperación. Nada de reducir calidad o desbloquear CFG14/atajos double. Se modificó y midió el enlace de estado; el diagnóstico GL se retiró de la APK normal instalada.
 
 ## Cola TECNO conservada
 

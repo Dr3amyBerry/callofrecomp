@@ -18,6 +18,8 @@
 
 ## Decisión actual
 
+**Continuación WSA aplicada:** [candidata de enlace local y mediciones](WSA_POSTOPT_APPLICATION_2026-10-15.md). Se conservó el conjunto acumulativo y se obtuvo una mejora adicional pequeña en ambas parejas. La siguiente candidata debe abordar conversiones o reempaquetado probado, usando el ELF correcto y sin convertir los contadores GL en tiempo GPU. El texto ARM64 siguiente conserva la estrategia histórica.
+
 Priorizar una investigación transversal del coste de **materializar, copiar y convertir el estado x87 en ARM64**, apoyada en las dos capturas físicas verificadas de TECNO. La unidad inicial debe ser un patrón repetido en varias funciones, con una frontera original comprobable. No seguir ampliando cachés de pequeñas regiones enteras que ya dieron resultados nulos o regresivos.
 
 La fase 15 encontró que ocho funciones reúnen **19,0–19,6 % de muestras del proceso**. La referencia separada de **38,895 ms CPU/frame** requiere una reducción CPU hipotética del **57,15 %** para entrar en 16,667 ms. Eliminar esas ocho funciones enteras tampoco bastaría bajo ese modelo. La presencia de x87 en ~81 % de las muestras seleccionadas **no equivale a 81 % del tiempo total ni al coste exclusivo de la aritmética x87**. Las etiquetas de memoria, copia y flags se solapan. [Evidencia y límites](PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md).
