@@ -25,6 +25,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--x87-normal-f2d-p4', proc.stdout)
         self.assertIn('--x87-normal-f2d-p4-selective', proc.stdout)
         self.assertIn('--x87-normal-f2d-p4-profiled', proc.stdout)
+        self.assertIn('--x87-stack-shift-outline', proc.stdout)
         self.assertIn('--dispatch-last-cache', proc.stdout)
         self.assertIn('--x87-fcom-fastpath', proc.stdout)
 
@@ -74,6 +75,21 @@ class ProfileBuildFlagsTest(unittest.TestCase):
                                         capture_output=True, text=True)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(error, result.stderr)
+
+    def test_x87_stack_outline_requires_arm64_and_disjoint_p4_mode(self):
+        cases = [
+            (['--abi','x86_64','--x87-stack-shift-outline'], 'ARM64-only'),
+            (['--x87-normal-f2d','--x87-stack-shift-outline','--x87-normal-f2d-p4'],
+             'cannot combine with p4 x87 conversion'),
+            (['--x87-normal-f2d','--x87-stack-shift-outline','--x87-normal-f2d-p4-profiled'],
+             'cannot combine with p4 x87 conversion'),
+        ]
+        for argv, phrase in cases:
+            with self.subTest(argv=argv):
+                process=subprocess.run([sys.executable,str(BUILDER),*argv],
+                                       text=True,capture_output=True)
+                self.assertNotEqual(process.returncode,0)
+                self.assertIn(phrase,process.stderr)
 
     def test_wsa_uncap_is_rejected_for_arm64(self):
         proc = subprocess.run(

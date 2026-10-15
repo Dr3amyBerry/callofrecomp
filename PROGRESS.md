@@ -9,6 +9,14 @@
 **Primary target:** Call of Duty 1.5 single-player
 **Long-term target:** native Android ARM64 execution without x86 emulation
 
+### 2026-10-14 — Fase 12: fusión estructural de pila x87, ARM64 offline
+
+- [x] Identificados 18.194 grupos de siete copias exactas de registros x87 en 333.208 instrucciones CoDSP; nueva transformación optativa, con control de saltos internos y copia exclusiva de diez bytes por ranura.
+- [x] Integrados `pcode2c --x87-stack-shift-outline`, ayudantes nativos y parche reversible de las 12 particiones en `build_android --x87-stack-shift-outline`; OFF por defecto. Restauración exacta de cada archivo comprobada.
+- [x] Compilación NDK de p4 completo: .text AArch64 **1.998.764 -> 1.774.024 bytes**, ahorro **224.740 bytes (11,244 %)**; ejemplos de geometría y visibilidad también se redujeron cerca del 11 %.
+- [x] Equivalencia R/RAM/U/PC en casos sintéticos a O0/O1/O2; **269 pruebas Python (4 omitidas)** y **35/35 CTest**. No se utilizó el teléfono ni se instaló una APK.
+- [ ] FPS no medidos. Candidata estructural preparada para evaluación A/B/A futura. [Informe](docs/CPU_PHASE12_X87_STACK_SHIFT_OUTLINE_OFFLINE_2026-10-14.md).
+
 ### 2026-10-14 — Fase 11: clasificación del solapamiento `memcpy` / `rd` / `wr`, OFFLINE
 
 - [x] Reutilizados exclusivamente **dos perfiles Simpleperf ya archivados** de CoDSP p4, con 1.017/889 muestras nativas; recuperadas exactamente **974/840 muestras** a PC original, sin una nueva ejecución en TECNO ni en WSA.

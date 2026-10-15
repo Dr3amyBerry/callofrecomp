@@ -2,6 +2,12 @@
 
 **Estado:** VIGENTE · **Desde:** 2026-10-14 · **Versión:** 1 · **Decisión:** no cambiar de estrategia sin evidencia nueva suficiente.
 
+## Fase 12 offline: fusión de siete movimientos x87 por llamada nativa compartida
+
+Los perfiles Simpleperf archivados sitúan costes importantes en geometría, visibilidad y movimientos arquitectónicos; sus muestras no son tiempos exclusivos por función ni medidas nuevas de FPS. En el p-code CoDSP 1.5 se localizaron **18.194 secuencias** completas de siete copias x87 de 10 bytes con paso de 16. La transformación revisa los saltos al interior y consolida el grupo en un helper nativo `noinline`, conservando el padding observable. La herramienta optativa está implementada en el generador y constructor ARM64, con verificaciones de SHA-256 y restauración byte a byte en los 12 archivos generados; **OFF por defecto**.
+
+El objeto AArch64 de la partición **p4 completa** pasó de **1.998.764 a 1.774.024 bytes** en sección `.text` (**−224.740, −11,244 %**), con imágenes de geometría y visibilidad compiladas aisladamente alrededor de −11 %. Tests: **269 Python (4 omitidas), 35/35 CTest** y equivalencia sintética completa de R/RAM/U/PC a O0/O1/O2. No es un perfil de ciclos ni una mejora probada de FPS; se preserva la APK estable y no se utilizó el TECNO. [Informe fase 12](CPU_PHASE12_X87_STACK_SHIFT_OUTLINE_OFFLINE_2026-10-14.md).
+
 ## Fase 11 offline: evitar doble cómputo de `rd`/`wr`/ `memcpy` en Simpleperf
 
 Con el A/B/A de fase 10 cerrado, se reusaron dos perfiles históricos de chunks CoDSP p4 (**1.017/889 muestras; 974/840 atribuidas a PC guest**). La clase **más interna** de marcos DWARF fue `memcpy` en **409/353 muestras (~42 % de las atribuidas)**; `f2d` en **352/309**; `d2f` en **102/96**. Las muestras inclusivas de `rd` (**233/204**) y `wr` (**154/123**) están **enteramente solapadas con `memcpy`**; no son costes independientes para sumar. *Marco interno* NO equivale a tiempo exclusivo ni FPS: solo guía una auditoría futura del ensamblado, cargas/almacenamientos y equivalencia del estado completo. No se tocó la APK ni el TECNO. [Informe y pruebas](CPU_PHASE11_P4_INLINE_OVERLAP_OFFLINE_2026-10-14.md).

@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+#include "runtime/x87_stack_shift.h"
 
 typedef unsigned __int128 u128;
 typedef __int128 s128;

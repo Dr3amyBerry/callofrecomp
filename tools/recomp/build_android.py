@@ -67,6 +67,9 @@ def main():
                         help="ARM64 experiment: x87 fast conversion only in four sampled p4 function bodies, OFF")
     parser.add_argument("--x87-normal-f2d-p4-profiled", action="store_true",
                         help="ARM64 experiment: only 277 x87 sites at 124 historically sampled CoDSP p4 guest PCs, OFF")
+    parser.add_argument("--x87-stack-shift-outline", action="store_true",
+                        help="ARM64-only experiment: outline exact 7-step CoDSP x87 register "
+                             "shifts; generated C restored in normal builds (OFF)")
     parser.add_argument("--dispatch-last-cache", action="store_true",
                         help="experiment: per-guest-run last-chunk dispatch hint; default OFF")
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
@@ -87,6 +90,13 @@ def main():
         parser.error("--x87-normal-f2d-p4-profiled is ARM64-only")
     if args.x87_normal_f2d_p4_profiled and not args.x87_normal_f2d:
         parser.error("--x87-normal-f2d-p4-profiled requires --x87-normal-f2d")
+    if args.x87_stack_shift_outline and args.abi != "arm64-v8a":
+        parser.error("--x87-stack-shift-outline is ARM64-only")
+    if args.x87_stack_shift_outline and any((
+            args.x87_normal_f2d_p4, args.x87_normal_f2d_p4_selective,
+            args.x87_normal_f2d_p4_profiled)):
+        parser.error("--x87-stack-shift-outline cannot combine with p4 x87 conversion "
+                     "variants requiring exact generated-source hashes")
     if sum((args.x87_normal_f2d_p4, args.x87_normal_f2d_p4_selective,
             args.x87_normal_f2d_p4_profiled)) > 1:
         parser.error("p4 x87 options are mutually exclusive (not both)")
@@ -113,6 +123,17 @@ def main():
         # fails closed; ordinary builds of unrelated sources are untouched.
         p4_source = root / 'recomp_out/codsp_recomp_p4.c'
         patch_script = root / 'tools/recomp/patch_codsp_p4_f2d_selective.py'
+        # Undo prior out-of-line x87 trial before other source-level patches:
+        # their strict baseline hashes must see the original generated C.
+        shift_script = root / 'tools/recomp/patch_codsp_x87_shift.py'
+        pcode_path = root / 'recomp_out/codsp.pcode'
+        shift_parts = [root / f'recomp_out/codsp_recomp_p{i}.c'
+                       for i in range(12)]
+        if args.x87_stack_shift_outline and not all(f.is_file() for f in shift_parts):
+            parser.error("Require all 12 CoDSP generated C partitions")
+        for part in shift_parts:
+            if part.is_file():
+                run(sys.executable, shift_script, part, pcode_path, '--restore')
         p4_bytes = p4_source.read_bytes() if p4_source.is_file() else b''
         if b'CODRECOMP_X87_NORMAL_F2D_P4_SELECTIVE' in p4_bytes:
             run(sys.executable, patch_script, p4_source,
@@ -139,6 +160,11 @@ def main():
             run(sys.executable, root / 'tools/recomp/patch_codsp_fcom.py',
                 root / 'recomp_out/codsp_recomp_p1.c',
                 root / 'recomp_out/codsp_recomp_p8.c')
+        if args.x87_stack_shift_outline:
+            # This is a source-level, reversible experiment. No production
+            # compiler define is needed; helpers remain dead when unused.
+            for part in shift_parts:
+                run(sys.executable, shift_script, part, pcode_path, '--apply')
         for name, (url, revision) in DEPENDENCIES.items():
             path = deps / name
             if not path.exists():

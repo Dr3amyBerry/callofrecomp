@@ -21,6 +21,7 @@ from pe_inspect import PEFile  # noqa: E402
 from flag_liveness import dead_flag_writes
 from temp_liveness import dead_unique_writes
 from register_liveness import dead_arch_register_writes
+from x87_stack_fusion import plan_x87_shift
 from function_map import build_function_map, write_function_map, scan_pcode_provenance
 
 CHUNK = 1500
@@ -322,7 +323,8 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
              eliminate_dead_flags: bool = True, eliminate_dead_temporaries: bool = False,
              dead_temp_parts: frozenset[int] | None = None,
              cache_hot_registers: bool = False,
-             prune_hot_register_writes: bool = False):
+             prune_hot_register_writes: bool = False,
+             x87_stack_shift_outline: bool = False):
     """Return ([part sources], main source, unsupported ops)."""
     g = Gen(userops)
     # Silent per-module fallback could mix local writers with another module's
@@ -385,6 +387,10 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
                 and any(lo <= addr <= hi for lo, hi in HOT_CODSP_REGISTER_CACHE_RANGES)
             ) else {}
             g.reg_cache = {reg: f'regcache_{reg[1]:x}_{reg[2]}' for reg in cache}
+            shifts = (plan_x87_shift(ops, removed=removed, branch_targets=rel_targets)
+                      if x87_stack_shift_outline and separate_spaces and
+                      ident == 'codsp' and not cache and
+                      not prune_hot_register_writes else {})
             scoped = g.temp_offsets is not None or bool(cache)
             if cache:
                 out.append(' {')
@@ -402,8 +408,15 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
                 if i in rel_targets:
                     out.append(f' L_{addr:x}_{i}:;')
                 # Keep every p-code index/label: relative branches use indices.
-                out.append(' ;' if i in removed else
-                           ' ' + g.op(mn, o, ins, jump, None))
+                if i in removed:
+                    out.append(' ;')
+                elif i in shifts:
+                    direction = shifts[i]
+                    out.append((' codsp_x87_shift_' + direction +
+                                '(R); /* CODSP_X87_SHIFT_OUTLINED */')
+                               if direction else ' ;')
+                else:
+                    out.append(' ' + g.op(mn, o, ins, jump, None))
             for reg, (_, wrote) in cache.items():
                 if wrote:
                     out.append(f' wr(R+0x{reg[1]:x},{reg[2]},{g.reg_cache[reg]});')
@@ -427,6 +440,8 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
             # Restrict only these two spaces, not addresses within either space.
             # Fatal diagnostics read global registers: retain their old path.
             body = [line.replace('R+', 'guest_regs+').replace('G(', 'GR(')
+                    .replace('codsp_x87_shift_push(R)', 'codsp_x87_shift_push(guest_regs)')
+                    .replace('codsp_x87_shift_pop(R)', 'codsp_x87_shift_pop(guest_regs)')
                     for line in out[start:]]
             body[0] = (f'static void {ident}_chunk_{ci}_spaces('
                        'uint8_t *restrict guest_regs, uint8_t *restrict guest_mem) {')
@@ -482,6 +497,9 @@ def main() -> int:
     ap.add_argument('--prune-hot-register-writes', action='store_true',
                     help='EXPERIMENT: omit provably dead architectural register writes '
                          'in the audited CoDSP p0 geometry body, OFF by default')
+    ap.add_argument('--x87-stack-shift-outline', action='store_true',
+                    help='EXPERIMENT: outline seven identical x87 register moves in verified '
+                         'CoDSP 1.5 p-code; OFF by default')
     ap.add_argument('--function-map-out', type=Path,
                     help='optional JSON: original Ghidra function entries to generated chunks; '
                          'store under ignored recomp_out/')
@@ -503,7 +521,12 @@ def main() -> int:
                          for k in range(args.parts))
         if args.function_map_out.resolve() in protected:
             ap.error('--function-map-out must not overwrite input or generated C files')
-    if args.cache_hot_registers or args.prune_hot_register_writes:
+    if args.x87_stack_shift_outline and (
+            args.cache_hot_registers or args.prune_hot_register_writes or
+            args.shared_spaces):
+        ap.error('--x87-stack-shift-outline cannot combine with register caching, '
+                 'register-write pruning or shared spaces')
+    if args.cache_hot_registers or args.prune_hot_register_writes or args.x87_stack_shift_outline:
         # Neither pass is safe to generalize to unknown game executables.
         # In particular, the full-register DCE needs disjoint R and guest RAM.
         if (args.pe.name.casefold() != 'codsp.exe' or
@@ -526,7 +549,8 @@ def main() -> int:
                                              not args.global_temporaries, not args.shared_spaces,
                                              not args.keep_dead_flags, args.prune_dead_temporaries,
                                              dead_temp_parts, args.cache_hot_registers,
-                                             args.prune_hot_register_writes)
+                                             args.prune_hot_register_writes,
+                                             args.x87_stack_shift_outline)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]
