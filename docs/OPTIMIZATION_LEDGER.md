@@ -1,5 +1,7 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-MET-02:** comparador offline `scene_fingerprint.py`, seis pruebas aprobadas. Una imagen por pasada y comparacion automatica de encuadre; no mide estado 3D ni FPS. Complementa la guarda temporal, no la sustituye.
+
 **ARM64-MET-01, control de FPS (2026-10-15):**
 Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. Implementadas herramientas read-only de estabilidad y telemetria CPU/termica; no hay cambios al motor ni a la calidad. Datos privados preservados; docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md.
 

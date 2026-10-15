@@ -1,5 +1,7 @@
 # Estado actual de CallofRecomp
 
+**ARM64-MET-02:** comparador offline `scene_fingerprint.py`, seis pruebas aprobadas. Una imagen por pasada y comparacion automatica de encuadre; no mide estado 3D ni FPS. Complementa la guarda temporal, no la sustituye.
+
 **Mediciones TECNO: control temporal (2026-10-15):**
 Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. Auditor permanente de FPS y telemetria HAL/CPU, docs/performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md. Nueva guarda de referencia: A1 con 16,85 FPS frente a 21,675 FPS fue rechazado y la prueba cancelada; la APK 0.2.4 y el save se restauraron por SHA. Conservar las pequeñas mejoras ARM64 como opt-in hasta pruebas limpias.
 
