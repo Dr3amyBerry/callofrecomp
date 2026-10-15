@@ -14,7 +14,7 @@ nativa binary80 ya está integrada. GPU time y sesiones complejas/prolongadas
 siguen pendientes; 120 FPS no alcanzados. El informe enlazado es la fuente
 de métricas y límites de estas pruebas.
 
-**Última CI aprobada anterior a la integración:** `b0256db`, [run 38741645925](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38741645925). La integración acumulativa debe contrastarse con su nueva ejecución de CI.
+**CI de la integración:** `8401f29`, [run 38773880404 aprobado](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38773880404).
 **Integración acumulativa medida:** [APK, opciones, pruebas y A/B/A/B](WSA_CUMULATIVE_2026-10-15.md).
 Región x87 binary80 conectada al runtime, retorno probado y conjunto compatible
 activo en WSA. Misma escena/Alta: medias de medianas **54,75 → 66,75 FPS**,

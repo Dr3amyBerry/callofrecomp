@@ -15,6 +15,7 @@
 - A/B/A/B Alta, misma escena/guardado y límite 120: conjunto activo en ambas B; mejora repetida de CPU y FPS. Guardados intactos. [Tabla, alcance y reproducción](docs/WSA_CUMULATIVE_2026-10-15.md).
 - Oráculo del adaptador final: 22.344 casos WSA sin diferencias; repetición con alias CW contrastada también contra CPU i686 original. Se mantienen bloqueos de rutas con errores conocidos.
 - Preset experimental instalado y activo en WSA. No acredita 120 FPS sostenidos, TECNO ni estabilidad prolongada; próximo perfil debe usar el ELF nuevo.
+- Código `8401f29`, [CI 38773880404 aprobada](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38773880404).
 
 ### 2026-10-15 — Metadatos, alias y captura precisa de faltas x87
 

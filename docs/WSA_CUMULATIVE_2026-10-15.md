@@ -91,6 +91,7 @@ Validación local: 37 CTest no Python aprobados y suite Python aprobada tras
 corregir la regresión detectada del manejador desktop; pruebas compiladas de
 región/alias y retorno aprobadas. La revisión independiente no encontró
 bloqueadores nuevos; quedan los límites de señales/SEH descritos arriba.
+Código integrado `8401f29`: [CI 38773880404 aprobada](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38773880404).
 
 SHA256 APK referencia: `c722b4ea7bcfcf8bb8d95456e9201a0bed210ae348888a682b1d9cd4499caa55`.
 SHA256 APK conjunto medido: `a19ea65e30024f7f1f6f55d2be97ba99c854fd1e32e6c151bed6213194da1702`.
