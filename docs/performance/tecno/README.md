@@ -1,5 +1,9 @@
 # Investigación TECNO CK6n ARM64 — objetivo vigente
 
+**Prueba física ARM64 FCHS (2026-10-16):**
+[A/B/A/B de la opción de signo binary80](TECNO_FCHS_SIGN_ABAB_2026-10-16.md): cuatro pasadas válidas; sin mejora de FPS, APK original y partida verificadas.
+
+
 **ARM64, signo binary80 en FCHS (2026-10-16):**
 [Candidato offline de tres instrucciones](ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md), APK y equivalencia de valor; -1.032 bytes de `.text`, OFF por defecto, sin TECNO/WSA ni nuevos FPS.
 

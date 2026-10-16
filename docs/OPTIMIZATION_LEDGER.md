@@ -1,5 +1,9 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-SIGN80-02, A/B/A/B TECNO (2026-10-16):**
+Variante experimental de 3 PCs: 4/4 escenas y capturas estables, B más lenta en ambas parejas, −0,68 % FPS y +0,71 % CPU descriptivos; no activar por defecto. Original 0.2.4/save restaurados por hash. [Prueba física](performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).
+
+
 **ARM64-SIGN80-01, tres FCHS exactos (2026-10-16):**
 Implementado **opt-in/OFF** con pcode sha estricto, tres PCs, transformación reversible, build APK ARM64; reduccion de 1.032 bytes de `.text`, sin cambios de 490 contratos exportados. Valor sign-bit probado con Unicorn (4.000 ejecuciones) y oraculo x86 de 65.536 casos, *no* full FPU state ni fps probado. [Evidencia](performance/tecno/ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md).
 

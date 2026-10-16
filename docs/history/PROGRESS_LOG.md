@@ -1,5 +1,10 @@
 # Project Progress
 
+### 2026-10-16 — TECNO físico: cuatro capturas A/B/A/B FCHS
+- Probadas A1/B1/A2/B2 estables en la misma escena Camp Toccoa. FPS A 22,10 -> B 21,95 (−0,68 %), CPU A 43,500 -> B 43,810 ms (+0,71 %); sin señal positiva, optimización OFF.
+- Restaurada y verificada de forma independiente la 0.2.4 y training.svg por SHA, sin borrar datos. [Informe](../performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).
+
+
 ### 2026-10-16 — Cierre de tarea interrumpida FLOAT_NEG de CoDSP
 - Oraculo de FABS/FCHS original x86 rehecho: 65.536 casos; tres PCs verificados 0x41975e/0x419c48/0x419e12.
 - Nuevo flag ARM64 opt-in para cambio exacto del bit de signo binary80 sin round-trip double; 4.000 ejecuciones Unicorn, APK A/B ARM64, -1.032 bytes .text y 490 exports intactos. Source generado y APK base restaurados; OFF por defecto.

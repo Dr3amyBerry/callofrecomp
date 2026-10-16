@@ -119,6 +119,7 @@
 - [PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md](../performance/tecno/PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md) — Fase 15 — Perfiles TECNO originales, presupuesto por fotograma y oportunidades transversales
 - [README.md](../performance/tecno/README.md) — Investigación TECNO CK6n ARM64 — objetivo vigente
 - [TECNO_CK6N_ARM64_PERF_2026-10-14.md](../performance/tecno/TECNO_CK6N_ARM64_PERF_2026-10-14.md) — TECNO CK6n: medición real de CallofRecomp ARM64 — 2026-10-14
+- [TECNO_FCHS_SIGN_ABAB_2026-10-16.md](../performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md) — TECNO CK6n — A/B/A/B físico para ARM64 FCHS sign-bit (2026-10-16 UTC)
 - [TECNO_RELEASE024_ABAB_2026-10-15.md](../performance/tecno/TECNO_RELEASE024_ABAB_2026-10-15.md) — TECNO CK6n: revalidación física de 0.2.4
 - [TECNO_STABILITY_GATE_2026-10-15.md](../performance/tecno/TECNO_STABILITY_GATE_2026-10-15.md) — TECNO ARM64 — estabilidad de mediciones y conservación de pequeñas mejoras (15-10-2026)
 - [TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md](../performance/tecno/TECNO_X87_NORMAL_F2D_GAMEPLAY_ABAB_2026-10-14.md) — TECNO CK6n ARM64 — A/B/A/B de x87 normal f2d y descarte de geometry -O2 (2026-10-14)

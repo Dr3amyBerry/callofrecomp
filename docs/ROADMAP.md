@@ -1,5 +1,9 @@
 # Cola de trabajo del proyecto
 
+**ARM64 FCHS, medición física cerrada (2026-10-16):**
+El parche de signo binary80 se conserva OFF: A/B/A/B válido en TECNO no produjo ganancia (−0,68 % FPS, +0,71 % CPU). Priorizar nuevos bloques de ahorro dinámico ARM64 con fidelidad verificada. [Mediciones](performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).
+
+
 **Siguiente fase ARM64 binary80 (2026-10-16):**
 Conservar la candidata `--arm64-x87-sign-bits` para los tres FCHS validados [informe](performance/tecno/ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md), pero no generalizar hasta modelar semantica de estado x87 (SW/C1/TOP/tags/excepciones/alias/faltas) y demostrar equivalencia con original x86. Sin telefono no declarar ganancias de FPS. Proseguir por bloques reversibles offline.
 

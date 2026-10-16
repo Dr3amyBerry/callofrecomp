@@ -129,3 +129,7 @@ binary80 solo con equivalencia demostrable; no generalizar este
 parche a otras funciones y no reactivar la vía basada en double.
 Cuando vuelva a estar disponible un teléfono ARM64 comparable, medir
 A/B/A/B con el protocolo estable de escena y la misma calidad gráfica.
+
+## Prueba física posterior (2026-10-16)
+
+Cuatro pasadas A/B/A/B reales en TECNO: A 22,10 FPS y 43,500 ms CPU, B 21,95 FPS y 43,810 ms CPU; −0,68 % FPS, +0,71 % CPU. La opción no mostró una ganancia y permanece OFF. [Informe y verificación de restauración](TECNO_FCHS_SIGN_ABAB_2026-10-16.md).

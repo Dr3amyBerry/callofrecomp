@@ -1,5 +1,9 @@
 # Estado actual de CallofRecomp
 
+**TECNO ARM64 FCHS, A/B/A/B real (2026-10-16):**
+Cuatro capturas físicas estables A1/B1/A2/B2 de `--arm64-x87-sign-bits`: A 22,10 vs B 21,95 FPS (−0,68 %); CPU A 43,500 vs B 43,810 ms (+0,71 %). Ninguna señal positiva de velocidad; flag experimental OFF. APK 0.2.4 y partida reinstaladas/verificadas por SHA. [Informe](performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).
+
+
 **ARM64 binary80, FCHS de tres PCs (2026-10-16):**
 Flag `--arm64-x87-sign-bits` opt-in y OFF, cambia solo el bit de signo binary80 de tres instrucciones verificadas (CoDSP `0x41975e/0x419c48/0x419e12`). APK ARM64 A/B compiladas, -1.032 bytes `.text`, 490 exports intactos. 4.000 ejecuciones AArch64 Unicorn y 65.536 casos de oraculo x86 original; valor correcto en el alcance probado, **sin equivalencia plena SW/C1/excepciones ni FPS**. Compilacion normal restaurada. [Informe](performance/tecno/ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md).
 
