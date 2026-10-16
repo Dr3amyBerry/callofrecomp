@@ -72,7 +72,7 @@ Archivos ignorados, todos bajo la sesión:
 - **Auditoría de artefactos privados:** `pass_with_warnings`, sin errores; 200 scripts históricos, 33 capturas y siete builds archivados verificados; cero rutas privadas rastreadas. Permanece una advertencia histórica de sintaxis en un script no ejecutado y ajeno al cambio.
 - **Catálogo:** 138 documentos, cero enlaces rotos; `git diff --check` correcto.
 - **Restauración:** `codsp_recomp_p8.c` exacto a SHA-256 `7532b4222eb40b37c5e8bb5491babe3250756f263f5cc2e9b73f2fba7501bdca`. Se reconstruyó con `--arm64-x87-fld32-visibility` OFF y el ELF `libmain.so` resultó **byte por byte igual** al ELF A archivado: SHA-256 `fabe966fe381eb2f5043c236859184b5761562a72640b56abe3a51c523598d5c`. Las 12 entradas internas del APK reconstruido son idénticas a A; el SHA del contenedor APK es distinto por diferencias del contenedor/ZIP y no se interpreta como cambio de código. Resultado privado: `reports/restored_default.apk.json`.
-- **CI pública:** comprobar el workflow del commit publicado antes de marcarla como aprobada.
+- **CI pública:** [tools-ci 38960304880 PASS](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38960304880) para el commit [`06fb120`](https://github.com/Dr3amyBerry/callofrecomp/commit/06fb1204cc4978344a88012f2c2bb6a1efc45936): análisis y host tests finalizados con estado success. Avisos de deprecación de GitHub Actions ajenos a las pruebas, sin fallos.
 
 ## Decisión
 
