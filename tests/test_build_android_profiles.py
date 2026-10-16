@@ -63,6 +63,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--gl-vk-state-capture', proc.stdout)
         self.assertIn('--wsa-uncap-bench', proc.stdout)
         self.assertIn('--core-hot-o2', proc.stdout)
+        self.assertIn('--core-hot-o2-parts', proc.stdout)
         self.assertIn('--render-o2', proc.stdout)
         self.assertIn('--hot-x87-transform', proc.stdout)
         self.assertIn('--fast-copy32', proc.stdout)
@@ -148,6 +149,30 @@ class ProfileBuildFlagsTest(unittest.TestCase):
                                       capture_output=True,text=True)
                 self.assertNotEqual(result.returncode,0)
                 self.assertIn(phrase,result.stderr)
+
+    def test_core_hot_o2_subset_rejects_invalid_inputs_before_build(self):
+        cases = [
+            (['--core-hot-o2-parts', 'p0'], 'requires --core-hot-o2'),
+            (['--core-hot-o2', '--core-hot-o2-parts', 'p8'],
+             'requires distinct p0,p1,p4'),
+            (['--core-hot-o2', '--core-hot-o2-parts', 'p1,p1'],
+             'requires distinct p0,p1,p4'),
+            (['--core-hot-o2', '--core-hot-o2-parts', 'p0,,p4'],
+             'requires distinct p0,p1,p4'),
+            (['--core-hot-o2', '--core-hot-o2-parts', 'p0, p1'],
+             'requires distinct p0,p1,p4'),
+            (['--abi', 'x86_64', '--core-hot-o2', '--core-hot-o2-parts', 'p1'],
+             'ARM64-only'),
+            (['--core-hot-o2', '--core-hot-o2-parts', 'p1', '--recomp-opt', '0'],
+             'requires --recomp-opt 1'),
+        ]
+        for args, expected in cases:
+            with self.subTest(args=args):
+                result = subprocess.run(
+                    [sys.executable, str(BUILDER), *args],
+                    capture_output=True, text=True, timeout=15)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stderr)
 
     def test_wsa_uncap_is_rejected_for_arm64(self):
         proc = subprocess.run(

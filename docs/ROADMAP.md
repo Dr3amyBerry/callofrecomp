@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**Siguiente paso ARM64 sin teléfono (2026-10-16):** selector experimental `--core-hot-o2-parts` ya permite A/B limpio de `p1`, `p0,p1` y perfil completo; está documentado el coste binario y los hashes. Mantener todas las opciones OFF, evaluar equivalencia y análisis nativo offline, y comparar A/B/A/B físico de `p1` cuando vuelva el TECNO. [Resultados](performance/tecno/ARM64_CORE_HOT_O2_PARTITIONS_OFFLINE_2026-10-16.md).
+
+
 **ARM64 — resolución del A1 lento (2026-10-16):** CI ya aprobó (`517910e`, run 38846701351); nueva captura física A1 dio 17,10 FPS / 56,16 ms CPU con encuadre aparente compatible y distinta notificación transitoria de HUD, batería 35 °C, `thermal_status=0`. La referencia A1 no es comparable; B FLD32 NO instalada. Siguiente: contrastar perfilado de CPU/scheduler y estado real del guion en períodos de ~17 y ~22 FPS con la **misma APK** antes de otro A/B/A/B. [Informe](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
 
 

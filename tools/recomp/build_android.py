@@ -52,6 +52,9 @@ def main():
     parser.add_argument("--core-hot-o2", action="store_true",
                         help="ARM64 offline-profile-guided CoDSP p0/p1/p4 compilation "
                              "at strict-FP -O2; OFF by default")
+    parser.add_argument("--core-hot-o2-parts", metavar="p0,p1,p4",
+                        help="optional comma-separated subset of p0,p1,p4; "
+                             "requires --core-hot-o2, never changes defaults")
     parser.add_argument("--cfg14-geom-region", action="store_true",
                         help="EXP: verified CoDSP 1.5 geometry block start-only native "
                              "CFG cache with original dispatcher fallback; OFF by default")
@@ -145,6 +148,18 @@ def main():
         parser.error("ORIGINAL_X87_PRECISION_UNSAFE: legacy transform loses binary80 "
                      "cancellation results; independent original-x86 outputs differ. "
                      "Do not enable until full precision/state/fault equivalence is proven.")
+    if args.core_hot_o2_parts is not None:
+        if not args.core_hot_o2:
+            parser.error("--core-hot-o2-parts requires --core-hot-o2")
+        requested = args.core_hot_o2_parts.split(",")
+        allowed = ("p0", "p1", "p4")
+        if (not requested or len(requested) > len(allowed)
+                or any(part not in allowed for part in requested)
+                or len(set(requested)) != len(requested)):
+            parser.error("--core-hot-o2-parts requires distinct p0,p1,p4 "
+                         "partition IDs without whitespace")
+        args.core_hot_o2_parts = ",".join(
+            part for part in allowed if part in requested)
     if args.core_hot_o2 and args.abi != "arm64-v8a":
         parser.error("--core-hot-o2 is ARM64-only")
     if args.cfg14_geom_region and args.abi != "arm64-v8a":
@@ -292,6 +307,7 @@ def main():
             f"-DCODRECOMP_GL_VK_STATE_CAPTURE={'ON' if args.gl_vk_state_capture else 'OFF'}",
             f"-DCODRECOMP_WSA_UNCAP_BENCH={'ON' if args.wsa_uncap_bench else 'OFF'}",
             f"-DCODRECOMP_CORE_HOT_O2={'ON' if args.core_hot_o2 else 'OFF'}",
+            f"-DCODRECOMP_CORE_HOT_O2_PARTS={args.core_hot_o2_parts or 'p0,p1,p4'}",
             f"-DCODRECOMP_CFG14_GEOM_REGION={'ON' if args.cfg14_geom_region else 'OFF'}",
             f"-DCODRECOMP_RENDER_O2={'ON' if args.render_o2 else 'OFF'}",
             f"-DCODRECOMP_HOT_X87_FASTPATH={'ON' if args.hot_x87_transform else 'OFF'}",

@@ -15,7 +15,10 @@ class HotCoreCompilePolicyTests(unittest.TestCase):
 
     def test_coDSP_hot_windows_only_not_visibility(self):
         block=self.policy_block()
-        self.assertIn("foreach(part p0 p1 p4)",block)
+        self.assertIn('set(CODRECOMP_CORE_HOT_O2_PARTS "p0,p1,p4" CACHE STRING', block)
+        self.assertIn('foreach(part IN LISTS hot_o2_parts)',block)
+        self.assertIn('if(part IN_LIST seen_hot_o2_parts)',block)
+        self.assertIn('if(NOT CODRECOMP_CORE_HOT_O2_PARTS MATCHES "^p[014](,p[014])*$")',block)
         self.assertNotIn("foreach(part p0 p1 p4 p8)",block)
         self.assertIn('COMPILE_OPTIONS "-O2;-ffp-contract=off"',block)
         self.assertIn('if(NOT ANDROID_ABI STREQUAL "arm64-v8a")',block)

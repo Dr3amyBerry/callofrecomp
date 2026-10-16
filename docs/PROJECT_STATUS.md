@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**ARM64 offline, compilación selectiva hot-O2 (2026-10-16):** el A/B/A/B físico previo de `p0,p1,p4` terminó (A1 21,30 / B1 21,85 / A2 21,80 / B2 21,90 FPS), con señal positiva no confirmada; runner registra restauración, hash instalado pendiente de comprobación ADB. Nuevo selector OFF `--core-hot-o2-parts`: `p1` aislada produjo `−1.652 B` de `.text` frente a A, 490 exportaciones y recursos intactos; **sin FPS de `p1`**. [Auditoría](performance/tecno/ARM64_CORE_HOT_O2_PARTITIONS_OFFLINE_2026-10-16.md).
+
+
 **TECNO FLD32 / CI, comprobación posterior a `517910e` (2026-10-16):** [GitHub Actions 38846701351](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38846701351) **PASS**. Nuevo intento físico: A1 reproduciblemente lenta, 17,10 FPS y 56,16 ms CPU/frame frente a referencia externa 21,675 FPS; escena central similar (0,3091 %), HUD temporal no idéntico, HAL térmico 0, batería 35 °C. Ensayo abortó correctamente antes de B; **0.2.4 y save restaurados y verificados por SHA**. FLD32 sigue opt-in OFF; no existe resultado FPS B. [Evidencia y próxima acción](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
 
 

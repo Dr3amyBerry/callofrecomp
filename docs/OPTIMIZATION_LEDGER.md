@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-CORE-HOT-O2-SUBSET (2026-10-16):** selector de particiones de `--core-hot-o2` con requisitos SHA/ABI/FP estrictos y default inalterado. Físico previo de las tres particiones +1,51 % FPS promedio descriptivo, por debajo de la variación A1/A2; **inconcluso**. Offline `p1`: 42.338.448 bytes `.text` (`−1.652` vs A), 490 exportaciones intactas, no FPS medidos. [Evidencia](performance/tecno/ARM64_CORE_HOT_O2_PARTITIONS_OFFLINE_2026-10-16.md).
+
+
 **ARM64-MET-04 resultado físico y CI (2026-10-16):** `517910e` reparó CI [run 38846701351 PASS](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38846701351), manteniendo oráculos locales privados. A1 FLD32 17,10 FPS y 56,16 ms CPU frente a referencia 21,675: rechazo antes de B, imagen/entorno registrados en sesión privada, APK original y save restaurados exactos. **Sin nueva ganancia FPS certificada**; investigar estado de ejecución 17/22. [Detalles](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
 
 
