@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-NARROW-LEFT-HOT-16 (2026-10-16, OFF):** de 9.869 `INT_LEFT` estáticos de CoDSP 1.5 se distinguieron 2.487 con cuenta variable; en regiones calientes, 16 variables (4 p0, 12 p8), 273 constantes no transformadas al no ahorrar en wrapper. Parche fuentes SHA y reversible, helper 64-bit low-mask exacto, oráculo independiente host O0/O1/O2 y AArch64 Unicorn sin divergencias. ABI 490 símbolos exportados y recursos intactos; B `.text` −44 B, chunk18 −4 B/−1 instrucción, chunks151/152 0 B. No FPS medidos. [Resultados](performance/tecno/ARM64_NARROW_LEFT_SHIFT_SELECTIVE_2026-10-16.md).
+
+
 **ARM64-X87-FLD32-VISIBILITY-10 (2026-10-16, opt-in/OFF):** 10 PCs en p8 de visibilidad y geometría, runtime binary80 exacto para normales, no altera otras entradas (excepciones especiales conservan ruta original); 9 tests + 7 tests helper PASS; 2.400 comparaciones completas host R/U/MEM/PC. APK A/B firmadas, 490 exportaciones y recursos idénticos; delta nativo `.text` **+428 bytes** (16+89 instrucciones estáticas en chunks 151/152). Sin FPS causal ni x86 independiente; conservar OFF. [Análisis](performance/tecno/ARM64_X87_FLD32_VISIBILITY_2026-10-16.md).
 
 

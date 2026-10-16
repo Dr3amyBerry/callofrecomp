@@ -32,6 +32,18 @@ static inline s128 sx(u128 v, int n) {
     return ((s128)(v << sh)) >> sh;
 }
 static inline u128 shl(u128 a, u128 b) { return b >= 128 ? 0 : a << (int)b; }
+// Opt-in source-level CoDSP p0/p8 optimization. The caller still masks the
+// result to its original output width. For 1..8 bytes only those low bits are
+// observable, so 64-bit arithmetic is exact, including overshifts and counts
+// with nonzero high halves. Other widths retain the original 128-bit path.
+static inline u128 codsp_arm64_narrow_shl(u128 a, u128 b, int output_bytes) {
+    if (output_bytes >= 1 && output_bytes <= 8) {
+        if (b >= (u128)(8 * output_bytes))
+            return 0;
+        return (u128)((uint64_t)a << (unsigned)b);
+    }
+    return shl(a, b);
+}
 static inline u128 shr(u128 a, u128 b) {
 #ifdef CODRECOMP_ARM64_NARROW_RIGHT_SHIFT
     /* Specialize only when the compiler proves that the high half is zero.

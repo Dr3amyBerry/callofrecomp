@@ -91,6 +91,8 @@ def main():
                         help="ARM64 experiment: specialize provably narrow logical right shifts; OFF")
     parser.add_argument("--arm64-narrow-sar", action="store_true",
                         help="ARM64 experiment: exact signed <=64-bit SAR; OFF by default")
+    parser.add_argument("--arm64-narrow-left-shift", action="store_true",
+                        help="ARM64 experiment: 16 exact dynamic CoDSP p0/p8 narrow SHL sites; OFF")
     parser.add_argument("--arm64-dispatch-entry-cache", action="store_true",
                         help="ARM64 experiment: cache last chunk range and callback with layout invalidation; OFF")
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
@@ -134,6 +136,15 @@ def main():
         parser.error('--arm64-narrow-right-shift requires arm64-v8a')
     if args.arm64_narrow_sar and args.abi != 'arm64-v8a':
         parser.error('--arm64-narrow-sar requires arm64-v8a')
+    if args.arm64_narrow_left_shift and args.abi != "arm64-v8a":
+        parser.error("--arm64-narrow-left-shift requires arm64-v8a")
+    if args.arm64_narrow_left_shift and args.package_only:
+        parser.error("--arm64-narrow-left-shift cannot use --package-only")
+    if args.arm64_narrow_left_shift and any((
+            args.arm64_x87_sign_bits, args.x87_nan_bits,
+            args.x87_fcom_fastpath, args.x87_stack_shift_outline,
+            args.arm64_x87_fld32_visibility)):
+        parser.error("--arm64-narrow-left-shift cannot combine with CoDSP p0/p8 source patches")
     if args.arm64_dispatch_entry_cache and args.abi != 'arm64-v8a':
         parser.error('--arm64-dispatch-entry-cache requires arm64-v8a')
     if args.arm64_dispatch_entry_cache and args.dispatch_last_cache:
@@ -241,6 +252,16 @@ def main():
         # their strict baseline hashes must see the original generated C.
         shift_script = root / 'tools/recomp/patch_codsp_x87_shift.py'
         pcode_path = root / 'recomp_out/codsp.pcode'
+        narrow_left_script = root / 'tools/recomp/patch_codsp_narrow_left_shift.py'
+        narrow_left_p0 = root / 'recomp_out/codsp_recomp_p0.c'
+        narrow_left_p8 = root / 'recomp_out/codsp_recomp_p8.c'
+        if args.arm64_narrow_left_shift and not (
+                narrow_left_p0.is_file() and narrow_left_p8.is_file()):
+            parser.error("--arm64-narrow-left-shift requires original generated CoDSP p0 and p8")
+        if narrow_left_p0.is_file() and narrow_left_p8.is_file():
+            # Restore first, before all other hash-pinned source patches.
+            run(sys.executable, narrow_left_script, narrow_left_p0,
+                narrow_left_p8, pcode_path, '--restore')
         sign_script = root / 'tools/recomp/patch_codsp_x87_sign.py'
         sign_source = root / 'recomp_out/codsp_recomp_p0.c'
         fld32_script = root / 'tools/recomp/patch_codsp_x87_fld32.py'
@@ -303,6 +324,10 @@ def main():
             # P8 hot visibility input conversions only; rest are untouched.
             run(sys.executable, vis_fld32_script, vis_fld32_source,
                 pcode_path, '--apply')
+        if args.arm64_narrow_left_shift:
+            # Original p0/p8 only: 16 dynamically-counted 1..8-byte SHL ops.
+            run(sys.executable, narrow_left_script, narrow_left_p0,
+                narrow_left_p8, pcode_path, '--apply')
         if args.x87_stack_shift_outline:
             # This is a source-level, reversible experiment. No production
             # compiler define is needed; helpers remain dead when unused.

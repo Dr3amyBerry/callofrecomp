@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**ARM64-SHL-DYNAMIC-16 (2026-10-16, opt-in OFF):** 16 desplazamientos variables `INT_LEFT` de geometría y visibilidad en CoDSP p0/p8 original, con parche reversible y SHA fijado; el resto, especialmente 273 shifts por constante, queda intacto. Oráculo bitwise 36.864 casos host y 8.600 llamadas AArch64 Unicorn PASS; ELF APK A/B: **−44 B `.text`**, pero el chunk caliente 18 ahorra solo 4 B/1 instrucción y los chunks de visibilidad 151/152 **no cambian tamaño**. Sin FPS nuevos ni recomendación de habilitar. [Informe](performance/tecno/ARM64_NARROW_LEFT_SHIFT_SELECTIVE_2026-10-16.md).
+
+
 **ARM64-FLD32-VISIBILITY-10 (2026-10-16, OFF):** diez conversiones binary32→binary80 en CoDSP p8, seleccionadas por muestras físicas históricas y verificadas por SHA, con cambio reversible de expresión único. Oráculo completo de R/U/MEM/PC: 800 A/B×3 niveles O0/O1/O2 sin divergencias; build NDK A/B conserva 490 símbolos y recursos, pero **B aumenta `.text` 428 B y 105 instrucciones estáticas en dos chunks**. No hay FPS nuevos ni validación x86 original en dispositivo. [Informe](performance/tecno/ARM64_X87_FLD32_VISIBILITY_2026-10-16.md).
 
 

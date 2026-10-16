@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**Nueva opción ARM64 OFF (2026-10-16):** `--arm64-narrow-left-shift` transforma solo 16 shifts variables de los dos cuerpos seleccionados de CoDSP p0/p8, no 289 indiscriminados. Código global −44 B, ahorro local chunk 18 −4 B; visibilidad sin delta de tamaño. Pasa oráculos y restituye fuentes exactas; priorizar el perfil físico estable de 17 vs22 FPS y efectos de flags/visibilidad antes de activar nada. [Evidencia](performance/tecno/ARM64_NARROW_LEFT_SHIFT_SELECTIVE_2026-10-16.md).
+
+
 **Próximo paso ARM64 (2026-10-16):** nueva opción experimental `--arm64-x87-fld32-visibility` (10 PCs p8) está OFF, fuente reversible, estados diferenciales aprobados. ELF B +428 bytes/105 instrucciones estáticas frente a A; posible ahorro dinámico de normales sin medir. No activar ni combinar con NaN/FCOM/stack shift. Validar con oráculo Intel x86 y A/B/A/B físico al volver TECNO. [Evidencia](performance/tecno/ARM64_X87_FLD32_VISIBILITY_2026-10-16.md).
 
 
