@@ -14,6 +14,13 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertNotEqual(proc.returncode,0)
         self.assertIn('requires arm64-v8a',proc.stderr)
 
+    def test_narrow_sar_is_arm64_only(self):
+        proc = subprocess.run(
+            [sys.executable, str(BUILDER), '--abi', 'x86_64',
+             '--arm64-narrow-sar'], capture_output=True, text=True)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('--arm64-narrow-sar requires arm64-v8a', proc.stderr)
+
     def test_entry_dispatch_is_arm64_only_and_excludes_last_hint(self):
         for options,message in (
             (['--abi','x86_64','--arm64-dispatch-entry-cache'], 'requires arm64-v8a'),
@@ -64,6 +71,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--wsa-uncap-bench', proc.stdout)
         self.assertIn('--core-hot-o2', proc.stdout)
         self.assertIn('--core-hot-o2-parts', proc.stdout)
+        self.assertIn('--arm64-narrow-sar', proc.stdout)
         self.assertIn('--render-o2', proc.stdout)
         self.assertIn('--hot-x87-transform', proc.stdout)
         self.assertIn('--fast-copy32', proc.stdout)

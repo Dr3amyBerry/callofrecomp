@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**ARM64 siguiente validación (2026-10-16):** experimental `--arm64-narrow-sar` implementado OFF, oráculos de bits y ARM64 aprobados; el ELF completo reduce 184 bytes y 44 instrucciones estáticas en cinco chunks CoDSP. No extrapolar a FPS: cuando vuelva el teléfono realizar A/B/A/B independiente a igual escena, calidad y guardados. [Evidencia](performance/tecno/ARM64_NARROW_SAR_2026-10-16.md).
+
+
 **Siguiente paso ARM64 sin teléfono (2026-10-16):** selector experimental `--core-hot-o2-parts` ya permite A/B limpio de `p1`, `p0,p1` y perfil completo; está documentado el coste binario y los hashes. Mantener todas las opciones OFF, evaluar equivalencia y análisis nativo offline, y comparar A/B/A/B físico de `p1` cuando vuelva el TECNO. [Resultados](performance/tecno/ARM64_CORE_HOT_O2_PARTITIONS_OFFLINE_2026-10-16.md).
 
 

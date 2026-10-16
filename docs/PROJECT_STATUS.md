@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**ARM64-NARROW-SAR-01, 2026-10-16 (offline, OFF):** especialización exacta de SAR para valores guest de 1..8 bytes; fallback original para 9..16 bytes. Oráculo independiente y ejecución AArch64 Unicorn sin divergencias; build NDK A/B firmado conserva los 490 símbolos, recursos y manifiesto. **−184 bytes de .text y −44 instrucciones estáticas en 5 chunks CoDSP**, sin nuevos FPS ni acceso al TECNO. [Informe](performance/tecno/ARM64_NARROW_SAR_2026-10-16.md).
+
+
 **ARM64 offline, compilación selectiva hot-O2 (2026-10-16):** el A/B/A/B físico previo de `p0,p1,p4` terminó (A1 21,30 / B1 21,85 / A2 21,80 / B2 21,90 FPS), con señal positiva no confirmada; runner registra restauración, hash instalado pendiente de comprobación ADB. Nuevo selector OFF `--core-hot-o2-parts`: `p1` aislada produjo `−1.652 B` de `.text` frente a A, 490 exportaciones y recursos intactos; **sin FPS de `p1`**. [Auditoría](performance/tecno/ARM64_CORE_HOT_O2_PARTITIONS_OFFLINE_2026-10-16.md).
 
 

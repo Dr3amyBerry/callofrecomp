@@ -42,7 +42,21 @@ static inline u128 shr(u128 a, u128 b) {
 #endif
     return b >= 128 ? 0 : a >> (int)b;
 }
-static inline u128 sar(u128 a, u128 b, int n) { s128 s = sx(a, n); return (u128)(b >= 128 ? (s < 0 ? -1 : 0) : s >> (int)b); }
+static inline u128 sar(u128 a, u128 b, int n) {
+#ifdef CODRECOMP_ARM64_NARROW_SAR
+    /* A sign-extended 1..8-byte operand fits int64_t. Counts at least 64
+       saturate to its sign; retain all 128 bits of the signed result.
+       Preserve the original wide path for larger guest operands. */
+    if (n > 0 && n <= 8) {
+        const int64_t value = (int64_t)sx(a, n);
+        const int64_t shifted = b >= 64 ? (value < 0 ? -1 : 0)
+                                       : value >> (unsigned)b;
+        return (u128)(s128)shifted;
+    }
+#endif
+    s128 s = sx(a, n);
+    return (u128)(b >= 128 ? (s < 0 ? -1 : 0) : s >> (int)b);
+}
 // Intel OF after signed addition/subtraction. Use the compiler's checked
 // arithmetic for common x86 operand sizes; on ARM64 this lowers to native
 // flag-setting add/sub instructions instead of 128-bit temporary arithmetic.

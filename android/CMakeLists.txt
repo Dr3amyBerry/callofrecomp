@@ -105,6 +105,14 @@ if(CODRECOMP_ARM64_NARROW_RIGHT_SHIFT)
   endif()
   target_compile_definitions(main PRIVATE CODRECOMP_ARM64_NARROW_RIGHT_SHIFT)
 endif()
+option(CODRECOMP_ARM64_NARROW_SAR
+  "ARM64 experiment: exact signed narrow arithmetic right shift, OFF by default" OFF)
+if(CODRECOMP_ARM64_NARROW_SAR)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "Narrow SAR requires arm64-v8a")
+  endif()
+  target_compile_definitions(main PRIVATE CODRECOMP_ARM64_NARROW_SAR)
+endif()
 # Dispatch last-hit cache is deliberately off in normal APKs until a
 # game-level ARM64 A/B confirms it is faster than the existing page index.
 option(CODRECOMP_DISPATCH_LAST_CACHE

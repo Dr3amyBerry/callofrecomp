@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-NARROW-SAR-01 (2026-10-16, opt-in/OFF):** SAR de ancho 1..8 B usando int64 y extensión final a 128 bits; fallback sin cambios en n>8. A/B NDK −184 B `.text`, cinco chunks CoDSP −44 instrucciones estáticas, 490 exportaciones iguales y recursos inmutables. Oráculo byte independiente + 8.192 ejecuciones en Unicorn sin discrepancias. Sin evidencia de FPS ni fidelidad de juego completo. [Datos](performance/tecno/ARM64_NARROW_SAR_2026-10-16.md).
+
+
 **ARM64-CORE-HOT-O2-SUBSET (2026-10-16):** selector de particiones de `--core-hot-o2` con requisitos SHA/ABI/FP estrictos y default inalterado. Físico previo de las tres particiones +1,51 % FPS promedio descriptivo, por debajo de la variación A1/A2; **inconcluso**. Offline `p1`: 42.338.448 bytes `.text` (`−1.652` vs A), 490 exportaciones intactas, no FPS medidos. [Evidencia](performance/tecno/ARM64_CORE_HOT_O2_PARTITIONS_OFFLINE_2026-10-16.md).
 
 

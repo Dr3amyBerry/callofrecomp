@@ -87,6 +87,8 @@ def main():
                         help="experiment: per-guest-run last-chunk dispatch hint; default OFF")
     parser.add_argument("--arm64-narrow-right-shift", action="store_true",
                         help="ARM64 experiment: specialize provably narrow logical right shifts; OFF")
+    parser.add_argument("--arm64-narrow-sar", action="store_true",
+                        help="ARM64 experiment: exact signed <=64-bit SAR; OFF by default")
     parser.add_argument("--arm64-dispatch-entry-cache", action="store_true",
                         help="ARM64 experiment: cache last chunk range and callback with layout invalidation; OFF")
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
@@ -120,6 +122,8 @@ def main():
         parser.error("--arm64-x87-sign-bits cannot use --package-only")
     if args.arm64_narrow_right_shift and args.abi != 'arm64-v8a':
         parser.error('--arm64-narrow-right-shift requires arm64-v8a')
+    if args.arm64_narrow_sar and args.abi != 'arm64-v8a':
+        parser.error('--arm64-narrow-sar requires arm64-v8a')
     if args.arm64_dispatch_entry_cache and args.abi != 'arm64-v8a':
         parser.error('--arm64-dispatch-entry-cache requires arm64-v8a')
     if args.arm64_dispatch_entry_cache and args.dispatch_last_cache:
@@ -325,6 +329,7 @@ def main():
             f"-DCODRECOMP_DISPATCH_LAST_CACHE={'ON' if args.dispatch_last_cache else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_ENTRY_CACHE={'ON' if args.arm64_dispatch_entry_cache else 'OFF'}",
             f"-DCODRECOMP_ARM64_NARROW_RIGHT_SHIFT={'ON' if args.arm64_narrow_right_shift else 'OFF'}",
+             f"-DCODRECOMP_ARM64_NARROW_SAR={'ON' if args.arm64_narrow_sar else 'OFF'}",
             f"-DCODRECOMP_ARM64_SAFE_ICF={'ON' if args.arm64_safe_icf else 'OFF'}",
             f"-DCODRECOMP_ARM64_ICF_METADATA={'ON' if args.arm64_icf_metadata else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",
