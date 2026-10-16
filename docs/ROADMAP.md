@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**Próximo paso ARM64 (2026-10-16):** nueva opción experimental `--arm64-x87-fld32-visibility` (10 PCs p8) está OFF, fuente reversible, estados diferenciales aprobados. ELF B +428 bytes/105 instrucciones estáticas frente a A; posible ahorro dinámico de normales sin medir. No activar ni combinar con NaN/FCOM/stack shift. Validar con oráculo Intel x86 y A/B/A/B físico al volver TECNO. [Evidencia](performance/tecno/ARM64_X87_FLD32_VISIBILITY_2026-10-16.md).
+
+
 **Investigación offline ARM64 (2026-10-16):** repetidos los dos perfiles físicos históricos con Build ID/huella originales, 16 PCs hot aparecen en ambos; predominan instrucciones relacionadas con x87, pero no es desglose exclusivo de tiempo CPU. La alternativa simple de `sx` emite exactamente los mismos tamaños ARM64 en 11 anchos con `-O1/-O2`, descartada. FCOM y NaN bits ya tienen opt-in con A/B físico inconcluso/regresivo, **no activarlos**. Prioridad próxima: análisis seguro de vida de flags/estado x87 y perfiles de la variación de escena/scheduler antes de otro cambio. [Informe](performance/tecno/ARM64_HOTPATH_RESEARCH_2026-10-16.md).
 
 

@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-X87-FLD32-VISIBILITY-10 (2026-10-16, opt-in/OFF):** 10 PCs en p8 de visibilidad y geometría, runtime binary80 exacto para normales, no altera otras entradas (excepciones especiales conservan ruta original); 9 tests + 7 tests helper PASS; 2.400 comparaciones completas host R/U/MEM/PC. APK A/B firmadas, 490 exportaciones y recursos idénticos; delta nativo `.text` **+428 bytes** (16+89 instrucciones estáticas en chunks 151/152). Sin FPS causal ni x86 independiente; conservar OFF. [Análisis](performance/tecno/ARM64_X87_FLD32_VISIBILITY_2026-10-16.md).
+
+
 **ARM64-OFFLINE-TRIAGE (2026-10-16):** auditoría independiente repetida de dos capturas Simpleperf verificadas Build ID `80dc3884...`, 16 PC x86 en top-20 de ambos perfiles. 1.255/1.557 y 1.005/1.244 muestras atribuibles a instrucciones asociadas con x87 dentro de ocho cuerpos, sin ser coste exclusivo. Optimización directa de `sx` descartada: **delta 0 bytes** en 11 wrappers O1 y O2. `x87-nan-bits` y `x87-fcom-fastpath` ya experimentados (FCOM B2 regresivo), no duplicar ni activar. [Datos](performance/tecno/ARM64_HOTPATH_RESEARCH_2026-10-16.md).
 
 

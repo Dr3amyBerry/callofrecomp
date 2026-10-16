@@ -80,6 +80,8 @@ def main():
                         help="ARM64 opt-in: exact binary80 sign toggle at 3 verified CoDSP FCHS PCs; OFF")
     parser.add_argument("--arm64-x87-fld32-normal", action="store_true",
                         help="ARM64 opt-in: exact normal binary32->binary80 mapping at 39 CoDSP hot PCs; OFF")
+    parser.add_argument("--arm64-x87-fld32-visibility", action="store_true",
+                        help="ARM64 opt-in: exact normal binary32->binary80 at 10 sampled CoDSP visibility PCs; OFF")
     parser.add_argument("--x87-stack-shift-outline", action="store_true",
                         help="ARM64-only experiment: outline exact 7-step CoDSP x87 register "
                              "shifts; generated C restored in normal builds (OFF)")
@@ -108,6 +110,14 @@ def main():
     args = parser.parse_args()
     if args.arm64_x87_fld32_normal and args.abi != "arm64-v8a":
         parser.error("--arm64-x87-fld32-normal requires arm64-v8a")
+    if args.arm64_x87_fld32_visibility and args.abi != "arm64-v8a":
+        parser.error("--arm64-x87-fld32-visibility requires arm64-v8a")
+    if args.arm64_x87_fld32_visibility and args.package_only:
+        parser.error("--arm64-x87-fld32-visibility cannot use --package-only")
+    if args.arm64_x87_fld32_visibility and (
+            args.x87_stack_shift_outline or args.x87_nan_bits or
+            args.x87_fcom_fastpath):
+        parser.error("--arm64-x87-fld32-visibility cannot combine with x87 shift/NaN/FCOM source patches")
     if args.arm64_x87_fld32_normal and args.package_only:
         parser.error("--arm64-x87-fld32-normal cannot use --package-only")
     if args.arm64_x87_fld32_normal and args.x87_stack_shift_outline:
@@ -235,6 +245,13 @@ def main():
         sign_source = root / 'recomp_out/codsp_recomp_p0.c'
         fld32_script = root / 'tools/recomp/patch_codsp_x87_fld32.py'
         fld32_source = root / 'recomp_out/codsp_recomp_p10.c'
+        vis_fld32_script = root / 'tools/recomp/patch_codsp_x87_fld32_visibility.py'
+        vis_fld32_source = root / 'recomp_out/codsp_recomp_p8.c'
+        if args.arm64_x87_fld32_visibility and not vis_fld32_source.is_file():
+            parser.error("--arm64-x87-fld32-visibility requires generated CoDSP p8")
+        if vis_fld32_source.is_file():
+            run(sys.executable, vis_fld32_script, vis_fld32_source,
+                pcode_path, '--restore')
         if args.arm64_x87_fld32_normal and not fld32_source.is_file():
             parser.error("--arm64-x87-fld32-normal requires generated CoDSP p10")
         if fld32_source.is_file():
@@ -282,6 +299,10 @@ def main():
         if args.arm64_x87_fld32_normal:
             # Only FLD32 input conversions change; LOAD and x87 stores remain.
             run(sys.executable, fld32_script, fld32_source, pcode_path, '--apply')
+        if args.arm64_x87_fld32_visibility:
+            # P8 hot visibility input conversions only; rest are untouched.
+            run(sys.executable, vis_fld32_script, vis_fld32_source,
+                pcode_path, '--apply')
         if args.x87_stack_shift_outline:
             # This is a source-level, reversible experiment. No production
             # compiler define is needed; helpers remain dead when unused.

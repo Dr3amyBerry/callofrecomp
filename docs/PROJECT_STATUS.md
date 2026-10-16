@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**ARM64-FLD32-VISIBILITY-10 (2026-10-16, OFF):** diez conversiones binary32→binary80 en CoDSP p8, seleccionadas por muestras físicas históricas y verificadas por SHA, con cambio reversible de expresión único. Oráculo completo de R/U/MEM/PC: 800 A/B×3 niveles O0/O1/O2 sin divergencias; build NDK A/B conserva 490 símbolos y recursos, pero **B aumenta `.text` 428 B y 105 instrucciones estáticas en dos chunks**. No hay FPS nuevos ni validación x86 original en dispositivo. [Informe](performance/tecno/ARM64_X87_FLD32_VISIBILITY_2026-10-16.md).
+
+
 **Nuevo diagnóstico ARM64 fuera del TECNO (2026-10-16):** cruzados de nuevo dos perfiles físicos históricos con ELF/Build ID/p-code fijados: 16 instrucciones x86 aparecen en top-20 de ambos; `0x004d9511` mostró 55 y 35 muestras respectivamente y agrupa NaN/compare/copy x87. Las rutas seguras NaN y FCOM ya existen OFF y se han probado físicamente sin ganancia estable; `sx` explícito vs vigente no cambia el tamaño AArch64. Mantener los flags OFF. [Informe](performance/tecno/ARM64_HOTPATH_RESEARCH_2026-10-16.md).
 
 
