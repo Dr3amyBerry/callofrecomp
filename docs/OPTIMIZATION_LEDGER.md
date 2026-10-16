@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-MET-04 — diagnóstico de A1 y CI privada/pública (2026-10-16):** Conservar verificación de p-code real en estaciones autorizadas, marcar `skip` solo cuando falten los originales en CI y mantener tests sintéticos. En calentamiento fallido del runner ARM64 registrar evidencia privada antes de restaurar, sin aceptar FPS ni instalar B. [Informe](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
+
+
 **ARM64-X87-FLD32-NORMAL-01, 39 sitios en 0x5061B0 (2026-10-16):**
 Estado opt-in OFF. 4.096 casos/8.192 ejecuciones AArch64 más 16 faltas de RAM equivalentes; normal 55→52 instrucciones aisladas, especiales 54→59. Texto ELF B +1.144 bytes, 490 exportaciones A/B; fuentes y build A restauradas. A1 física no comparable, B no instalada, ninguna mejora FPS demostrada. [Informe](performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md).
 

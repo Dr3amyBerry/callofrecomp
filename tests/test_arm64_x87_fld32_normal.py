@@ -35,6 +35,8 @@ class HotFLD32ARM64Tests(unittest.TestCase):
         sys.path.insert(0, str(ROOT / "tools/recomp"))
         from pcode2c import parse
         p = ROOT / "recomp_out/codsp.pcode"
+        if not p.is_file():
+            self.skipTest("Private CoDSP p-code unavailable in public checkout")
         self.assertEqual(sha256(p.read_bytes()).hexdigest(), patch.PCODE_SHA256)
         instructions, _, _ = parse(p)
         matching = []
@@ -50,6 +52,8 @@ class HotFLD32ARM64Tests(unittest.TestCase):
 
     def test_source_roundtrip_byte_exact_without_other_pc_changes(self):
         source = ROOT / "recomp_out/codsp_recomp_p10.c"
+        if not source.is_file():
+            self.skipTest("Private generated CoDSP source unavailable in public checkout")
         original = source.read_bytes()
         self.assertEqual(sha256(original).hexdigest(), patch.SOURCE_SHA256)
         edited, pcs = patch.transform_file(original, apply=True)

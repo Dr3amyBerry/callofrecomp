@@ -29,7 +29,8 @@ class FCHSARM64Tests(unittest.TestCase):
         sys.path.insert(0,str(ROOT/"tools/recomp"))
         from pcode2c import parse
         pcode=ROOT/"recomp_out/codsp.pcode"
-        self.assertTrue(pcode.is_file())
+        if not pcode.is_file():
+            self.skipTest("Private CoDSP p-code unavailable in public checkout")
         self.assertEqual(sha256(pcode.read_bytes()).hexdigest(),sign.PCODE_SHA256)
         ins,_,_=parse(pcode)
         for pc in sign.PC_SITES:

@@ -297,6 +297,43 @@ class ABABTests(unittest.TestCase):
         self.assertEqual(removals, [('shell', 'run-as', abab.PACKAGE, 'rm', '-f', abab.LOG)])
         self.assertTrue((self.run / 'captures/a1-scene.png').exists())
 
+    def test_rejected_a1_warmup_records_scene_and_environment_then_restores(self):
+        runner = abab.Runner(abab.load_plan(self.prepare()))
+        events = self.device(runner)
+        runner.log = lambda: 'CL_InitCGame:\n' + frames(16.0, 58.0)
+        initialization = iter([
+            '--- Common Initialization Complete ---',
+            frames(60, 10),
+            'G_loadGame:\nCL_InitCGame:',
+            'CL_InitCGame:\n' + frames(16.0, 58.0),
+        ])
+
+        def wait(predicate, **kwargs):
+            text = next(initialization)
+            self.assertTrue(predicate(text))
+            return text
+
+        runner.wait_log = wait
+        with patch.object(abab.time, 'sleep'), \
+             patch.object(abab, 'snapshot', return_value={'thermal_status': 0}), \
+             patch.object(abab, 'capture_path',
+                          side_effect=lambda r, name: r / 'captures' / (name + '.png')):
+            with self.assertRaisesRegex(RuntimeError, 'Non-comparable baseline'):
+                runner.execute()
+
+        report = json.loads((self.run / 'metrics/A1-warmup-rejected.json').read_text())
+        self.assertEqual(report['kind'], 'rejected_warmup_not_performance_evidence')
+        self.assertEqual(report['gate']['reason_codes'], ['reference_mismatch'])
+        self.assertEqual(report['gate']['median_fps'], 16.0)
+        self.assertEqual(report['environment']['thermal_status'], 0)
+        self.assertTrue(report['scene']['comparable'])
+        self.assertTrue((self.run / 'captures/a1-warmup-rejected.png').exists())
+        self.assertTrue((self.run / 'logs/A1-warmup-rejected.log').exists())
+        self.assertEqual(sum(e[0] == 'push' for e in events), 2)  # A, restore; never B.
+        outcome = json.loads((self.run / 'reports/abab-result.json').read_text())
+        self.assertTrue(outcome['restored'])
+        self.assertEqual(outcome['completed_stages'], [])
+
     def test_timed_out_commit_is_proven_terminal_before_restoration_install(self):
         runner = abab.Runner(abab.load_plan(self.prepare()))
         events = self.device(runner, interrupt_first_commit=True, pending_polls=2)

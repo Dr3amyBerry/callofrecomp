@@ -327,6 +327,44 @@ class Runner:
     def tap(self, x: int, y: int) -> None:
         self.adb('shell', 'input', 'tap', str(x), str(y))
 
+    def record_failed_warmup(self, label: str, reason: str) -> None:
+        """Collect a single private, read-only diagnostic before rejecting a stage.
+
+        Never use these artifacts as valid FPS samples: they describe the failed
+        pre-capture checkpoint only. No configuration, save or power state changes.
+        """
+        report = {
+            'stage': label,
+            'reason': reason,
+            'recorded_utc': datetime.now(timezone.utc).isoformat(),
+            'expected_baseline_fps': self.plan['reference_fps'] if label.startswith('A') else None,
+            'kind': 'rejected_warmup_not_performance_evidence',
+        }
+        try:
+            text = self.log()
+            gameplay = text.rsplit('CL_InitCGame:', 1)[-1]
+            report['gate'] = capture_gate(
+                gameplay, last=20, edge=5,
+                reference_fps=report['expected_baseline_fps'])
+            # Bound the evidence; it remains in this private run only.
+            write_text(self.run / 'logs' / (label + '-warmup-rejected.log'), gameplay[-24000:])
+        except Exception as exc:
+            report['log_error'] = type(exc).__name__ + ': ' + str(exc)
+        try:
+            report['environment'] = snapshot(self.plan['serial'])
+        except Exception as exc:
+            report['environment_error'] = type(exc).__name__ + ': ' + str(exc)
+        try:
+            png = self.adb('exec-out', 'screencap', '-p', timeout=30)
+            name = label.lower() + '-warmup-rejected'
+            write_png(capture_path(self.run, name), png)
+            report['scene'] = compare_scene(
+                self.plan['scene']['fingerprint'], _fingerprint(png))
+            report['capture_name'] = name + '.png'
+        except Exception as exc:
+            report['capture_error'] = type(exc).__name__ + ': ' + str(exc)
+        write_json(self.run / 'metrics' / (label + '-warmup-rejected.json'), report)
+
     def stage(self, label: str) -> str:
         self.savecheck()
         self.battery()
@@ -355,7 +393,13 @@ class Runner:
                 raise RuntimeError('Non-comparable baseline; stop before B')
             return gate['stable']
 
-        self.wait_log(warmed, timeout=180)
+        try:
+            self.wait_log(warmed, timeout=180)
+        except RuntimeError as exc:
+            # A slow A1 must not silently become a comparison with a faster B.
+            # Diagnose the failed run *before* the finally handler restores A.
+            self.record_failed_warmup(label, str(exc))
+            raise
         # Exactly one image per stage; script comparison, no repeated UI inspection.
         raw = self.adb('exec-out', 'screencap', '-p', timeout=30)
         write_png(capture_path(self.run, label.lower() + '-scene'), raw)

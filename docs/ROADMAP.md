@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**ARM64, siguiente bloque (2026-10-16):** Verificar CI pública sin fuentes comerciales privadas y obtener una captura diagnóstica durante la referencia anómala 17 FPS usando el corredor A/B/A/B mejorado. No instalar la candidata FLD32 mientras A no cumpla referencia/escena; después medir A/B/A/B con una sesión y APK pinneadas por hash. [Criterios](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
+
+
 **Próximo paso ARM64 tras FLD32 de 0x5061B0 (2026-10-16):**
 39 conversiones FLD32 comprobadas y reversibles; el ahorro de tres instrucciones en una FLD aislada requiere verificación física. Reproducir escena y referencia ~22 FPS antes de acumular cambios o activar el flag OFF. No confundir Unicorn con FPS. [Pruebas](performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md).
 

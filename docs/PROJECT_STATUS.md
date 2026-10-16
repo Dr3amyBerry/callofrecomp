@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**TECNO ARM64 — CI y diagnóstico de calentamiento (2026-10-16):** La comprobación pública de p-code comercial ahora omite solo las pruebas dependientes de originales ausentes; fixtures y pruebas locales siguen activas. El A/B/A/B almacena evidencia privada (imagen, log, gate y HAL/CPU) cuando una A1 no es comparable, sin instalar B por ese motivo ni aceptar FPS falsos. [Procedimiento y límites](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md). Resultados de CI/dispositivo: actualizar después de cada ejecución.
+
+
 **TECNO ARM64 FLD32 0x5061B0 (2026-10-16):**
 Opt-in OFF: 39 conversiones normales exactas float32→binary80, 8.192 ejecuciones AArch64, 16 fallos RAM con estado PC/R conservado; FLD normal 55→52 instrucciones en oráculo aislado. APKs A/B compiladas con 490 exportaciones y C generado restaurado por SHA. A/B/A/B físico abortado A1 no comparable, B no instalada; APK 0.2.4 y save verificados. Sin FPS medidos de la candidata. [Informe](performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md).
 
