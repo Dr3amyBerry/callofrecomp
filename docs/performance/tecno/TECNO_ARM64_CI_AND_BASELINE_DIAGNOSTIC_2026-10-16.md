@@ -27,3 +27,16 @@ Primero: verificar GitHub Actions `tools-ci` en la revisión con estos cambios. 
 - Catálogo de documentos: 134 documentos verificados, sin enlaces locales rotos. `git diff --check` correcto.
 
 Estos resultados prueban el tooling, **no** la ganancia de FPS de FLD32. El workflow público debe confirmarse por separado después del push.
+
+## Resultado físico adicional — sesión de diagnóstico 2026-10-16 UTC
+
+- **Commit del tooling:** `517910ec4957ad7d2b8c1e31cd8cac04ca40112d`. GitHub Actions `tools-ci` [38846701351](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38846701351) aprobó el conjunto público, incluidos los CTest en Linux.
+- **Sesión privada nueva:** `.local/profiles/runs/tecno/2026-10-16/arm64-fld32-warmup-diagnostic/20261016T033904Z-8868-00/`. Plan `reports/abab-plan.json`, originales comerciales fuera de Git, captura `captures/a1-warmup-rejected.png`, `metrics/A1-warmup-rejected.json` y `logs/A1-warmup-rejected.log`.
+- **A1 detenida ANTES de B** al alcanzar 20 ventanas: **17,10 FPS**, **56,16 ms CPU/frame**, FPS p10 de ventanas **16,10**, desviación externa **−21,1073 %** frente a 21,675. La serie es temporalmente estable (deriva de extremos **−1,1628 %**, mitades **+1,1799 %**), pero corresponde a un estado de carga **no comparable**. No hay FPS medidos de la APK B.
+- **Evidencia simultánea:** batería 35 °C/100 % USB, HAL CPU/GPU **51,3 °C**, skin **40 °C**, `thermal_status=0`, relojes observados de núcleos 6/7 a 2,0/1,9 GHz. Son instantáneas y no descartan cambio de planificación, contención, GPU ni el trabajo dinámico real del guion.
+- **Imagen anclada:** huella de escena central aceptada con **0,3091 %** de diferencia; una comparación visual directa entre PNG privados muestra un mensaje temporal de HUD/objetivo en la referencia que no está presente en el rechazo. Esto **no demuestra** por sí solo que la cámara, IA o geometría difieran: no confundir una notificación con una causa de 13 ms CPU/frame.
+- **Restauración:** `reports/abab-result.json` registra `status=failed`, `restored=true`, `completed_stages=[]`. Segunda verificación ADB confirmó APK instalada SHA-256 `fb8647c34dfe8fd269c0902f34edcc4c0844b18c6aa13ff6006232678da25f70`, partida SHA-256 `efbc68e54fabc79946dfd3a9d188e5f6ba284b1aad99130bbe2726eb637f64f8`. El repositorio sigue limpio, no cambió código del motor.
+
+### Próximo experimento fundamentado
+
+**No lanzar reiteradamente FLD32 contra una A1 inconsistente.** Prioridad: comparar la misma APK 0.2.4 en estados ~17 y ~22 FPS con controles de proceso/hilos, frecuencias temporales, ejecución del guion y perfil Simpleperf asociado al ELF exacto; separar tiempo de ejecución CPU de la espera/scheduler y usar capturas/estados de escena equivalentes. Solo entonces repetir A/B/A/B, exigir repetibilidad de A y conservar cualquier beneficio válido de FLD32 como opt-in hasta contar con evidencia. Mantener calidad Equilibrado y partidas iguales.

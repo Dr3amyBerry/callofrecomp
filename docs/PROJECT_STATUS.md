@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**TECNO FLD32 / CI, comprobación posterior a `517910e` (2026-10-16):** [GitHub Actions 38846701351](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38846701351) **PASS**. Nuevo intento físico: A1 reproduciblemente lenta, 17,10 FPS y 56,16 ms CPU/frame frente a referencia externa 21,675 FPS; escena central similar (0,3091 %), HUD temporal no idéntico, HAL térmico 0, batería 35 °C. Ensayo abortó correctamente antes de B; **0.2.4 y save restaurados y verificados por SHA**. FLD32 sigue opt-in OFF; no existe resultado FPS B. [Evidencia y próxima acción](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
+
+
 **TECNO ARM64 — CI y diagnóstico de calentamiento (2026-10-16):** La comprobación pública de p-code comercial ahora omite solo las pruebas dependientes de originales ausentes; fixtures y pruebas locales siguen activas. El A/B/A/B almacena evidencia privada (imagen, log, gate y HAL/CPU) cuando una A1 no es comparable, sin instalar B por ese motivo ni aceptar FPS falsos. [Procedimiento y límites](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md). Resultados de CI/dispositivo: actualizar después de cada ejecución.
 
 

@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**ARM64 — resolución del A1 lento (2026-10-16):** CI ya aprobó (`517910e`, run 38846701351); nueva captura física A1 dio 17,10 FPS / 56,16 ms CPU con encuadre aparente compatible y distinta notificación transitoria de HUD, batería 35 °C, `thermal_status=0`. La referencia A1 no es comparable; B FLD32 NO instalada. Siguiente: contrastar perfilado de CPU/scheduler y estado real del guion en períodos de ~17 y ~22 FPS con la **misma APK** antes de otro A/B/A/B. [Informe](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
+
+
 **ARM64, siguiente bloque (2026-10-16):** Verificar CI pública sin fuentes comerciales privadas y obtener una captura diagnóstica durante la referencia anómala 17 FPS usando el corredor A/B/A/B mejorado. No instalar la candidata FLD32 mientras A no cumpla referencia/escena; después medir A/B/A/B con una sesión y APK pinneadas por hash. [Criterios](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
 
 

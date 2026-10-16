@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-MET-04 resultado físico y CI (2026-10-16):** `517910e` reparó CI [run 38846701351 PASS](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38846701351), manteniendo oráculos locales privados. A1 FLD32 17,10 FPS y 56,16 ms CPU frente a referencia 21,675: rechazo antes de B, imagen/entorno registrados en sesión privada, APK original y save restaurados exactos. **Sin nueva ganancia FPS certificada**; investigar estado de ejecución 17/22. [Detalles](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
+
+
 **ARM64-MET-04 — diagnóstico de A1 y CI privada/pública (2026-10-16):** Conservar verificación de p-code real en estaciones autorizadas, marcar `skip` solo cuando falten los originales en CI y mantener tests sintéticos. En calentamiento fallido del runner ARM64 registrar evidencia privada antes de restaurar, sin aceptar FPS ni instalar B. [Informe](performance/tecno/TECNO_ARM64_CI_AND_BASELINE_DIAGNOSTIC_2026-10-16.md).
 
 
