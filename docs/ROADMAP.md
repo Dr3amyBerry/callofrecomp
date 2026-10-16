@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**Investigación offline ARM64 (2026-10-16):** repetidos los dos perfiles físicos históricos con Build ID/huella originales, 16 PCs hot aparecen en ambos; predominan instrucciones relacionadas con x87, pero no es desglose exclusivo de tiempo CPU. La alternativa simple de `sx` emite exactamente los mismos tamaños ARM64 en 11 anchos con `-O1/-O2`, descartada. FCOM y NaN bits ya tienen opt-in con A/B físico inconcluso/regresivo, **no activarlos**. Prioridad próxima: análisis seguro de vida de flags/estado x87 y perfiles de la variación de escena/scheduler antes de otro cambio. [Informe](performance/tecno/ARM64_HOTPATH_RESEARCH_2026-10-16.md).
+
+
 **ARM64 siguiente validación (2026-10-16):** experimental `--arm64-narrow-sar` implementado OFF, oráculos de bits y ARM64 aprobados; el ELF completo reduce 184 bytes y 44 instrucciones estáticas en cinco chunks CoDSP. No extrapolar a FPS: cuando vuelva el teléfono realizar A/B/A/B independiente a igual escena, calidad y guardados. [Evidencia](performance/tecno/ARM64_NARROW_SAR_2026-10-16.md).
 
 

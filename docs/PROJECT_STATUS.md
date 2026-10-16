@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**Nuevo diagnóstico ARM64 fuera del TECNO (2026-10-16):** cruzados de nuevo dos perfiles físicos históricos con ELF/Build ID/p-code fijados: 16 instrucciones x86 aparecen en top-20 de ambos; `0x004d9511` mostró 55 y 35 muestras respectivamente y agrupa NaN/compare/copy x87. Las rutas seguras NaN y FCOM ya existen OFF y se han probado físicamente sin ganancia estable; `sx` explícito vs vigente no cambia el tamaño AArch64. Mantener los flags OFF. [Informe](performance/tecno/ARM64_HOTPATH_RESEARCH_2026-10-16.md).
+
+
 **ARM64-NARROW-SAR-01, 2026-10-16 (offline, OFF):** especialización exacta de SAR para valores guest de 1..8 bytes; fallback original para 9..16 bytes. Oráculo independiente y ejecución AArch64 Unicorn sin divergencias; build NDK A/B firmado conserva los 490 símbolos, recursos y manifiesto. **−184 bytes de .text y −44 instrucciones estáticas en 5 chunks CoDSP**, sin nuevos FPS ni acceso al TECNO. [Informe](performance/tecno/ARM64_NARROW_SAR_2026-10-16.md).
 
 

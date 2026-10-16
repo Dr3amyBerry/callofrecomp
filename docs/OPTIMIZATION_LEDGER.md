@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-OFFLINE-TRIAGE (2026-10-16):** auditoría independiente repetida de dos capturas Simpleperf verificadas Build ID `80dc3884...`, 16 PC x86 en top-20 de ambos perfiles. 1.255/1.557 y 1.005/1.244 muestras atribuibles a instrucciones asociadas con x87 dentro de ocho cuerpos, sin ser coste exclusivo. Optimización directa de `sx` descartada: **delta 0 bytes** en 11 wrappers O1 y O2. `x87-nan-bits` y `x87-fcom-fastpath` ya experimentados (FCOM B2 regresivo), no duplicar ni activar. [Datos](performance/tecno/ARM64_HOTPATH_RESEARCH_2026-10-16.md).
+
+
 **ARM64-NARROW-SAR-01 (2026-10-16, opt-in/OFF):** SAR de ancho 1..8 B usando int64 y extensión final a 128 bits; fallback sin cambios en n>8. A/B NDK −184 B `.text`, cinco chunks CoDSP −44 instrucciones estáticas, 490 exportaciones iguales y recursos inmutables. Oráculo byte independiente + 8.192 ejecuciones en Unicorn sin discrepancias. Sin evidencia de FPS ni fidelidad de juego completo. [Datos](performance/tecno/ARM64_NARROW_SAR_2026-10-16.md).
 
 
