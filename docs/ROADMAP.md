@@ -1,5 +1,9 @@
 # Cola de trabajo del proyecto
 
+**Siguiente fase ARM64 binary80 (2026-10-16):**
+Conservar la candidata `--arm64-x87-sign-bits` para los tres FCHS validados [informe](performance/tecno/ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md), pero no generalizar hasta modelar semantica de estado x87 (SW/C1/TOP/tags/excepciones/alias/faltas) y demostrar equivalencia con original x86. Sin telefono no declarar ganancias de FPS. Proseguir por bloques reversibles offline.
+
+
 **ARM64-MET-03 / A/B/A/B reutilizable:** [candidatas y automatizacion preparada](performance/tecno/ARM64_OFFLINE_READY_2026-10-15.md). CLI offline + ejecucion separada; reutiliza logs, escena historica y guardas, una imagen por pasada. Tres planes con APK/SHA fijados, sin ADB ni capturas nuevas. Recuperacion por sesion de instalacion verificada con dobles; firmware fisico pendiente.
 
 **ARM64-08 / shifts estrechos:** [helper, oracle y APK A/B](performance/tecno/ARM64_NARROW_RIGHT_SHIFT_2026-10-15.md). Opt-in OFF; `.text` neta -16 bytes, cambios mixtos por chunk y ninguna ganancia FPS demostrada. 8.192 casos AArch64 por variante; 494 pruebas Python y 40 CTest. Siguiente: preparar comparaciones fisicas de candidatas y continuar segun el coste real, sin activar rutas inseguras.

@@ -90,10 +90,14 @@
 - [WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md](../performance/graphics/WSA_VULKAN_STAGED_BENCHMARK_2026-10-14.md) — Benchmark por etapas: WSA actual → superficie Vulkan → juego final
 - [WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md](../performance/graphics/WSA_VULKAN_TEXENV_ALPHA_2026-10-14.md) — Vulkan WSA: TexEnv MODULATE/REPLACE + prueba alfa (2026-10-14)
 - [WSA_VULKAN_TEXTURE_2026-10-14.md](../performance/graphics/WSA_VULKAN_TEXTURE_2026-10-14.md) — Vulkan WSA: subida real de texturas RGBA8 con staging y sampler
+- [ARM64_DISPATCH_ENTRY_CACHE_2026-10-15.md](../performance/tecno/ARM64_DISPATCH_ENTRY_CACHE_2026-10-15.md) — ARM64: cache local de entrada completa de dispatch
+- [ARM64_NARROW_RIGHT_SHIFT_2026-10-15.md](../performance/tecno/ARM64_NARROW_RIGHT_SHIFT_2026-10-15.md) — ARM64: desplazamientos logicos derechos estrechos
+- [ARM64_OFFLINE_READY_2026-10-15.md](../performance/tecno/ARM64_OFFLINE_READY_2026-10-15.md) — ARM64: candidatas y procedimiento A/B/A/B preparado
 - [ARM64_PERF_EXPERIMENTS_2026-10-14.md](../performance/tecno/ARM64_PERF_EXPERIMENTS_2026-10-14.md) — TECNO CK6n ARM64: experimentos posteriores a x87 — 14 de octubre de 2026
 - [ARM64_RENDERER_CPU_FCOM_2026-10-14.md](../performance/tecno/ARM64_RENDERER_CPU_FCOM_2026-10-14.md) — CPU del renderizador en TECNO: auditoría GL4ES y comparaciones x87 (2026-10-14)
 - [ARM64_SAFE_ICF_2026-10-15.md](../performance/tecno/ARM64_SAFE_ICF_2026-10-15.md) — ARM64: deduplicación segura de código y copias x87
 - [ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md](../performance/tecno/ARM64_WSA_LOCAL_STATE_BINARY80_2026-10-15.md) — TECNO ARM64: primera adaptación del enlace local de WSA y referencia numérica binary80 — 2026-10-15
+- [ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md](../performance/tecno/ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md) — ARM64: cambio exacto del signo binary80 en tres FCHS de CoDSP
 - [ARM64_X87_NAN_BITS_2026-10-14.md](../performance/tecno/ARM64_X87_NAN_BITS_2026-10-14.md) — CoDSP ARM64: detección binaria x87 NaN — 14 de octubre de 2026
 - [ARM64_X87_NORMAL_F2D_2026-10-14.md](../performance/tecno/ARM64_X87_NORMAL_F2D_2026-10-14.md) — CoDSP ARM64: fast path de conversión x87 normal a double — 2026-10-14
 - [CPU_PHASE10_TECNO_P4_PROFILED_ABA_2026-10-14.md](../performance/tecno/CPU_PHASE10_TECNO_P4_PROFILED_ABA_2026-10-14.md) — Fase 10 — Validación física A/B/A de la conversión x87 perfilada de p4

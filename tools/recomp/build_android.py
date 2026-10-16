@@ -73,6 +73,8 @@ def main():
                         help="ARM64 experiment: x87 fast conversion only in four sampled p4 function bodies, OFF")
     parser.add_argument("--x87-normal-f2d-p4-profiled", action="store_true",
                         help="ARM64 experiment: only 277 x87 sites at 124 historically sampled CoDSP p4 guest PCs, OFF")
+    parser.add_argument("--arm64-x87-sign-bits", action="store_true",
+                        help="ARM64 opt-in: exact binary80 sign toggle at 3 verified CoDSP FCHS PCs; OFF")
     parser.add_argument("--x87-stack-shift-outline", action="store_true",
                         help="ARM64-only experiment: outline exact 7-step CoDSP x87 register "
                              "shifts; generated C restored in normal builds (OFF)")
@@ -97,6 +99,10 @@ def main():
                         help="ARM64 ICF A/B reference: emit address-significance metadata without enabling folding; OFF")
     parser.add_argument("--wsa-release", action="store_true", help="WSA cumulative + local-state release; default native x87 on and frame limit 120")
     args = parser.parse_args()
+    if args.arm64_x87_sign_bits and args.abi != "arm64-v8a":
+        parser.error("--arm64-x87-sign-bits requires arm64-v8a")
+    if args.arm64_x87_sign_bits and args.package_only:
+        parser.error("--arm64-x87-sign-bits cannot use --package-only")
     if args.arm64_narrow_right_shift and args.abi != 'arm64-v8a':
         parser.error('--arm64-narrow-right-shift requires arm64-v8a')
     if args.arm64_dispatch_entry_cache and args.abi != 'arm64-v8a':
@@ -194,6 +200,12 @@ def main():
         # their strict baseline hashes must see the original generated C.
         shift_script = root / 'tools/recomp/patch_codsp_x87_shift.py'
         pcode_path = root / 'recomp_out/codsp.pcode'
+        sign_script = root / 'tools/recomp/patch_codsp_x87_sign.py'
+        sign_source = root / 'recomp_out/codsp_recomp_p0.c'
+        if args.arm64_x87_sign_bits and not sign_source.is_file():
+            parser.error("--arm64-x87-sign-bits requires generated CoDSP p0")
+        if sign_source.is_file():
+            run(sys.executable, sign_script, sign_source, pcode_path, '--restore')
         shift_parts = [root / f'recomp_out/codsp_recomp_p{i}.c'
                        for i in range(12)]
         if args.x87_stack_shift_outline and not all(f.is_file() for f in shift_parts):
@@ -227,6 +239,8 @@ def main():
             run(sys.executable, root / 'tools/recomp/patch_codsp_fcom.py',
                 root / 'recomp_out/codsp_recomp_p1.c',
                 root / 'recomp_out/codsp_recomp_p8.c')
+        if args.arm64_x87_sign_bits:
+            run(sys.executable, sign_script, sign_source, pcode_path, '--apply')
         if args.x87_stack_shift_outline:
             # This is a source-level, reversible experiment. No production
             # compiler define is needed; helpers remain dead when unused.

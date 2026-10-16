@@ -1,5 +1,9 @@
 # Investigación TECNO CK6n ARM64 — objetivo vigente
 
+**ARM64, signo binary80 en FCHS (2026-10-16):**
+[Candidato offline de tres instrucciones](ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md), APK y equivalencia de valor; -1.032 bytes de `.text`, OFF por defecto, sin TECNO/WSA ni nuevos FPS.
+
+
 **Control de estabilidad TECNO (2026-10-15):**
 Dos corridas de la MISMA 0.2.4: R3 21.70 FPS / 44.250 ms CPU y R4 21.65 FPS / 44.440 ms CPU; diferencia relativa -0.23 %. Veredicto: repetibilidad de referencia aceptable. No es una ganancia de optimización; son dos medidas del mismo código. [Informe tecnico](TECNO_STABILITY_GATE_2026-10-15.md).
 

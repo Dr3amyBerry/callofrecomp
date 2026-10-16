@@ -1,5 +1,9 @@
 # Estado actual de CallofRecomp
 
+**ARM64 binary80, FCHS de tres PCs (2026-10-16):**
+Flag `--arm64-x87-sign-bits` opt-in y OFF, cambia solo el bit de signo binary80 de tres instrucciones verificadas (CoDSP `0x41975e/0x419c48/0x419e12`). APK ARM64 A/B compiladas, -1.032 bytes `.text`, 490 exports intactos. 4.000 ejecuciones AArch64 Unicorn y 65.536 casos de oraculo x86 original; valor correcto en el alcance probado, **sin equivalencia plena SW/C1/excepciones ni FPS**. Compilacion normal restaurada. [Informe](performance/tecno/ARM64_X87_FCHS_SIGN_BITS_2026-10-16.md).
+
+
 **ARM64-MET-03 / A/B/A/B reutilizable:** [candidatas y automatizacion preparada](performance/tecno/ARM64_OFFLINE_READY_2026-10-15.md). CLI offline + ejecucion separada; reutiliza logs, escena historica y guardas, una imagen por pasada. Tres planes con APK/SHA fijados, sin ADB ni capturas nuevas. Recuperacion por sesion de instalacion verificada con dobles; firmware fisico pendiente.
 
 **ARM64-08 / shifts estrechos:** [helper, oracle y APK A/B](performance/tecno/ARM64_NARROW_RIGHT_SHIFT_2026-10-15.md). Opt-in OFF; `.text` neta -16 bytes, cambios mixtos por chunk y ninguna ganancia FPS demostrada. 8.192 casos AArch64 por variante; 494 pruebas Python y 40 CTest. Siguiente: preparar comparaciones fisicas de candidatas y continuar segun el coste real, sin activar rutas inseguras.
