@@ -1,5 +1,9 @@
 # Estado actual de CallofRecomp
 
+**TECNO, optimización ARM64 memoria/dispatch (2026-10-16):**
+Caché de entrada ARM64: A1 22,00 FPS, B1 21,55, A2 21,65; B2 no válida (deriva ~30 %). Enlace local R/MEM/U/PC: A1 rechazado como no comparable, sin prueba B. Rango unsigned de dispatch y copia R→R descartados por cero/peor código máquina. Sin ganancia validada ni flags activados; APK 0.2.4 y save comprobados por SHA. [Evidencia](performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).
+
+
 **TECNO ARM64 FCHS, A/B/A/B real (2026-10-16):**
 Cuatro capturas físicas estables A1/B1/A2/B2 de `--arm64-x87-sign-bits`: A 22,10 vs B 21,95 FPS (−0,68 %); CPU A 43,500 vs B 43,810 ms (+0,71 %). Ninguna señal positiva de velocidad; flag experimental OFF. APK 0.2.4 y partida reinstaladas/verificadas por SHA. [Informe](performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).
 

@@ -1,5 +1,9 @@
 # Investigación TECNO CK6n ARM64 — objetivo vigente
 
+**Ensayos ARM64 sobre memoria/dispatch (2026-10-16):**
+[Caché, enlace local, rango y autocopias](TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md): sin mejora validada; candidatos correctos retenidos como opt-in, prototipos regresivos retirados.
+
+
 **Prueba física ARM64 FCHS (2026-10-16):**
 [A/B/A/B de la opción de signo binary80](TECNO_FCHS_SIGN_ABAB_2026-10-16.md): cuatro pasadas válidas; sin mejora de FPS, APK original y partida verificadas.
 

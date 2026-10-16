@@ -1,5 +1,10 @@
 # Project Progress
 
+### 2026-10-16 — TECNO: controles ARM64 de memoria y dispatch
+- Caché de entrada A1/B1/A2 estables (22,00/21,55/21,65 FPS), B2 inválida por deriva +29,94 %. Enlace local: A1 no comparable, B no ejecutada. Ambas pruebas restauraron 0.2.4/save por SHA.
+- Se probaron dos variantes de búsqueda de rango AArch64; aumentaron cargas e instrucciones en 4 patrones, por lo que se revirtieron. Autocopias R→R ya eliminadas por Clang O1. [Detalles](../performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).
+
+
 ### 2026-10-16 — TECNO físico: cuatro capturas A/B/A/B FCHS
 - Probadas A1/B1/A2/B2 estables en la misma escena Camp Toccoa. FPS A 22,10 -> B 21,95 (−0,68 %), CPU A 43,500 -> B 43,810 ms (+0,71 %); sin señal positiva, optimización OFF.
 - Restaurada y verificada de forma independiente la 0.2.4 y training.svg por SHA, sin borrar datos. [Informe](../performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).

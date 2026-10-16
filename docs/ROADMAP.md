@@ -1,5 +1,9 @@
 # Cola de trabajo del proyecto
 
+**Próximo objetivo ARM64 tras descarte de caché (2026-10-16):**
+Priorizar accesos de estado de la función caliente CoDSP 0x005061B0 con pruebas que preserven x87 extendido, todos los PC, guardados y observabilidad en fallos de memoria. Las A/B actuales no prueban ganancia para caché de dispatch ni enlace local; resolver inestabilidad de escena antes de activar combinaciones. [Informe de controles](performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).
+
+
 **ARM64 FCHS, medición física cerrada (2026-10-16):**
 El parche de signo binary80 se conserva OFF: A/B/A/B válido en TECNO no produjo ganancia (−0,68 % FPS, +0,71 % CPU). Priorizar nuevos bloques de ahorro dinámico ARM64 con fidelidad verificada. [Mediciones](performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).
 

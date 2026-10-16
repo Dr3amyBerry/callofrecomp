@@ -1,5 +1,9 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-MEM-EXPERIMENT-01, física y AArch64 (2026-10-16):**
+La caché de dispatch tuvo A1/B1/A2 estables, B2 inestable (17→22 FPS, deriva casi 30 %); no se demuestra mejora. Enlace local A1 rechazado antes de B. Dos prototipos de comparación de rango aumentaron instrucciones y lecturas en Unicorn: revertidos exactamente. Ningún cambio de motor ni flag por defecto. [Datos](performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).
+
+
 **ARM64-SIGN80-02, A/B/A/B TECNO (2026-10-16):**
 Variante experimental de 3 PCs: 4/4 escenas y capturas estables, B más lenta en ambas parejas, −0,68 % FPS y +0,71 % CPU descriptivos; no activar por defecto. Original 0.2.4/save restaurados por hash. [Prueba física](performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md).
 
