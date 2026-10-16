@@ -58,4 +58,4 @@ Evidencia **privada e inmutable** dentro de `.local/profiles/runs/tecno/2026-10-
 - Compilaciones Android NDK reales: APKs firmadas para `p1` y `p0,p1`, sin instalar.
 - Auditoría ELF por `llvm-size`/`llvm-nm` y CMake/Ninja real: **490 símbolos**, recursos ZIP comparados, `-O2` aplicado únicamente a los subconjuntos exigidos.
 - `git diff --check` correcto; `tools/verify_local_artifacts.py --save` sin errores (advertencia preexistente: un script histórico sin ejecutar tiene sintaxis inválida). Verificados 200 scripts, 33 capturas, 7 builds archivados y ningún archivo privado rastreado por Git.
-- Catálogo: **135 documentos** sin enlaces rotos. CI de GitHub se confirmará tras el push.
+- Catálogo: **135 documentos** sin enlaces rotos. CI GitHub pública: [tools-ci 38892591147 PASS](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38892591147) para el commit [`63eba60`](https://github.com/Dr3amyBerry/callofrecomp/commit/63eba604fbd42345ac898d395e7d8c17469a7a54).
