@@ -67,4 +67,4 @@ La reversión de fuentes p0/p8 se ejecutó al finalizar B y ambas volvieron **ex
 - `ctest --test-dir .local/builds/build --output-on-failure`: **40/40 aprobados** (147,61 s).
 - Auditoría de artefactos privados: `pass_with_warnings`, cero errores y **cero rutas privadas rastreadas**. Advertencia preexistente: script Python histórico no ejecutado con sintaxis inválida.
 - Índice documental: **139 documentos y 0 enlaces rotos**. `git diff --check` aprobado.
-- GitHub Actions: verificar el nuevo commit público después del push; la CI anterior no valida automáticamente esta modificación.
+- GitHub Actions: [tools-ci 38965409748 PASS](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38965409748) para [commit `593b4ed`](https://github.com/Dr3amyBerry/callofrecomp/commit/593b4ed5c270750ec5d38712bc4a8a4a8d4140d7). Workflow de análisis y pruebas host completo, sin fallos. Avisos no bloqueantes de deprecación de acciones Node.js y `setup-java@v4`.
