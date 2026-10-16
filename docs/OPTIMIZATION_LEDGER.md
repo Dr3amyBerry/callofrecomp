@@ -1,5 +1,9 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-X87-FLD32-NORMAL-01, 39 sitios en 0x5061B0 (2026-10-16):**
+Estado opt-in OFF. 4.096 casos/8.192 ejecuciones AArch64 más 16 faltas de RAM equivalentes; normal 55→52 instrucciones aisladas, especiales 54→59. Texto ELF B +1.144 bytes, 490 exportaciones A/B; fuentes y build A restauradas. A1 física no comparable, B no instalada, ninguna mejora FPS demostrada. [Informe](performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md).
+
+
 **ARM64-MEM-EXPERIMENT-01, física y AArch64 (2026-10-16):**
 La caché de dispatch tuvo A1/B1/A2 estables, B2 inestable (17→22 FPS, deriva casi 30 %); no se demuestra mejora. Enlace local A1 rechazado antes de B. Dos prototipos de comparación de rango aumentaron instrucciones y lecturas en Unicorn: revertidos exactamente. Ningún cambio de motor ni flag por defecto. [Datos](performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).
 

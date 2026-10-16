@@ -1,5 +1,9 @@
 # Investigación TECNO CK6n ARM64 — objetivo vigente
 
+**CoDSP 0x005061B0, FLD32 exacto (2026-10-16):**
+[39 conversiones normales a binary80](TECNO_ARM64_HOT_FLD32_2026-10-16.md): 8.192 ejecuciones AArch64 y 16 faltas RAM equivalentes, OFF. Intento físico TECNO abortado en A1 no comparable, sin FPS atribuibles.
+
+
 **Ensayos ARM64 sobre memoria/dispatch (2026-10-16):**
 [Caché, enlace local, rango y autocopias](TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md): sin mejora validada; candidatos correctos retenidos como opt-in, prototipos regresivos retirados.
 

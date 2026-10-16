@@ -1,5 +1,9 @@
 # Cola de trabajo del proyecto
 
+**Próximo paso ARM64 tras FLD32 de 0x5061B0 (2026-10-16):**
+39 conversiones FLD32 comprobadas y reversibles; el ahorro de tres instrucciones en una FLD aislada requiere verificación física. Reproducir escena y referencia ~22 FPS antes de acumular cambios o activar el flag OFF. No confundir Unicorn con FPS. [Pruebas](performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md).
+
+
 **Próximo objetivo ARM64 tras descarte de caché (2026-10-16):**
 Priorizar accesos de estado de la función caliente CoDSP 0x005061B0 con pruebas que preserven x87 extendido, todos los PC, guardados y observabilidad en fallos de memoria. Las A/B actuales no prueban ganancia para caché de dispatch ni enlace local; resolver inestabilidad de escena antes de activar combinaciones. [Informe de controles](performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).
 

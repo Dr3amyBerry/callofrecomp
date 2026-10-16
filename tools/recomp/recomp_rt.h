@@ -255,3 +255,6 @@ static inline double codsp_x87_normal_f2d(u128 v, int n) {
 // The original f2d remains callable as (f2d)(bits, n) for differential tests.
 #define f2d(v,n) codsp_x87_normal_f2d((v),(n))
 #endif
+
+// Opt-in CoDSP FLD m32 conversion; unused in default generated code.
+#include "runtime/x87_fld32_normal.h"

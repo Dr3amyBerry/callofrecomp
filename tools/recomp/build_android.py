@@ -75,6 +75,8 @@ def main():
                         help="ARM64 experiment: only 277 x87 sites at 124 historically sampled CoDSP p4 guest PCs, OFF")
     parser.add_argument("--arm64-x87-sign-bits", action="store_true",
                         help="ARM64 opt-in: exact binary80 sign toggle at 3 verified CoDSP FCHS PCs; OFF")
+    parser.add_argument("--arm64-x87-fld32-normal", action="store_true",
+                        help="ARM64 opt-in: exact normal binary32->binary80 mapping at 39 CoDSP hot PCs; OFF")
     parser.add_argument("--x87-stack-shift-outline", action="store_true",
                         help="ARM64-only experiment: outline exact 7-step CoDSP x87 register "
                              "shifts; generated C restored in normal builds (OFF)")
@@ -99,6 +101,16 @@ def main():
                         help="ARM64 ICF A/B reference: emit address-significance metadata without enabling folding; OFF")
     parser.add_argument("--wsa-release", action="store_true", help="WSA cumulative + local-state release; default native x87 on and frame limit 120")
     args = parser.parse_args()
+    if args.arm64_x87_fld32_normal and args.abi != "arm64-v8a":
+        parser.error("--arm64-x87-fld32-normal requires arm64-v8a")
+    if args.arm64_x87_fld32_normal and args.package_only:
+        parser.error("--arm64-x87-fld32-normal cannot use --package-only")
+    if args.arm64_x87_fld32_normal and args.x87_stack_shift_outline:
+        parser.error("--arm64-x87-fld32-normal cannot combine with x87 stack outlining")
+    if args.arm64_x87_fld32_normal and any((
+            args.x87_normal_f2d_p4, args.x87_normal_f2d_p4_selective,
+            args.x87_normal_f2d_p4_profiled)):
+        parser.error("--arm64-x87-fld32-normal must use original CoDSP p10 layout")
     if args.arm64_x87_sign_bits and args.abi != "arm64-v8a":
         parser.error("--arm64-x87-sign-bits requires arm64-v8a")
     if args.arm64_x87_sign_bits and args.package_only:
@@ -202,6 +214,13 @@ def main():
         pcode_path = root / 'recomp_out/codsp.pcode'
         sign_script = root / 'tools/recomp/patch_codsp_x87_sign.py'
         sign_source = root / 'recomp_out/codsp_recomp_p0.c'
+        fld32_script = root / 'tools/recomp/patch_codsp_x87_fld32.py'
+        fld32_source = root / 'recomp_out/codsp_recomp_p10.c'
+        if args.arm64_x87_fld32_normal and not fld32_source.is_file():
+            parser.error("--arm64-x87-fld32-normal requires generated CoDSP p10")
+        if fld32_source.is_file():
+            # Restore before optional x87 shifts inspect generated C.
+            run(sys.executable, fld32_script, fld32_source, pcode_path, '--restore')
         if args.arm64_x87_sign_bits and not sign_source.is_file():
             parser.error("--arm64-x87-sign-bits requires generated CoDSP p0")
         if sign_source.is_file():
@@ -241,6 +260,9 @@ def main():
                 root / 'recomp_out/codsp_recomp_p8.c')
         if args.arm64_x87_sign_bits:
             run(sys.executable, sign_script, sign_source, pcode_path, '--apply')
+        if args.arm64_x87_fld32_normal:
+            # Only FLD32 input conversions change; LOAD and x87 stores remain.
+            run(sys.executable, fld32_script, fld32_source, pcode_path, '--apply')
         if args.x87_stack_shift_outline:
             # This is a source-level, reversible experiment. No production
             # compiler define is needed; helpers remain dead when unused.

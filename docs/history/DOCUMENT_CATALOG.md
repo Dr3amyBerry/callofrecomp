@@ -118,6 +118,7 @@
 - [PERFORMANCE_STRATEGY_RUN_2026-10-14.md](../performance/tecno/PERFORMANCE_STRATEGY_RUN_2026-10-14.md) — Ejecución de PERFORMANCE_STRATEGY_CURRENT — TECNO (2026-10-14)
 - [PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md](../performance/tecno/PHASE15_TECNO_CPU_PROFILE_CROSSCUTTING_2026-10-15.md) — Fase 15 — Perfiles TECNO originales, presupuesto por fotograma y oportunidades transversales
 - [README.md](../performance/tecno/README.md) — Investigación TECNO CK6n ARM64 — objetivo vigente
+- [TECNO_ARM64_HOT_FLD32_2026-10-16.md](../performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md) — TECNO ARM64 — FLD32 exacto en CoDSP 0x005061B0
 - [TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md](../performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md) — TECNO ARM64 — reducción de accesos a memoria y dispatch: resultados físicos y offline
 - [TECNO_CK6N_ARM64_PERF_2026-10-14.md](../performance/tecno/TECNO_CK6N_ARM64_PERF_2026-10-14.md) — TECNO CK6n: medición real de CallofRecomp ARM64 — 2026-10-14
 - [TECNO_FCHS_SIGN_ABAB_2026-10-16.md](../performance/tecno/TECNO_FCHS_SIGN_ABAB_2026-10-16.md) — TECNO CK6n — A/B/A/B físico para ARM64 FCHS sign-bit (2026-10-16 UTC)

@@ -1,5 +1,10 @@
 # Project Progress
 
+### 2026-10-16 — CoDSP ARM64 0x005061B0: FLD32 normal exacto
+- Implementado flag ARM64 opt-in de 39 sitios, referencia bit a bit y fallos RAM AArch64 equivalentes: 8.192 ejecuciones, 16 fallos, normal FLD 55→52 instrucciones aisladas.
+- APK A/B compiladas, texto B +1.144 bytes, exportaciones 490/490; todos los C originales restaurados. TECNO rechazó A1 antes de instalar B, original 0.2.4 y partida verificados por SHA. OFF; no FPS nuevos. [Informe](../performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md).
+
+
 ### 2026-10-16 — TECNO: controles ARM64 de memoria y dispatch
 - Caché de entrada A1/B1/A2 estables (22,00/21,55/21,65 FPS), B2 inválida por deriva +29,94 %. Enlace local: A1 no comparable, B no ejecutada. Ambas pruebas restauraron 0.2.4/save por SHA.
 - Se probaron dos variantes de búsqueda de rango AArch64; aumentaron cargas e instrucciones en 4 patrones, por lo que se revirtieron. Autocopias R→R ya eliminadas por Clang O1. [Detalles](../performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).

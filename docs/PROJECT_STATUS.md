@@ -1,5 +1,9 @@
 # Estado actual de CallofRecomp
 
+**TECNO ARM64 FLD32 0x5061B0 (2026-10-16):**
+Opt-in OFF: 39 conversiones normales exactas float32→binary80, 8.192 ejecuciones AArch64, 16 fallos RAM con estado PC/R conservado; FLD normal 55→52 instrucciones en oráculo aislado. APKs A/B compiladas con 490 exportaciones y C generado restaurado por SHA. A/B/A/B físico abortado A1 no comparable, B no instalada; APK 0.2.4 y save verificados. Sin FPS medidos de la candidata. [Informe](performance/tecno/TECNO_ARM64_HOT_FLD32_2026-10-16.md).
+
+
 **TECNO, optimización ARM64 memoria/dispatch (2026-10-16):**
 Caché de entrada ARM64: A1 22,00 FPS, B1 21,55, A2 21,65; B2 no válida (deriva ~30 %). Enlace local R/MEM/U/PC: A1 rechazado como no comparable, sin prueba B. Rango unsigned de dispatch y copia R→R descartados por cero/peor código máquina. Sin ganancia validada ni flags activados; APK 0.2.4 y save comprobados por SHA. [Evidencia](performance/tecno/TECNO_ARM64_MEM_DISPATCH_AUDIT_2026-10-16.md).
 
