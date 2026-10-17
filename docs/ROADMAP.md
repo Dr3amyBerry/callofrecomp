@@ -1,5 +1,8 @@
 # Cola de trabajo del proyecto
 
+**Prioridad ARM64 (2026-10-16):** evitar nuevas ramas FLD32 solo porque reduzcan unos pasos para cero/Inf: una variante aumentó el trabajo total en el corpus probado. Usar el nuevo desglose nativo por clase para orientar futuras candidatas; medir frecuencia real de datos, ciclos y FPS antes de optimizar o activar flags. No se tocó la instalación del TECNO. [Estudio](performance/tecno/ARM64_X87_FLD32_CLASS_COST_2026-10-16.md).
+
+
 **Nueva opción ARM64 OFF (2026-10-16):** `--arm64-narrow-left-shift` transforma solo 16 shifts variables de los dos cuerpos seleccionados de CoDSP p0/p8, no 289 indiscriminados. Código global −44 B, ahorro local chunk 18 −4 B; visibilidad sin delta de tamaño. Pasa oráculos y restituye fuentes exactas; priorizar el perfil físico estable de 17 vs22 FPS y efectos de flags/visibilidad antes de activar nada. [Evidencia](performance/tecno/ARM64_NARROW_LEFT_SHIFT_SELECTIVE_2026-10-16.md).
 
 

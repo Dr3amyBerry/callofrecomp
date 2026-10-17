@@ -22,6 +22,21 @@ REGIONS = {"r":0x200000,"stack":0x300000,"guest":0x400000}
 REG_BASE = REGIONS["r"] + 0x100
 GUEST_BASE = REGIONS["guest"] + 0x100
 
+BINARY32_CLASSES = ("normal", "signed_zero", "subnormal", "infinity", "nan")
+
+
+def classify_binary32(bits: int) -> str:
+    """Classify 32-bit IEEE inputs using bits only, including signed zero."""
+    if type(bits) is not int or not 0 <= bits <= 0xffffffff:
+        raise ValueError("Expected exact unsigned 32-bit input")
+    exponent = (bits >> 23) & 0xff
+    fraction = bits & 0x7fffff
+    if exponent == 0:
+        return "signed_zero" if fraction == 0 else "subnormal"
+    if exponent == 0xff:
+        return "infinity" if fraction == 0 else "nan"
+    return "normal"
+
 
 def verify(llvm: Path, out: Path, cases: int=2048) -> dict:
     if not __debug__:
@@ -130,8 +145,15 @@ void candidate_fld32(uint8_t *r, const uint8_t *g) {
     vectors=vectors[:cases]
     normal_instruction_counts={"reference_fld32":[],"candidate_fld32":[]}
     special_instruction_counts={"reference_fld32":[],"candidate_fld32":[]}
+    class_samples = {kind: {"reference_fld32": [], "candidate_fld32": []}
+                     for kind in BINARY32_CLASSES}
+    class_instruction_totals = {kind: {"reference_fld32": 0, "candidate_fld32": 0}
+                                for kind in BINARY32_CLASSES}
+    class_case_counts = {kind: 0 for kind in BINARY32_CLASSES}
     samples=0
     for i,bits in enumerate(vectors):
+        kind = classify_binary32(bits)
+        class_case_counts[kind] += 1
         initial=(bytes(0x2000) if i==0 else bytes([0xff])*0x2000 if i==1
                  else bytes(range(256))*32 if i==2 else rng.randbytes(0x2000))
         rbase=REG_BASE+(i%16)
@@ -175,6 +197,9 @@ void candidate_fld32(uint8_t *r, const uint8_t *g) {
             bucket=normal_instruction_counts if 1 <= ((bits>>23)&0xff) <= 254 else special_instruction_counts
             if len(bucket[name])<512:
                 bucket[name].append(current["count"])
+            if len(class_samples[kind][name]) < 512:
+                class_samples[kind][name].append(current["count"])
+            class_instruction_totals[kind][name] += current["count"]
         if snapshots["reference_fld32"] != snapshots["candidate_fld32"]:
             raise AssertionError(f"Full architectural R mismatch case={i} raw={bits:08x}")
         samples+=1
@@ -224,8 +249,21 @@ void candidate_fld32(uint8_t *r, const uint8_t *g) {
         "guest_memory_untouched":True,"reference_candidate_fpcr_fpsr_sp_equal":True,
         "normal_instructions":{k:stats(v) for k,v in normal_instruction_counts.items()},
         "special_instructions":{k:stats(v) for k,v in special_instruction_counts.items()},
+        "binary32_class_telemetry":{
+            kind:{
+                "cases":class_case_counts[kind],
+                "reference":stats(class_samples[kind]["reference_fld32"]),
+                "candidate":stats(class_samples[kind]["candidate_fld32"]),
+                "reference_total_instructions":class_instruction_totals[kind]["reference_fld32"],
+                "candidate_total_instructions":class_instruction_totals[kind]["candidate_fld32"],
+                "saved_dynamic_instructions_in_sample":
+                    class_instruction_totals[kind]["reference_fld32"]
+                    - class_instruction_totals[kind]["candidate_fld32"],
+            }
+            for kind in BINARY32_CLASSES
+        },
         "symbols":symbols,"compile_command":cmd,
-        "limits":"Isolated FLD m32+stack instruction only, not entire binary80 math/CW/SW/TOP/tag/fault model or gameplay FPS."
+        "limits":"Isolated FLD m32+stack instruction only; per-class dynamic counts reflect synthetic vectors (not game value frequencies), not binary80 math/CW/SW/TOP/tag/fault model, CPU cycles or gameplay FPS."
     }
     (out/"result.json").write_text(json.dumps(result,indent=2),encoding="utf8")
     return result

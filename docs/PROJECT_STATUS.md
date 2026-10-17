@@ -1,5 +1,8 @@
 # Estado actual de CallofRecomp
 
+**ARM64-FLD32-CLASS-COST (2026-10-16):** análisis offline reproducible por clases de binary32 en Unicorn AArch64. En 512 entradas sintéticas, el helper actual ahorra 3 instrucciones por normal pero consume 5 extra por excepcionales; la variante exacta de cero/Inf probada resultó **36 instrucciones dinámicas peor en el conjunto sintético** y fue **descartada sin integrar**. El verificador canónico ahora publica métricas por clase, sin modificar runtime ni APK. [Informe](performance/tecno/ARM64_X87_FLD32_CLASS_COST_2026-10-16.md).
+
+
 **ARM64-SHL-DYNAMIC-16 (2026-10-16, opt-in OFF):** 16 desplazamientos variables `INT_LEFT` de geometría y visibilidad en CoDSP p0/p8 original, con parche reversible y SHA fijado; el resto, especialmente 273 shifts por constante, queda intacto. Oráculo bitwise 36.864 casos host y 8.600 llamadas AArch64 Unicorn PASS; ELF APK A/B: **−44 B `.text`**, pero el chunk caliente 18 ahorra solo 4 B/1 instrucción y los chunks de visibilidad 151/152 **no cambian tamaño**. Sin FPS nuevos ni recomendación de habilitar. [Informe](performance/tecno/ARM64_NARROW_LEFT_SHIFT_SELECTIVE_2026-10-16.md).
 
 

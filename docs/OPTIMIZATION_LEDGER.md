@@ -1,5 +1,8 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-FLD32-NATIVE-CLASS-TELEMETRY (2026-10-16, diagnóstico integrado):** verificador Unicorn AArch64 ampliado para contar instrucciones por normal, cero firmado, subnormal, inf y NaN; clasificación de patrones con tests públicos sin archivos comerciales. Original→FLD32 normal 55→52 instrucciones nativas; los especiales son más costosos. Variante experimental cero/Inf: 1 instrucción menos en ceros, 6 menos en Inf, pero 5 más en subnormales/NaN; en los 512 inputs sintéticos, +36 instrucciones respecto al helper actual. Variante **rechazada** y revertida; runtime/CMake/builder idénticos a HEAD previo. [Datos](performance/tecno/ARM64_X87_FLD32_CLASS_COST_2026-10-16.md).
+
+
 **ARM64-NARROW-LEFT-HOT-16 (2026-10-16, OFF):** de 9.869 `INT_LEFT` estáticos de CoDSP 1.5 se distinguieron 2.487 con cuenta variable; en regiones calientes, 16 variables (4 p0, 12 p8), 273 constantes no transformadas al no ahorrar en wrapper. Parche fuentes SHA y reversible, helper 64-bit low-mask exacto, oráculo independiente host O0/O1/O2 y AArch64 Unicorn sin divergencias. ABI 490 símbolos exportados y recursos intactos; B `.text` −44 B, chunk18 −4 B/−1 instrucción, chunks151/152 0 B. No FPS medidos. [Resultados](performance/tecno/ARM64_NARROW_LEFT_SHIFT_SELECTIVE_2026-10-16.md).
 
 
