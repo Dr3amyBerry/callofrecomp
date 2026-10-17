@@ -58,6 +58,6 @@ Evidencia privada con JSON, source sintético, disassembly y ELF:
 
 **Regresiones completadas:** `python -m unittest discover -s tests` ejecutó **556 pruebas, 6 omitidas, 0 fallos** (113,05 s). `ctest --test-dir .local/builds/build --output-on-failure` aprobó **40/40** (155,76 s). Catálogo: **140 documentos, sin enlaces rotos**. Auditoría privada: cero rutas de binarios, fuentes comerciales o partidas rastreadas; permanece únicamente la advertencia conocida de sintaxis en un script histórico no ejecutado. `git diff --check` y `py_compile` sin errores. La compilación AArch64/Unicorn nueva de 512 entradas y 16 fallos de LOAD fue aprobada; no se compiló ni instaló otra APK.
 
-**CI pública:** se registra después del push del commit; los tests locales no deben presentarse como verificación de GitHub Actions hasta que termine.
+**CI pública:** [tools-ci 38994349309 PASS](https://github.com/Dr3amyBerry/callofrecomp/actions/runs/38994349309) sobre [commit `c808d1b`](https://github.com/Dr3amyBerry/callofrecomp/commit/c808d1b3bc46dc6815d6d0989518db6e5b150f90): validación de análisis y host tests correcta. Solo avisos no bloqueantes de deprecación de Node.js 20, `setup-java@v4` y futura migración `ubuntu-latest`.
 
 Próxima optimización: diseñar un candidato que ahorre **instrucciones dinámicas en la ruta normal predominante** y demuestre equivalencia contra x86 original (incluidos binary80, flags, RAM y excepciones). Sin datos de frecuencia real de entrada o mediciones físicas TECNO no se debe activar FLD32 ni atribuir aumento de FPS.
