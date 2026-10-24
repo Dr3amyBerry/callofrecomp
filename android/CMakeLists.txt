@@ -124,6 +124,14 @@ if(CODRECOMP_ARM64_NARROW_SAR)
   endif()
   target_compile_definitions(main PRIVATE CODRECOMP_ARM64_NARROW_SAR)
 endif()
+option(CODRECOMP_ARM64_X87_CONV_FAST
+  "ARM64 experiment: exact normal-value binary80<->binary64 conversion fast paths, OFF by default" OFF)
+if(CODRECOMP_ARM64_X87_CONV_FAST)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "x87 conversion fast path requires arm64-v8a")
+  endif()
+  target_compile_definitions(main PRIVATE CODRECOMP_ARM64_X87_CONV_FAST)
+endif()
 # Dispatch last-hit cache is deliberately off in normal APKs until a
 # game-level ARM64 A/B confirms it is faster than the existing page index.
 option(CODRECOMP_DISPATCH_LAST_CACHE

@@ -91,6 +91,8 @@ def main():
                         help="ARM64 experiment: specialize provably narrow logical right shifts; OFF")
     parser.add_argument("--arm64-narrow-sar", action="store_true",
                         help="ARM64 experiment: exact signed <=64-bit SAR; OFF by default")
+    parser.add_argument("--arm64-x87-conv-fast", action="store_true",
+                        help="ARM64 experiment: exact normal-value binary80<->binary64 d2f/f2d fast paths; OFF")
     parser.add_argument("--arm64-narrow-left-shift", action="store_true",
                         help="ARM64 experiment: 16 exact dynamic CoDSP p0/p8 narrow SHL sites; OFF")
     parser.add_argument("--arm64-dispatch-entry-cache", action="store_true",
@@ -136,6 +138,8 @@ def main():
         parser.error("--arm64-x87-sign-bits cannot use --package-only")
     if args.arm64_narrow_right_shift and args.abi != 'arm64-v8a':
         parser.error('--arm64-narrow-right-shift requires arm64-v8a')
+    if args.arm64_x87_conv_fast and args.abi != 'arm64-v8a':
+        parser.error('--arm64-x87-conv-fast requires arm64-v8a')
     if args.arm64_narrow_sar and args.abi != 'arm64-v8a':
         parser.error('--arm64-narrow-sar requires arm64-v8a')
     if args.arm64_narrow_left_shift and args.abi != "arm64-v8a":
@@ -381,6 +385,7 @@ def main():
             f"-DCODRECOMP_ARM64_NARROW_RIGHT_SHIFT={'ON' if args.arm64_narrow_right_shift else 'OFF'}",
              f"-DCODRECOMP_ARM64_NARROW_SAR={'ON' if args.arm64_narrow_sar else 'OFF'}",
             f"-DCODRECOMP_ARM64_BIND_LOCAL={'ON' if args.arm64_bind_local else 'OFF'}",
+             f"-DCODRECOMP_ARM64_X87_CONV_FAST={'ON' if args.arm64_x87_conv_fast else 'OFF'}",
             f"-DCODRECOMP_ARM64_SAFE_ICF={'ON' if args.arm64_safe_icf else 'OFF'}",
             f"-DCODRECOMP_ARM64_ICF_METADATA={'ON' if args.arm64_icf_metadata else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",

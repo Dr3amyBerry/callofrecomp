@@ -119,6 +119,28 @@ static inline uint64_t x87_round_shift(uint64_t value, unsigned shift) {
 static inline double f2d(u128 v, int n) {
     if (n == 4) { uint32_t b = (uint32_t)v; float f; memcpy(&f, &b, 4); return f; }
     uint64_t b = (uint64_t)v;
+#ifdef CODRECOMP_ARM64_X87_CONV_FAST
+    if (n == 10) {
+        /* Exact fast path: finite normal binary80 whose J bit is set and whose
+           low 11 significand bits are zero (so 53-bit rounding is a no-op) and
+           whose exponent maps to a normal binary64. Identical to the generic
+           path below; every other encoding falls through to it unchanged. */
+        const unsigned se_fast = (unsigned)(v >> 64) & 0xffffu;
+        const unsigned exp_fast = se_fast & 0x7fffu;
+        if ((unsigned)(exp_fast - 15361u) <= 2045u &&
+            (b & UINT64_C(0x80000000000007ff)) == UINT64_C(0x8000000000000000)) {
+            const uint64_t fast_bits =
+                ((uint64_t)(se_fast & 0x8000u) << 48) |
+                ((uint64_t)(exp_fast - 15360u) << 52) |
+                ((b >> 11) & UINT64_C(0x000fffffffffffff));
+            double fast_d; memcpy(&fast_d, &fast_bits, 8); return fast_d;
+        }
+        if ((b | exp_fast) == 0) {  /* +/-0.0: generic path yields sign only */
+            const uint64_t zero_bits = (uint64_t)(se_fast & 0x8000u) << 48;
+            double zero_d; memcpy(&zero_d, &zero_bits, 8); return zero_d;
+        }
+    }
+#endif
     if (n == 10) {
         uint64_t significand = b;
         unsigned se = (unsigned)(v >> 64) & 0xffff;
@@ -150,6 +172,20 @@ static inline double f2d(u128 v, int n) {
 static inline u128 d2f(double d, int n) {
     if (n == 4) { float f = (float)d; uint32_t b; memcpy(&b, &f, 4); return b; }
     uint64_t b; memcpy(&b, &d, 8);
+#ifdef CODRECOMP_ARM64_X87_CONV_FAST
+    if (n == 10) {
+        /* Exact fast path for finite normal binary64 (biased exponent
+           1..0x7fe); zero, subnormal, Inf and NaN use the generic path. */
+        const unsigned exp_fast = (unsigned)(b >> 52) & 0x7ffu;
+        if ((unsigned)(exp_fast - 1u) < 0x7feu) {
+            const unsigned se_fast = (unsigned)((b >> 48) & 0x8000u) |
+                                     (exp_fast + (16383u - 1023u));
+            const uint64_t sig_fast = UINT64_C(0x8000000000000000) |
+                                      ((b & UINT64_C(0x000fffffffffffff)) << 11);
+            return ((u128)se_fast << 64) | sig_fast;
+        }
+    }
+#endif
     if (n == 10) {
         unsigned exponent = (unsigned)(b >> 52) & 0x7ff;
         unsigned se = (unsigned)(b >> 48) & 0x8000;
