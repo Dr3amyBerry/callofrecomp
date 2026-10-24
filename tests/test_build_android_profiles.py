@@ -31,7 +31,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
             self.assertIn(message,proc.stderr)
 
     def test_safe_icf_is_arm64_only(self):
-        for flag in ('--arm64-safe-icf','--arm64-icf-metadata'):
+        for flag in ('--arm64-safe-icf','--arm64-icf-metadata','--arm64-bind-local'):
             proc=subprocess.run([sys.executable,str(BUILDER),'--abi','x86_64',flag],capture_output=True,text=True)
             self.assertNotEqual(proc.returncode,0)
             self.assertIn(flag+' requires arm64-v8a',proc.stderr)

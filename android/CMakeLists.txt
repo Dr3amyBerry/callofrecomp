@@ -42,6 +42,17 @@ if(CODRECOMP_ARM64_SAFE_ICF)
   # Never substitute --icf=all or --ignore-function-address-equality here.
   target_link_options(main PRIVATE "-Wl,--icf=safe")
 endif()
+option(CODRECOMP_ARM64_BIND_LOCAL "ARM64 experiment: -fno-plt and -Bsymbolic-functions for libmain; OFF" OFF)
+if(CODRECOMP_ARM64_BIND_LOCAL)
+  if(NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "ARM64 bind-local requires arm64-v8a")
+  endif()
+  # Only call binding changes: no generated-code, FPU, memory or export edits.
+  # Calls between libmain functions stop going through interposable PLT stubs;
+  # external libc/SDL/GL calls load the GOT directly. Exports stay visible.
+  target_compile_options(main PRIVATE -fno-plt)
+  target_link_options(main PRIVATE "-Wl,-Bsymbolic-functions")
+endif()
 option(CODRECOMP_LOCAL_GUEST_STATE "WSA experiment: bind guest data within libmain" OFF)
 if(CODRECOMP_LOCAL_GUEST_STATE)
   if(NOT ANDROID_ABI STREQUAL "x86_64")

@@ -106,6 +106,8 @@ def main():
                         help="ARM64 experiment: local R/MEM/U/PC ELF binding, same WSA 4-symbol map; OFF by default")
     parser.add_argument("--arm64-safe-icf", action="store_true",
                         help="ARM64 experiment: safe linker folding of address-insignificant identical code; OFF")
+    parser.add_argument("--arm64-bind-local", action="store_true",
+                        help="ARM64 experiment: -fno-plt + -Bsymbolic-functions for libmain (no PLT for internal calls); OFF")
     parser.add_argument("--arm64-icf-metadata", action="store_true",
                         help="ARM64 ICF A/B reference: emit address-significance metadata without enabling folding; OFF")
     parser.add_argument("--wsa-release", action="store_true", help="WSA cumulative + local-state release; default native x87 on and frame limit 120")
@@ -151,6 +153,8 @@ def main():
         parser.error('choose one dispatch cache: entry or last hint')
     if args.arm64_safe_icf and args.abi != 'arm64-v8a':
         parser.error('--arm64-safe-icf requires arm64-v8a')
+    if args.arm64_bind_local and args.abi != 'arm64-v8a':
+        parser.error('--arm64-bind-local requires arm64-v8a')
     if args.arm64_icf_metadata and args.abi != 'arm64-v8a':
         parser.error('--arm64-icf-metadata requires arm64-v8a')
     if args.wsa_release:
@@ -376,6 +380,7 @@ def main():
             f"-DCODRECOMP_DISPATCH_ENTRY_CACHE={'ON' if args.arm64_dispatch_entry_cache else 'OFF'}",
             f"-DCODRECOMP_ARM64_NARROW_RIGHT_SHIFT={'ON' if args.arm64_narrow_right_shift else 'OFF'}",
              f"-DCODRECOMP_ARM64_NARROW_SAR={'ON' if args.arm64_narrow_sar else 'OFF'}",
+            f"-DCODRECOMP_ARM64_BIND_LOCAL={'ON' if args.arm64_bind_local else 'OFF'}",
             f"-DCODRECOMP_ARM64_SAFE_ICF={'ON' if args.arm64_safe_icf else 'OFF'}",
             f"-DCODRECOMP_ARM64_ICF_METADATA={'ON' if args.arm64_icf_metadata else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",
