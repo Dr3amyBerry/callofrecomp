@@ -52,6 +52,7 @@ if(CODRECOMP_ARM64_BIND_LOCAL)
   # external libc/SDL/GL calls load the GOT directly. Exports stay visible.
   target_compile_options(main PRIVATE -fno-plt)
   target_link_options(main PRIVATE "-Wl,-Bsymbolic-functions")
+endif()
 option(CODRECOMP_ARM64_CODE_LAYOUT "ARM64 experiment: per-function sections and A55 scheduling" OFF)
 set(CODRECOMP_ARM64_SYMBOL_ORDER "" CACHE FILEPATH "ARM64: lld symbol ordering file (hot first)")
 if(CODRECOMP_ARM64_CODE_LAYOUT)
