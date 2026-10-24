@@ -293,12 +293,21 @@ def main():
         vis_fld32_source = root / 'recomp_out/codsp_recomp_p8.c'
         if args.arm64_x87_fld32_visibility and not vis_fld32_source.is_file():
             parser.error("--arm64-x87-fld32-visibility requires generated CoDSP p8")
-        if vis_fld32_source.is_file():
+        # pcode2c --x87-virtual-stack output is freshly generated and never
+        # carries hash-pinned text patches: skip their restores, refuse applies.
+        def vstack(path):
+            return path.is_file() and b'x87 virtual stack' in path.read_bytes()
+        if (vstack(vis_fld32_source) or vstack(fld32_source) or vstack(sign_source)) and (
+                args.arm64_x87_fld32_visibility or args.arm64_x87_fld32_normal or
+                args.arm64_x87_sign_bits or args.arm64_narrow_left_shift or
+                args.x87_stack_shift_outline):
+            parser.error("x87 text patches cannot apply to --x87-virtual-stack generated C")
+        if vis_fld32_source.is_file() and not vstack(vis_fld32_source):
             run(sys.executable, vis_fld32_script, vis_fld32_source,
                 pcode_path, '--restore')
         if args.arm64_x87_fld32_normal and not fld32_source.is_file():
             parser.error("--arm64-x87-fld32-normal requires generated CoDSP p10")
-        if fld32_source.is_file():
+        if fld32_source.is_file() and not vstack(fld32_source):
             # Restore before optional x87 shifts inspect generated C.
             run(sys.executable, fld32_script, fld32_source, pcode_path, '--restore')
         if args.arm64_x87_sign_bits and not sign_source.is_file():

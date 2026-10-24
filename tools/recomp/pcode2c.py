@@ -22,6 +22,8 @@ from flag_liveness import dead_flag_writes, dead_flag_writes_module
 from temp_liveness import dead_unique_writes
 from register_liveness import dead_arch_register_writes
 from x87_stack_fusion import plan_x87_shift
+from x87_virtual_stack import (VirtualStack, eligible as x87_eligible,
+                               slot_index as x87_slot, uses_stack as x87_uses)
 from function_map import build_function_map, write_function_map, scan_pcode_provenance
 
 CHUNK = 1500
@@ -187,10 +189,13 @@ class Gen:
         self.unsupported = {}
         self.temp_offsets = None
         self.reg_cache = {}
+        self.x87 = None  # VirtualStack while emitting a renamed-stack instruction
 
     def rd(self, v):
         if v[0] == 'r' and v in self.reg_cache:
             return self.reg_cache[v]
+        if self.x87 is not None and (k := x87_slot(v)) is not None:
+            return f'rd(R+0x{self.x87.phys(k):x},10)'
         sp, off, sz = v
         if sp == 'c':
             return f'(u128)0x{off & ((1 << (8 * min(sz, 8))) - 1):x}ULL'
@@ -201,6 +206,8 @@ class Gen:
     def wr(self, v, expr):
         if v[0] == 'r' and v in self.reg_cache:
             return f'{self.reg_cache[v]}=mask({expr},{v[2]});'
+        if self.x87 is not None and (k := x87_slot(v)) is not None:
+            return f'wr(R+0x{self.x87.dest(k):x},10,{expr});'
         sp, off, sz = v
         unique = f'T+{self.temp_offsets[off]}' if sp == 'u' and self.temp_offsets is not None else f'U+0x{off:x}'
         base = {'r': f'R+0x{off:x}', 'u': unique, 'm': f'G(0x{off:x}u)'}[sp]
@@ -222,6 +229,9 @@ class Gen:
         fa = lambda i: f'f2d({self.rd(ins[i])},{ins[i][2]})'  # noqa: E731
 
         if mnem == 'COPY':
+            if self.x87 is not None and x87_slot(out) is not None and x87_slot(ins[0]) is not None:
+                self.x87.alias(x87_slot(out), x87_slot(ins[0]))
+                return ';'
             return self.wr(out, a)
         if mnem == 'LOAD':
             return self.wr(out, f'rd(G((uint32_t){b}),{osz})')
@@ -318,6 +328,95 @@ class Gen:
         return f'unsupported("{mnem}");'
 
 
+EXIT_OPS = frozenset({'BRANCH', 'CALL', 'BRANCHIND', 'CALLIND', 'RETURN'})
+
+
+def emit_virtual_stack_chunk(g, chunk, addrs, out, dead_flags, dead_registers,
+                             dead_temps, local_temporaries):
+    """Emit one chunk with the x87 stack renamed inside straight-line runs.
+
+    Fast lane: instructions in order, eligible ones with a VirtualStack map.
+    An instruction whose fast-lane entry map is not the identity gets no
+    L_<addr> label there; its canonical copy (slow lane, after the fast lane)
+    carries the label for dispatcher/branch entries and chains forward.
+    """
+    vs = VirtualStack()
+    slow = []
+
+    def emit(idx, fast, lane):
+        addr, length, ops = chunk[idx]
+        nxt = addr + length
+        rel_targets = {i + rel(v[1]) for i, (mn, _, ins) in enumerate(ops)
+                       if mn in ('BRANCH', 'CBRANCH') for v in ins[:1] if v[0] == 'c'}
+        removed = {i for i in range(len(ops))
+                   if (idx, i) in dead_flags or (idx, i) in dead_registers
+                   or (idx, i) in dead_temps}
+        g.temp_offsets = temporary_layout(ops) if local_temporaries else None
+        g.x87 = vs if fast else None
+        cur = [0]
+
+        def flush():
+            return (vs.flush_code() + ' ') if fast else ''
+
+        def jump(v):
+            if v[0] == 'c':
+                t = cur[0] + rel(v[1])
+                if t < len(ops):
+                    return f'goto L_{addr:x}{lane}_{t};'
+                return flush() + (f'goto L_{nxt:x};' if nxt in addrs else f'PC=0x{nxt:x}u; return;')
+            t = v[1]
+            return flush() + (f'goto L_{t:x};' if t in addrs else f'PC=0x{t:x}u; return;')
+        lines = []
+        if g.temp_offsets is not None:
+            lines.append(f' {{ uint8_t T[{max(1, len(g.temp_offsets))}];')
+        for i, (mn, o, ins) in enumerate(ops):
+            cur[0] = i
+            if i in rel_targets:
+                lines.append(f' L_{addr:x}{lane}_{i}:;')
+            if i in removed:
+                lines.append(' ;')
+                continue
+            prefix = flush() if mn in ('BRANCHIND', 'CALLIND', 'RETURN') else ''
+            lines.append(' ' + prefix + g.op(mn, o, ins, jump, None))
+            if fast and mn in EXIT_OPS:
+                vs.reset()  # following code is reachable only through labels
+        if len(ops) in rel_targets:
+            lines.append(f' L_{addr:x}{lane}_{len(ops)}:;')
+        following = chunk[idx + 1][0] if idx + 1 < len(chunk) else None
+        if following != nxt:
+            lines.append(' ' + flush() + f'PC=0x{nxt:x}u; return;')
+            if fast:
+                vs.reset()
+        elif not fast and lane:
+            lines.append(f' goto L_{nxt:x};')
+        if g.temp_offsets is not None:
+            lines.append(' }')
+        g.x87 = None
+        return lines
+
+    for idx, (addr, _, ops) in enumerate(chunk):
+        rel_targets = {i + rel(v[1]) for i, (mn, _, ins) in enumerate(ops)
+                       if mn in ('BRANCH', 'CBRANCH') for v in ins[:1] if v[0] == 'c'}
+        removed = {i for i in range(len(ops))
+                   if (idx, i) in dead_flags or (idx, i) in dead_registers
+                   or (idx, i) in dead_temps}
+        ok = x87_eligible(ops, removed, rel_targets)
+        if not ok and not vs.identity():
+            out.append(' ' + vs.flush_code())
+            vs.reset()
+        if vs.identity():
+            out.append(f'L_{addr:x}:')
+        else:
+            slow.append(idx)
+            out.append(f'/* L_{addr:x}: renamed x87 stack, canonical entry below */')
+        out.extend(emit(idx, ok and (x87_uses(ops, removed) or not vs.identity()), ''))
+    if slow:
+        out.append('/* x87 virtual stack: canonical slow lane */')
+    for idx in slow:
+        out.append(f'L_{chunk[idx][0]:x}:')
+        out.extend(emit(idx, False, '_s'))
+
+
 def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
              local_temporaries: bool = True, separate_spaces: bool = True,
              eliminate_dead_flags: bool = True, eliminate_dead_temporaries: bool = False,
@@ -325,8 +424,11 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
              cache_hot_registers: bool = False,
              prune_hot_register_writes: bool = False,
              x87_stack_shift_outline: bool = False,
-             module_flag_liveness: bool = False):
+             module_flag_liveness: bool = False,
+             x87_virtual_stack: bool = False):
     """Return ([part sources], main source, unsupported ops)."""
+    if x87_virtual_stack and (cache_hot_registers or x87_stack_shift_outline):
+        raise ValueError('--x87-virtual-stack excludes register cache and shift outlining')
     g = Gen(userops)
     # Silent per-module fallback could mix local writers with another module's
     # global readers. Refuse instead; diagnostic global storage must be selected
@@ -369,7 +471,10 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
         addrs = {a for a, _, _ in chunk}
         out.append(f'void {ident}_chunk_{ci}(void) {{')
         out.append(' goto dyn;')
-        for idx, (addr, length, ops) in enumerate(chunk):
+        if x87_virtual_stack:
+            emit_virtual_stack_chunk(g, chunk, addrs, out, dead_flags, dead_registers,
+                                     dead_temps, local_temporaries)
+        for idx, (addr, length, ops) in enumerate(chunk if not x87_virtual_stack else ()):
             nxt = addr + length
             rel_targets = {i + rel(v[1]) for i, (mn, _, ins) in enumerate(ops)
                            if mn in ('BRANCH', 'CBRANCH') for v in ins[:1] if v[0] == 'c'}
@@ -507,6 +612,9 @@ def main() -> int:
     ap.add_argument('--x87-stack-shift-outline', action='store_true',
                     help='EXPERIMENT: outline seven identical x87 register moves in verified '
                          'CoDSP 1.5 p-code; OFF by default')
+    ap.add_argument('--x87-virtual-stack', action='store_true',
+                    help='EXPERIMENT: rename the x87 register stack at translation time inside '
+                         'straight-line runs (exact; canonical layout at every exit); OFF')
     ap.add_argument('--function-map-out', type=Path,
                     help='optional JSON: original Ghidra function entries to generated chunks; '
                          'store under ignored recomp_out/')
@@ -543,6 +651,8 @@ def main() -> int:
     if args.prune_hot_register_writes and (args.shared_spaces or args.global_temporaries):
         ap.error('--prune-hot-register-writes requires the disjoint register/RAM '
                  'and local temporary layout')
+    if args.x87_virtual_stack and (args.cache_hot_registers or args.x87_stack_shift_outline):
+        ap.error('--x87-virtual-stack excludes --cache-hot-registers and --x87-stack-shift-outline')
     if args.module_flag_liveness and args.keep_dead_flags:
         ap.error('--module-flag-liveness conflicts with --keep-dead-flags')
     insns, userops, funcs = parse(args.pcode)
@@ -560,7 +670,8 @@ def main() -> int:
                                              dead_temp_parts, args.cache_hot_registers,
                                              args.prune_hot_register_writes,
                                              args.x87_stack_shift_outline,
-                                             args.module_flag_liveness)
+                                             args.module_flag_liveness,
+                                             args.x87_virtual_stack)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]
