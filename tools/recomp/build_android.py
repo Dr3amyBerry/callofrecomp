@@ -93,6 +93,8 @@ def main():
                         help="ARM64 experiment: exact signed <=64-bit SAR; OFF by default")
     parser.add_argument("--arm64-narrow-left-shift", action="store_true",
                         help="ARM64 experiment: 16 exact dynamic CoDSP p0/p8 narrow SHL sites; OFF")
+    parser.add_argument("--audio-mix-span", action="store_true",
+                        help="experiment: bit-identical audio mixer span loop (host thread only); OFF by default")
     parser.add_argument("--arm64-dispatch-entry-cache", action="store_true",
                         help="ARM64 experiment: cache last chunk range and callback with layout invalidation; OFF")
     parser.add_argument("--x87-fcom-fastpath", action="store_true",
@@ -374,6 +376,7 @@ def main():
             f"-DCODRECOMP_X87_NORMAL_F2D_P4_PROFILED={'ON' if args.x87_normal_f2d_p4_profiled else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_LAST_CACHE={'ON' if args.dispatch_last_cache else 'OFF'}",
             f"-DCODRECOMP_DISPATCH_ENTRY_CACHE={'ON' if args.arm64_dispatch_entry_cache else 'OFF'}",
+            f"-DCODRECOMP_AUDIO_MIX_SPAN={'ON' if args.audio_mix_span else 'OFF'}",
             f"-DCODRECOMP_ARM64_NARROW_RIGHT_SHIFT={'ON' if args.arm64_narrow_right_shift else 'OFF'}",
              f"-DCODRECOMP_ARM64_NARROW_SAR={'ON' if args.arm64_narrow_sar else 'OFF'}",
             f"-DCODRECOMP_ARM64_SAFE_ICF={'ON' if args.arm64_safe_icf else 'OFF'}",

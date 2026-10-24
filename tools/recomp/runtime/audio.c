@@ -106,25 +106,60 @@ static float *current_pcm(sample *s, uint32_t *frames) {
     *frames = s->frames; return s->pcm;
 }
 
+// Reference per-frame mixer: current_pcm() is consulted for every output frame.
+static __attribute__((unused)) void mix_voice_scalar(sample *s, float *output, uint32_t frames, uint32_t rate) {
+    float left = s->volume * (s->pan > 0.5f ? 2.0f * (1.0f - s->pan) : 1.0f);
+    float right = s->volume * (s->pan < 0.5f ? 2.0f * s->pan : 1.0f);
+    const double step = (double)s->rate / rate;
+    for (uint32_t f = 0; f < frames; f++) {
+        uint32_t count;
+        float *pcm = current_pcm(s, &count);
+        if (!pcm || !count || !s->playing) break;
+        uint32_t p = (uint32_t)s->cursor;
+        output[2 * f] += pcm[2 * p] * left;
+        output[2 * f + 1] += pcm[2 * p + 1] * right;
+        s->cursor += step;
+    }
+    uint32_t ignored; current_pcm(s, &ignored);
+}
+// Opt-in CODRECOMP_AUDIO_MIX_SPAN: identical arithmetic and state, but
+// current_pcm() runs only when the cursor leaves the current span. Whenever
+// cursor < count, current_pcm() has no side effect in the plain, buffered and
+// stream paths (it returns the same pointer/count), so skipping it is exact.
+static __attribute__((unused)) void mix_voice_span(sample *s, float *output, uint32_t frames, uint32_t rate) {
+    float left = s->volume * (s->pan > 0.5f ? 2.0f * (1.0f - s->pan) : 1.0f);
+    float right = s->volume * (s->pan < 0.5f ? 2.0f * s->pan : 1.0f);
+    const double step = (double)s->rate / rate;
+    uint32_t f = 0;
+    while (f < frames) {
+        uint32_t count;
+        float *pcm = current_pcm(s, &count);
+        if (!pcm || !count || !s->playing) break;
+        double cursor = s->cursor;
+        do {
+            uint32_t p = (uint32_t)cursor;
+            output[2 * f] += pcm[2 * p] * left;
+            output[2 * f + 1] += pcm[2 * p + 1] * right;
+            cursor += step;
+            f++;
+        } while (f < frames && cursor < count);
+        s->cursor = cursor;
+    }
+    uint32_t ignored; current_pcm(s, &ignored);
+}
+#if defined(CODRECOMP_AUDIO_MIX_SPAN)
+#define mix_voice mix_voice_span
+#else
+#define mix_voice mix_voice_scalar
+#endif
+
 void audio_mix(float *output, uint32_t frames, uint32_t rate) {
     memset(output, 0, (size_t)frames * 2 * sizeof(float));
     if (!rate) return;
     for (int i = 0; i < SAMPLE_MAX; i++) {
         sample *s = &samples[i];
         if (!s->allocated || s->playing != 4) continue;
-        float left = s->volume * (s->pan > 0.5f ? 2.0f * (1.0f - s->pan) : 1.0f);
-        float right = s->volume * (s->pan < 0.5f ? 2.0f * s->pan : 1.0f);
-        const double step = (double)s->rate / rate;
-        for (uint32_t f = 0; f < frames; f++) {
-            uint32_t count;
-            float *pcm = current_pcm(s, &count);
-            if (!pcm || !count || !s->playing) break;
-            uint32_t p = (uint32_t)s->cursor;
-            output[2 * f] += pcm[2 * p] * left;
-            output[2 * f + 1] += pcm[2 * p + 1] * right;
-            s->cursor += step;
-        }
-        uint32_t ignored; current_pcm(s, &ignored);
+        mix_voice(s, output, frames, rate);
     }
     for (uint32_t i = 0; i < frames * 2; i++) {
         if (output[i] > 1) output[i] = 1;
