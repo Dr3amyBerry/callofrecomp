@@ -1,5 +1,30 @@
 # Estado actual de CallofRecomp
 
+## Objetivo vigente (2026-10-23)
+
+**El juego jugable a 60 FPS en teléfonos modestos**, con el TECNO CK6n como referencia. WSA 120 FPS pasa a ser secundario. Se cambian las reglas (ver [AGENTS.md](../AGENTS.md)):
+
+- Correctitud = **equivalencia observable** con el x86 (lógica, física, saves, imagen), no bit-exactitud x87. La auditoría del 2026-10-23 confirma en `pcode2c.py`/`recomp_rt.h` que la ruta ARM64 ya hace la aritmética x87 en `double`.
+- La prioridad son los bloques grandes: promoción de registros, pila x87 en `double`, flags muertas a nivel de módulo y renderer nativo. Los microajustes van detrás.
+- Todo el trabajo se hace en `main`, sin subramas. Un solo agente usa el teléfono.
+
+**Estado medido:** sin cambios. APK 0.2.4 ≈ 22 FPS, ≈ 44 ms CPU/frame. **Ninguna ganancia nueva medida** a 2026-10-23.
+
+**Integrado en `main` el 2026-10-23 (todo OFF, sin FPS):**
+
+| Flag | Estado |
+| --- | --- |
+| `--arm64-x87-conv-fast` | Oráculo bit a bit en host y en Unicorn |
+| `--arm64-bind-local` | Comprobado solo en una librería sintética |
+| `--arm64-code-layout`, `--arm64-symbol-order` | Solo pruebas de plumbing |
+| `--audio-mix-span` | Test diferencial |
+| `--module-flag-liveness` (pcode2c) | Trabajo en curso; tests sintéticos |
+| `--gl-state-filter` | Trabajo en curso; tests de generador |
+
+Además, `.gitattributes` fuerza LF en `*.patch`/`*.diff`. Corrige el fallo de `static_analysis_python` en Windows.
+
+**Siguiente:** perfil simpleperf del TECNO (ver [ROADMAP](ROADMAP.md)).
+
 **ARM64-FLD32-CLASS-COST (2026-10-16):** análisis offline reproducible por clases de binary32 en Unicorn AArch64. En 512 entradas sintéticas, el helper actual ahorra 3 instrucciones por normal pero consume 5 extra por excepcionales; la variante exacta de cero/Inf probada resultó **36 instrucciones dinámicas peor en el conjunto sintético** y fue **descartada sin integrar**. El verificador canónico ahora publica métricas por clase, sin modificar runtime ni APK. [Informe](performance/tecno/ARM64_X87_FLD32_CLASS_COST_2026-10-16.md).
 
 

@@ -1,5 +1,16 @@
 # Cola de trabajo del proyecto
 
+## Cola vigente (2026-10-23): 60 FPS en teléfonos modestos
+
+Sustituye las prioridades anteriores. Las entradas fechadas de más abajo son antecedentes. Las reglas están en [AGENTS.md](../AGENTS.md).
+
+1. **Perfil base TECNO** (bloqueante). APK 0.2.4, simpleperf con símbolos y `stable_frame_gate`, para repartir los ≈ 44 ms/frame entre código traducido, x87, dispatch, renderer/gl4es y driver. Explicar también la variación entre 17 y 22 FPS.
+2. **Promoción de registros guest** a locales C por función o región en `pcode2c.py`, con oráculos diferenciales y comprobación en juego.
+3. **Pila x87 en `double` dentro de la función**, sin ida y vuelta binary80. Política de equivalencia observable de AGENTS.md. Partir de la idea `f2d(d2f(x)) == x`, pendiente de demostrar.
+4. **Flags y escrituras muertas a nivel de módulo.** Ya existe `--module-flag-liveness` opt-in, aún sin validar sobre el p-code real.
+5. **Renderer nativo GLES3 con batching (HLE)** en lugar de GL1 traducido + gl4es. Hay un precursor: `--gl-state-filter`, opt-in sin verificar.
+6. **Microajustes en cola de A/B físico**, todos OFF: `--arm64-x87-conv-fast`, `--arm64-bind-local`, `--arm64-code-layout` (+ `--arm64-symbol-order` cuando haya perfil) y `--audio-mix-span`.
+
 **Prioridad ARM64 (2026-10-16):** evitar nuevas ramas FLD32 solo porque reduzcan unos pasos para cero/Inf: una variante aumentó el trabajo total en el corpus probado. Usar el nuevo desglose nativo por clase para orientar futuras candidatas; medir frecuencia real de datos, ciclos y FPS antes de optimizar o activar flags. No se tocó la instalación del TECNO. [Estudio](performance/tecno/ARM64_X87_FLD32_CLASS_COST_2026-10-16.md).
 
 
