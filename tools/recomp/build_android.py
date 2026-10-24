@@ -45,6 +45,9 @@ def main():
                         help="compile optional guest OpenGL call counters")
     parser.add_argument("--gl-time-profile", action="store_true",
                         help="compile opt-in CPU timing for GL4ES/GLES entry points")
+    parser.add_argument("--gl-state-filter", action="store_true",
+                        help="opt-in: drop provably redundant guest GL state calls before GL4ES "
+                             "(enable/bind/active-texture/depth/blend/cull); default OFF")
     parser.add_argument("--gl-vk-state-capture", action="store_true",
                         help="compile opt-in GL->Vulkan typed state observer, NOT a Vulkan game backend; default OFF")
     parser.add_argument("--wsa-uncap-bench", action="store_true",
@@ -355,6 +358,7 @@ def main():
             f"-DCODRECOMP_GL_PROFILING={'ON' if args.gl_profile else 'OFF'}",
             f"-DCODRECOMP_GL_TIMING={'ON' if args.gl_time_profile else 'OFF'}",
             f"-DCODRECOMP_GL_VK_STATE_CAPTURE={'ON' if args.gl_vk_state_capture else 'OFF'}",
+            f"-DCODRECOMP_GL_STATE_FILTER={'ON' if args.gl_state_filter else 'OFF'}",
             f"-DCODRECOMP_WSA_UNCAP_BENCH={'ON' if args.wsa_uncap_bench else 'OFF'}",
             f"-DCODRECOMP_CORE_HOT_O2={'ON' if args.core_hot_o2 else 'OFF'}",
             f"-DCODRECOMP_CORE_HOT_O2_PARTS={args.core_hot_o2_parts or 'p0,p1,p4'}",
