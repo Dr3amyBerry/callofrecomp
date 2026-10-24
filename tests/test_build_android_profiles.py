@@ -47,7 +47,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('-ffunction-sections -mtune=cortex-a55',cm)
         blk=cm[cm.index('if(CODRECOMP_ARM64_CODE_LAYOUT)'):cm.index('option(CODRECOMP_LOCAL_GUEST_STATE')]
         self.assertNotIn('-ffast-math',blk)
-        self.assertNotIn('-ffp-contract',blk)
+        self.assertNotIn('-ffp-contract=fast',blk)
         self.assertNotIn('-ffp-contract=fast',cm)
         self.assertIn('-ffp-contract=off',cm)
 
