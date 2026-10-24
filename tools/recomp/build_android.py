@@ -106,6 +106,10 @@ def main():
                         help="ARM64 experiment: local R/MEM/U/PC ELF binding, same WSA 4-symbol map; OFF by default")
     parser.add_argument("--arm64-safe-icf", action="store_true",
                         help="ARM64 experiment: safe linker folding of address-insignificant identical code; OFF")
+    parser.add_argument("--arm64-code-layout", action="store_true",
+                        help="ARM64 experiment: -ffunction-sections + -mtune=cortex-a55 (MT6768 big.LITTLE), no ISA/FP change; OFF")
+    parser.add_argument("--arm64-symbol-order", type=Path, metavar="FILE",
+                        help="ARM64 experiment: lld --symbol-ordering-file with hot symbols first; requires --arm64-code-layout")
     parser.add_argument("--arm64-icf-metadata", action="store_true",
                         help="ARM64 ICF A/B reference: emit address-significance metadata without enabling folding; OFF")
     parser.add_argument("--wsa-release", action="store_true", help="WSA cumulative + local-state release; default native x87 on and frame limit 120")
@@ -151,6 +155,12 @@ def main():
         parser.error('choose one dispatch cache: entry or last hint')
     if args.arm64_safe_icf and args.abi != 'arm64-v8a':
         parser.error('--arm64-safe-icf requires arm64-v8a')
+    if args.arm64_code_layout and args.abi != 'arm64-v8a':
+        parser.error('--arm64-code-layout requires arm64-v8a')
+    if args.arm64_symbol_order and not args.arm64_code_layout:
+        parser.error('--arm64-symbol-order requires --arm64-code-layout')
+    if args.arm64_symbol_order and not args.arm64_symbol_order.is_file():
+        parser.error('--arm64-symbol-order file not found')
     if args.arm64_icf_metadata and args.abi != 'arm64-v8a':
         parser.error('--arm64-icf-metadata requires arm64-v8a')
     if args.wsa_release:
@@ -377,6 +387,8 @@ def main():
             f"-DCODRECOMP_ARM64_NARROW_RIGHT_SHIFT={'ON' if args.arm64_narrow_right_shift else 'OFF'}",
              f"-DCODRECOMP_ARM64_NARROW_SAR={'ON' if args.arm64_narrow_sar else 'OFF'}",
             f"-DCODRECOMP_ARM64_SAFE_ICF={'ON' if args.arm64_safe_icf else 'OFF'}",
+            f"-DCODRECOMP_ARM64_CODE_LAYOUT={'ON' if args.arm64_code_layout else 'OFF'}",
+            f"-DCODRECOMP_ARM64_SYMBOL_ORDER={args.arm64_symbol_order.resolve().as_posix() if args.arm64_symbol_order else ''}",
             f"-DCODRECOMP_ARM64_ICF_METADATA={'ON' if args.arm64_icf_metadata else 'OFF'}",
             f"-DCODRECOMP_X87_FCOM_FASTPATH={'ON' if args.x87_fcom_fastpath else 'OFF'}",
             f"-DSDL2_SOURCE_DIR={(deps / 'SDL').as_posix()}", f"-DGL4ES_SOURCE_DIR={(deps / 'gl4es').as_posix()}")

@@ -36,6 +36,19 @@ class ProfileBuildFlagsTest(unittest.TestCase):
             self.assertNotEqual(proc.returncode,0)
             self.assertIn(flag+' requires arm64-v8a',proc.stderr)
 
+    def test_code_layout_flags_plumbing(self):
+        proc=subprocess.run([sys.executable,str(BUILDER),'--abi','x86_64','--arm64-code-layout'],capture_output=True,text=True)
+        self.assertIn('--arm64-code-layout requires arm64-v8a',proc.stderr)
+        proc=subprocess.run([sys.executable,str(BUILDER),'--abi','arm64-v8a','--arm64-symbol-order','x.txt'],capture_output=True,text=True)
+        self.assertIn('requires --arm64-code-layout',proc.stderr)
+        text=BUILDER.read_text(encoding='utf-8')
+        cm=(ROOT/'android/CMakeLists.txt').read_text(encoding='utf-8')
+        self.assertIn('CODRECOMP_ARM64_CODE_LAYOUT',text)
+        self.assertIn('-ffunction-sections -mtune=cortex-a55',cm)
+        self.assertNotIn('-ffast-math',cm)
+        self.assertNotIn('-ffp-contract=fast',cm)
+        self.assertIn('-ffp-contract=off',cm)
+
     def test_release_defaults_require_wsa_and_original_pe(self):
         for options in (['--wsa-release'],['--abi','x86_64','--wsa-release']):
             proc=subprocess.run([sys.executable,str(BUILDER),*options],capture_output=True,text=True)
