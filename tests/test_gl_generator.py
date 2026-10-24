@@ -111,6 +111,33 @@ class GLGenerationTest(unittest.TestCase):
             self.assertIn('#ifdef CODRECOMP_GL_VK_STATE_CAPTURE',s)
             self.assertIn('gl_vk_state_apply(&gl_vk_observer',s)
 
+    def test_state_filter_hooks_are_compile_time_opt_in_and_scoped(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d); xml=root/'gl.xml'; names=root/'names.txt'; dst=root/'out.c'
+            xml.write_text(xml_source())
+            names.write_text('\n'.join(COMMANDS))
+            subprocess.run([sys.executable,str(SCRIPT),str(xml),str(names),'-o',str(dst)],
+                           check=True, capture_output=True)
+            s=dst.read_text()
+            # Everything is behind the macro; OFF expands to nothing.
+            self.assertIn('#ifdef CODRECOMP_GL_STATE_FILTER',s)
+            self.assertIn('#define GL_SF_SKIP(op, a, b) ((void)0)',s)
+            self.assertIn('#define GL_SF_EVENT(ev) ((void)0)',s)
+            self.assertIn('GL_SF_SKIP(GL_SF_OP_ENABLE, ARG(esp, 0), 0);',s)
+            self.assertIn('GL_SF_SKIP(GL_SF_OP_BLEND_FUNC, ARG(esp, 0), ARG(esp, 1));',s)
+            self.assertIn('GL_SF_SKIP(GL_SF_OP_DEPTH_FUNC, ARG(esp, 0), 0);',s)
+            self.assertIn('GL_SF_EVENT(GL_SF_EV_RESET);',s)
+            # The skip precedes the host call, never follows it, and only
+            # whitelisted state setters carry it (draws/uploads never do).
+            enable = s[s.index('static uint32_t t_glEnable('):]
+            enable = enable[:enable.index('\n}')]
+            self.assertLess(enable.index('GL_SF_SKIP'), enable.index('p_glEnable('))
+            for forbidden in ('t_glDrawElements', 't_glVertexPointer', 't_glTexImage2D',
+                              't_glLoadMatrixf', 't_glTexEnvi', 't_glAlphaFunc'):
+                body = s[s.index('static uint32_t ' + forbidden + '('):]
+                body = body[:body.index('\n}')]
+                self.assertNotIn('GL_SF_SKIP', body, forbidden)
+
 
 if __name__ == '__main__':
     unittest.main()

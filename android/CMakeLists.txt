@@ -215,6 +215,14 @@ if(CODRECOMP_GL_VK_STATE_CAPTURE)
   endforeach()
 endif()
 
+# Opt-in redundant guest GL state-call filter (tools/recomp/runtime/gl_state_filter.h).
+# Only the generated GL wrappers change; OFF compiles every hook to nothing.
+option(CODRECOMP_GL_STATE_FILTER "Drop provably idempotent guest GL state calls before GL4ES" OFF)
+if(CODRECOMP_GL_STATE_FILTER)
+  set_property(SOURCE "${ROOT}/tools/recomp/runtime/gl_thunks.c" APPEND
+    PROPERTY COMPILE_DEFINITIONS CODRECOMP_GL_STATE_FILTER)
+endif()
+
 # Opt-in CPU time attributable to GL4ES/GLES entry points on the guest thread.
 # The normal build never pays the clock_gettime cost.
 option(CODRECOMP_GL_TIMING "Compile opt-in renderer GL call CPU timing" OFF)

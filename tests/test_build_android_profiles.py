@@ -83,6 +83,7 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         self.assertIn('--gl-profile', proc.stdout)
         self.assertIn('--gl-time-profile', proc.stdout)
         self.assertIn('--gl-vk-state-capture', proc.stdout)
+        self.assertIn('--gl-state-filter', proc.stdout)
         self.assertIn('--wsa-uncap-bench', proc.stdout)
         self.assertIn('--core-hot-o2', proc.stdout)
         self.assertIn('--core-hot-o2-parts', proc.stdout)
