@@ -1,5 +1,7 @@
 # Registro acumulativo de optimizaciones — estado verificable
 
+**ARM64-BIND-LOCAL-01 (2026-10-23, opt-in/OFF, sin FPS):** `--arm64-bind-local` anade `-fno-plt` al compilar y `-Wl,-Bsymbolic-functions` al enlazar libmain; elimina stubs PLT y la interposicion de llamadas internas entre chunks/dispatch, sin tocar C generado, x87, memoria ni exportaciones. Evidencia offline (sonda AArch64 clang+lld, sesion privada arm64-offline/dispatch-abi): sin flags 1 PLT y 2 relocs; con ambos 0 PLT y 1 reloc, salto interno directo. Solo ARM64, test de rechazo en x86_64. Pendiente: diff de 490 exportaciones/.text con NDK, APK A/B y A/B/A/B fisico TECNO; ninguna ganancia afirmada. Estado: opt-in/inconcluso.
+
 **ARM64-FLD32-NATIVE-CLASS-TELEMETRY (2026-10-16, diagnóstico integrado):** verificador Unicorn AArch64 ampliado para contar instrucciones por normal, cero firmado, subnormal, inf y NaN; clasificación de patrones con tests públicos sin archivos comerciales. Original→FLD32 normal 55→52 instrucciones nativas; los especiales son más costosos. Variante experimental cero/Inf: 1 instrucción menos en ceros, 6 menos en Inf, pero 5 más en subnormales/NaN; en los 512 inputs sintéticos, +36 instrucciones respecto al helper actual. Variante **rechazada** y revertida; runtime/CMake/builder idénticos a HEAD previo. [Datos](performance/tecno/ARM64_X87_FLD32_CLASS_COST_2026-10-16.md).
 
 
