@@ -45,7 +45,9 @@ class ProfileBuildFlagsTest(unittest.TestCase):
         cm=(ROOT/'android/CMakeLists.txt').read_text(encoding='utf-8')
         self.assertIn('CODRECOMP_ARM64_CODE_LAYOUT',text)
         self.assertIn('-ffunction-sections -mtune=cortex-a55',cm)
-        self.assertNotIn('-ffast-math',cm)
+        blk=cm[cm.index('if(CODRECOMP_ARM64_CODE_LAYOUT)'):cm.index('option(CODRECOMP_LOCAL_GUEST_STATE')]
+        self.assertNotIn('-ffast-math',blk)
+        self.assertNotIn('-ffp-contract',blk)
         self.assertNotIn('-ffp-contract=fast',cm)
         self.assertIn('-ffp-contract=off',cm)
 
