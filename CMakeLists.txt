@@ -331,5 +331,11 @@ if(CODRECOMP_BUILD_TESTS)
             add_test(NAME recomp_gl_strings_smoke COMMAND codrecomp_recomp_gl_strings_smoke)
             add_test(NAME recomp_audio_smoke COMMAND codrecomp_recomp_audio_smoke)
         endif()
+        # SDL-free differential oracle (stub SDL.h): span mixer == reference.
+        add_executable(codrecomp_recomp_audio_mix_span_smoke tests/recomp_audio_mix_span_smoke.c)
+        target_include_directories(codrecomp_recomp_audio_mix_span_smoke PRIVATE
+            tests/audio_stub tools/recomp tools/recomp/runtime)
+        target_link_libraries(codrecomp_recomp_audio_mix_span_smoke PRIVATE codrecomp_pcode_runtime)
+        add_test(NAME recomp_audio_mix_span_smoke COMMAND codrecomp_recomp_audio_mix_span_smoke)
     endif()
 endif()
