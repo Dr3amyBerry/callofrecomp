@@ -65,16 +65,45 @@ def uses_stack(ops, removed=frozenset()):
 
 
 class VirtualStack:
-    def __init__(self, base='R'):
+    """Logical->physical slot map plus an optional binary64 value cache.
+
+    Value cache (when `values`): a slot or 10-byte temporary written with
+    d2f(E,10) keeps E in a C double instead; reads through f2d(.,10) use it.
+    f2d(d2f(x,10),10) == x for every binary64 except signalling NaNs, which
+    come back quiet (exhaustively checked per exponent/sign + 20M random).
+    Values not produced by arithmetic are therefore read through x87_q().
+    Raw (bit) reads and every exit materialize d2f(E,10) exactly as before.
+    """
+
+    def __init__(self, base='R', values=False):
         self.base = base
+        self.values = values
         self.loc = list(range(8))  # logical -> physical
         self.seq = 0
+        self.cache = {}   # physical -> [var, dirty, safe]
+        self.tcache = {}  # temp varnode -> [var, dirty, safe]
+        self.vars = []
 
     def identity(self):
-        return self.loc == list(range(8))
+        """Canonical layout with nothing cached: memory is the full state."""
+        return self.loc == list(range(8)) and not self.cache
 
     def reset(self):
         self.loc = list(range(8))
+        self.cache.clear()
+        self.tcache.clear()
+
+    def new_var(self):
+        name = f'x87d{len(self.vars)}'
+        self.vars.append(name)
+        return name
+
+    def materialize_code(self):
+        """Store dirty cached values some logical slot still references.
+        No state change: also used on conditional exit paths."""
+        live = set(self.loc)
+        return ' '.join(f'wr({self.base}+0x{SLOTS[p]:x},10,d2f({rec[0]},10));'
+                        for p, rec in sorted(self.cache.items()) if rec[1] and p in live)
 
     def phys(self, logical):
         return SLOTS[self.loc[logical]]
@@ -83,16 +112,24 @@ class VirtualStack:
         self.loc[dst] = self.loc[src]
 
     def dest(self, logical):
-        """Physical slot a write to `logical` may use without clobbering others."""
+        """Physical slot a write to `logical` may use without clobbering others.
+        Any cached value of the returned slot is dropped (caller writes it)."""
         p = self.loc[logical]
         if self.loc.count(p) > 1:
             used = set(self.loc)
             p = next(q for q in range(8) if q not in used)
             self.loc[logical] = p
+        self.cache.pop(p, None)
         return SLOTS[p]
 
     def flush_code(self):
         """C statements restoring the canonical layout (does not reset)."""
+        mat = self.materialize_code()
+        perm = self._permute_code()
+        code = ' '.join(x for x in (mat, perm) if x)
+        return '{ ' + code + ' }' if code else ''
+
+    def _permute_code(self):
         # dest physical slot -> source (physical int, or parked scratch name).
         pending = {d: s for d, s in enumerate(self.loc) if d != s}
         if not pending:
@@ -113,4 +150,4 @@ class VirtualStack:
             s = pending.pop(ready)
             src = s if isinstance(s, str) else f'rd({b}+0x{SLOTS[s]:x},10)'
             lines.append(f'wr({b}+0x{SLOTS[ready]:x},10,{src});')
-        return '{ ' + ' '.join(lines) + ' }'
+        return ' '.join(lines)

@@ -190,10 +190,42 @@ class Gen:
         self.temp_offsets = None
         self.reg_cache = {}
         self.x87 = None  # VirtualStack while emitting a renamed-stack instruction
+        self.pre = []    # statements that must precede the current op (materialization)
+        self.f_safe = False
+
+    def _xcache(self, v):
+        """Cache record for a renamed slot or 10-byte temporary, else None."""
+        x = self.x87
+        if x is None or not x.values:
+            return None
+        if (k := x87_slot(v)) is not None:
+            return x.cache.get(x.loc[k])
+        if v[0] == 'u' and v[2] == 10:
+            return x.tcache.get(v)
+        return None
+
+    def _raw(self, v):
+        sp, off, sz = v
+        unique = f'T+{self.temp_offsets[off]}' if sp == 'u' and self.temp_offsets is not None else f'U+0x{off:x}'
+        return {'r': f'R+0x{off:x}', 'u': unique, 'm': f'G(0x{off:x}u)'}[sp]
+
+    def fval(self, v):
+        """binary64 value of a float varnode, as f2d(rd(v),size) would return."""
+        rec = self._xcache(v)
+        if rec is not None:
+            return rec[0] if rec[2] else f'x87_q({rec[0]})'
+        return f'f2d({self.rd(v)},{v[2]})'
 
     def rd(self, v):
         if v[0] == 'r' and v in self.reg_cache:
             return self.reg_cache[v]
+        rec = self._xcache(v)
+        if rec is not None and rec[1]:
+            # Bit-level read: store the exact binary80 the original would hold.
+            base = (f'R+0x{self.x87.phys(x87_slot(v)):x}' if x87_slot(v) is not None
+                    else self._raw(v))
+            self.pre.append(f'wr({base},10,d2f({rec[0]},10));')
+            rec[1] = False
         if self.x87 is not None and (k := x87_slot(v)) is not None:
             return f'rd(R+0x{self.x87.phys(k):x},10)'
         sp, off, sz = v
@@ -206,16 +238,63 @@ class Gen:
     def wr(self, v, expr):
         if v[0] == 'r' and v in self.reg_cache:
             return f'{self.reg_cache[v]}=mask({expr},{v[2]});'
-        if self.x87 is not None and (k := x87_slot(v)) is not None:
-            return f'wr(R+0x{self.x87.dest(k):x},10,{expr});'
+        x = self.x87
+        if x is not None and x.values and (x87_slot(v) is not None or (v[0] == 'u' and v[2] == 10)) \
+                and expr.startswith('d2f(') and expr.endswith(',10)'):
+            var = x.new_var()
+            rec = [var, True, self.f_safe]
+            if (k := x87_slot(v)) is not None:
+                p = x.dest(k)
+                x.cache[(p - 0x1100) // 16] = rec
+            else:
+                x.tcache[v] = rec
+            return f'{var}={expr[4:-4]};'
+        if x is not None and v[0] == 'u' and v[2] == 10:
+            x.tcache.pop(v, None)
+        if x is not None and (k := x87_slot(v)) is not None:
+            return f'wr(R+0x{x.dest(k):x},10,{expr});'
         sp, off, sz = v
         unique = f'T+{self.temp_offsets[off]}' if sp == 'u' and self.temp_offsets is not None else f'U+0x{off:x}'
         base = {'r': f'R+0x{off:x}', 'u': unique, 'm': f'G(0x{off:x}u)'}[sp]
         return f'wr({base},{sz},{expr});'
 
+    FLOAT_ONLY = frozenset({'FLOAT_ADD', 'FLOAT_SUB', 'FLOAT_MULT', 'FLOAT_DIV', 'FLOAT_EQUAL',
+                            'FLOAT_NOTEQUAL', 'FLOAT_LESS', 'FLOAT_LESSEQUAL', 'FLOAT_NAN',
+                            'FLOAT_NEG', 'FLOAT_ABS', 'FLOAT_SQRT', 'FLOAT_CEIL', 'FLOAT_FLOOR',
+                            'ROUND', 'FLOAT2FLOAT', 'TRUNC'})
+    # Results of these are never signalling NaNs (binary64 hardware arithmetic,
+    # integer conversion, binary32->binary64 widening quiets).
+    QUIET_RESULT = frozenset({'FLOAT_ADD', 'FLOAT_SUB', 'FLOAT_MULT', 'FLOAT_DIV', 'FLOAT_SQRT',
+                              'FLOAT_CEIL', 'FLOAT_FLOOR', 'ROUND', 'INT2FLOAT'})
+
     def op(self, mnem, out, ins, jump, rel_label):
-        a = self.rd(ins[0]) if ins and ins[0] else None
-        b = self.rd(ins[1]) if len(ins) > 1 else None
+        self.pre = []
+        body = self._op(mnem, out, ins, jump, rel_label)
+        pre, self.pre = self.pre, []
+        return ' '.join(pre + [body]) if pre else body
+
+    def _op(self, mnem, out, ins, jump, rel_label):
+        x = self.x87
+        if x is not None and mnem == 'COPY' and x87_slot(out) is not None \
+                and x87_slot(ins[0]) is not None:
+            x.alias(x87_slot(out), x87_slot(ins[0]))  # no read: nothing to materialize
+            return ';'
+        if x is not None and x.values and mnem == 'COPY' and out is not None:
+            src = self._xcache(ins[0])
+            if src is not None and (x87_slot(ins[0]) is None or x87_slot(out) is None):
+                # slot<->temp copy of a cached value: share the double, write nothing.
+                if (k := x87_slot(out)) is not None:
+                    p = x.dest(k)
+                    x.cache[(p - 0x1100) // 16] = [src[0], True, src[2]]
+                    return ';'
+                if out[0] == 'u' and out[2] == 10:
+                    x.tcache[out] = [src[0], True, src[2]]
+                    return ';'
+        self.f_safe = mnem in self.QUIET_RESULT or (
+            mnem == 'FLOAT2FLOAT' and ins and ins[0][2] == 4)
+        lazy = x is not None and mnem in self.FLOAT_ONLY
+        a = self.rd(ins[0]) if ins and ins[0] and not lazy else None
+        b = self.rd(ins[1]) if len(ins) > 1 and not lazy else None
         osz = out[2] if out else 0
         isz = ins[0][2] if ins else 0
         m = lambda e: f'mask({e},{osz})'  # noqa: E731
@@ -226,7 +305,8 @@ class Gen:
         scmp = {'INT_SLESS': '<', 'INT_SLESSEQUAL': '<='}
         fbin = {'FLOAT_ADD': '+', 'FLOAT_SUB': '-', 'FLOAT_MULT': '*', 'FLOAT_DIV': '/'}
         fcmp = {'FLOAT_EQUAL': '==', 'FLOAT_NOTEQUAL': '!=', 'FLOAT_LESS': '<', 'FLOAT_LESSEQUAL': '<='}
-        fa = lambda i: f'f2d({self.rd(ins[i])},{ins[i][2]})'  # noqa: E731
+        fa = lambda i: (self.fval(ins[i]) if x is not None  # noqa: E731
+                        else f'f2d({self.rd(ins[i])},{ins[i][2]})')
 
         if mnem == 'COPY':
             if self.x87 is not None and x87_slot(out) is not None and x87_slot(ins[0]) is not None:
@@ -332,7 +412,7 @@ EXIT_OPS = frozenset({'BRANCH', 'CALL', 'BRANCHIND', 'CALLIND', 'RETURN'})
 
 
 def emit_virtual_stack_chunk(g, chunk, addrs, out, dead_flags, dead_registers,
-                             dead_temps, local_temporaries):
+                             dead_temps, local_temporaries, values=False):
     """Emit one chunk with the x87 stack renamed inside straight-line runs.
 
     Fast lane: instructions in order, eligible ones with a VirtualStack map.
@@ -340,8 +420,9 @@ def emit_virtual_stack_chunk(g, chunk, addrs, out, dead_flags, dead_registers,
     L_<addr> label there; its canonical copy (slow lane, after the fast lane)
     carries the label for dispatcher/branch entries and chains forward.
     """
-    vs = VirtualStack()
+    vs = VirtualStack(values=values)
     slow = []
+    decl_at = len(out) - 1  # before ' goto dyn;'
 
     def emit(idx, fast, lane):
         addr, length, ops = chunk[idx]
@@ -392,6 +473,7 @@ def emit_virtual_stack_chunk(g, chunk, addrs, out, dead_flags, dead_registers,
         if g.temp_offsets is not None:
             lines.append(' }')
         g.x87 = None
+        vs.tcache.clear()  # unique temporaries die with the instruction
         return lines
 
     for idx, (addr, _, ops) in enumerate(chunk):
@@ -415,6 +497,8 @@ def emit_virtual_stack_chunk(g, chunk, addrs, out, dead_flags, dead_registers,
     for idx in slow:
         out.append(f'L_{chunk[idx][0]:x}:')
         out.extend(emit(idx, False, '_s'))
+    if vs.vars:
+        out.insert(decl_at, ' double ' + ','.join(vs.vars) + ';')
 
 
 def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
@@ -425,8 +509,11 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
              prune_hot_register_writes: bool = False,
              x87_stack_shift_outline: bool = False,
              module_flag_liveness: bool = False,
-             x87_virtual_stack: bool = False):
+             x87_virtual_stack: bool = False,
+             x87_value_cache: bool = False):
     """Return ([part sources], main source, unsupported ops)."""
+    if x87_value_cache and not x87_virtual_stack:
+        raise ValueError('--x87-value-cache requires --x87-virtual-stack')
     if x87_virtual_stack and (cache_hot_registers or x87_stack_shift_outline):
         raise ValueError('--x87-virtual-stack excludes register cache and shift outlining')
     g = Gen(userops)
@@ -473,7 +560,7 @@ def generate(insns, userops, pe: PEFile, name: str, ident: str, parts: int = 1,
         out.append(' goto dyn;')
         if x87_virtual_stack:
             emit_virtual_stack_chunk(g, chunk, addrs, out, dead_flags, dead_registers,
-                                     dead_temps, local_temporaries)
+                                     dead_temps, local_temporaries, x87_value_cache)
         for idx, (addr, length, ops) in enumerate(chunk if not x87_virtual_stack else ()):
             nxt = addr + length
             rel_targets = {i + rel(v[1]) for i, (mn, _, ins) in enumerate(ops)
@@ -615,6 +702,9 @@ def main() -> int:
     ap.add_argument('--x87-virtual-stack', action='store_true',
                     help='EXPERIMENT: rename the x87 register stack at translation time inside '
                          'straight-line runs (exact; canonical layout at every exit); OFF')
+    ap.add_argument('--x87-value-cache', action='store_true',
+                    help='EXPERIMENT (needs --x87-virtual-stack): keep x87 values as binary64 '
+                         'inside renamed runs; signalling NaNs re-quieted exactly; OFF')
     ap.add_argument('--function-map-out', type=Path,
                     help='optional JSON: original Ghidra function entries to generated chunks; '
                          'store under ignored recomp_out/')
@@ -671,7 +761,8 @@ def main() -> int:
                                              args.prune_hot_register_writes,
                                              args.x87_stack_shift_outline,
                                              args.module_flag_liveness,
-                                             args.x87_virtual_stack)
+                                             args.x87_virtual_stack,
+                                             args.x87_value_cache)
     if args.parts == 1:
         args.out.write_text(bodies[0] + main_src.split('\n', 3)[3])  # drop the repeated header
         files = [args.out]

@@ -24,6 +24,10 @@ class ABABTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
+        # Fake logs carry 60 windows; the real settle minimum is longer.
+        settle = patch.object(abab, 'MIN_SETTLE_WINDOWS', 40)
+        settle.start()
+        self.addCleanup(settle.stop)
         self.root = Path(self.temp.name)
         self.run = self.root / 'runs/tecno/session'
         self.run.mkdir(parents=True)

@@ -296,7 +296,8 @@ def main():
         # pcode2c --x87-virtual-stack output is freshly generated and never
         # carries hash-pinned text patches: skip their restores, refuse applies.
         def vstack(path):
-            return path.is_file() and b'x87 virtual stack' in path.read_bytes()
+            return path.is_file() and (b'x87 virtual stack' in (data := path.read_bytes())
+                                       or b'renamed x87 stack' in data)
         if (vstack(vis_fld32_source) or vstack(fld32_source) or vstack(sign_source)) and (
                 args.arm64_x87_fld32_visibility or args.arm64_x87_fld32_normal or
                 args.arm64_x87_sign_bits or args.arm64_narrow_left_shift or

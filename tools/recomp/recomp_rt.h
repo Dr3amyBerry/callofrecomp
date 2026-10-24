@@ -116,6 +116,17 @@ static inline uint64_t x87_round_shift(uint64_t value, unsigned shift) {
     uint64_t half = UINT64_C(1) << (shift - 1);
     return result + (remainder > half || (remainder == half && (result & 1)));
 }
+// f2d(d2f(x,10),10) without the binary80 round trip: identical for every
+// binary64 except signalling NaNs, which the round trip returns quieted.
+static inline double x87_q(double d) {
+    uint64_t b; memcpy(&b, &d, 8);
+    if ((b & 0x7ff0000000000000ull) == 0x7ff0000000000000ull &&
+        (b & 0x000fffffffffffffull) && !(b & 0x0008000000000000ull)) {
+        b |= 0x0008000000000000ull; memcpy(&d, &b, 8);
+    }
+    return d;
+}
+
 static inline double f2d(u128 v, int n) {
     if (n == 4) { uint32_t b = (uint32_t)v; float f; memcpy(&f, &b, 4); return f; }
     uint64_t b = (uint64_t)v;

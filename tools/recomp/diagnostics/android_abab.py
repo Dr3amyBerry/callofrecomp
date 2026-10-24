@@ -32,6 +32,7 @@ from tools.recomp.diagnostics.stable_frame_gate import LABELS, analyze_abab, cap
 RUNS = ROOT / '.local/profiles/runs'
 PACKAGE = 'org.callofrecomp'
 LOG = 'files/profile/codrecomp.log'
+MIN_SETTLE_WINDOWS = 100  # ~100 s of frame-stat windows after CL_InitCGame
 SOURCES = (Path(__file__).resolve(), ROOT / 'tools/local_capture.py',
            ROOT / 'tools/recomp/analyze_frame_stats.py',
            ROOT / 'tools/recomp/diagnostics/stable_frame_gate.py',
@@ -387,14 +388,20 @@ class Runner:
         self.tap(1190, 1010)
 
         def warmed(text):
-            gate = capture_gate(text.rsplit('CL_InitCGame:', 1)[-1], last=20, edge=5,
+            loaded = text.rsplit('CL_InitCGame:', 1)[-1]
+            # The checkpoint has a post-load slow phase (~17 FPS, ~55 ms CPU)
+            # of variable length that is stable on its own and can end in the
+            # middle of a capture (2026-10-24 B1). Never measure before it is over.
+            if len(parse_frames(loaded)) < MIN_SETTLE_WINDOWS:
+                return False
+            gate = capture_gate(loaded, last=20, edge=5,
                                 reference_fps=self.plan['reference_fps'] if label[0] == 'A' else None)
             if gate['reason_codes'] == ['reference_mismatch']:
                 raise RuntimeError('Non-comparable baseline; stop before B')
             return gate['stable']
 
         try:
-            self.wait_log(warmed, timeout=180)
+            self.wait_log(warmed, timeout=MIN_SETTLE_WINDOWS * 2 + 180)
         except RuntimeError as exc:
             # A slow A1 must not silently become a comparison with a faster B.
             # Diagnose the failed run *before* the finally handler restores A.

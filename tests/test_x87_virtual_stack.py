@@ -13,7 +13,46 @@ sys.path.insert(0, str(ROOT / "tools/recomp"))
 sys.path.insert(0, str(ROOT / "tests"))
 import pcode2c  # noqa: E402
 from x87_virtual_stack import SLOTS, VirtualStack, eligible  # noqa: E402
-from test_module_flag_liveness import HARNESS, find_cc  # noqa: E402
+from test_module_flag_liveness import HARNESS as FLAG_HARNESS, find_cc  # noqa: E402
+
+# Signalling NaN bits are injected at run time: a compile-time NaN constant lets
+# LLVM fold x+NaN to the constant, while hardware returns x's NaN (C leaves NaN
+# sign/payload unspecified), which would test the compiler, not the translation.
+HARNESS = FLAG_HARNESS.replace(
+    "unsigned entry =",
+    "if (rng() & 1) { uint64_t sn = 0x7ff0000000000001ull | (((uint64_t)rng() << 24) & 0x0007ffffff000000ull);"
+    " if (rng() & 1) sn |= 1ull << 63; memcpy(init + 0x58, &sn, 8); }\n    unsigned entry =")
+assert HARNESS != FLAG_HARNESS
+
+# With -O2 LLVM may commute FADD/FMUL operands; when both are NaN, hardware
+# returns the first one, so the surviving payload is the compiler's choice for
+# base and candidate alike. -O0 stays strictly bitwise; -O2 tolerates a
+# difference only where both sides hold a NaN of the same storage format.
+NAN_EQUIV = r"""
+static int nan80(const uint8_t *p) { uint64_t m; memcpy(&m, p, 8);
+  return (((p[9] & 0x7f) << 8 | p[8]) == 0x7fff) && (m << 1); }
+static int nan64(const uint8_t *p) { uint64_t b; memcpy(&b, p, 8);
+  return (b & 0x7ff0000000000000ull) == 0x7ff0000000000000ull && (b & 0xfffffffffffffull); }
+static int equiv(const uint8_t *x, const uint8_t *y) {
+#ifdef STRICT
+  return !memcmp(x, y, 0x2000);
+#else
+  static const int f80[] = {0x1100,0x1110,0x1120,0x1130,0x1140,0x1150,0x1160,0x1170,0x30,0x40};
+  for (int z = 0; z < 0x2000; z++) {
+    if (x[z] == y[z]) continue;
+    int ok = 0;
+    for (unsigned k = 0; k < sizeof f80 / sizeof *f80; k++)
+      if (z >= f80[k] && z < f80[k] + 10 && nan80(x + f80[k]) && nan80(y + f80[k])) ok = 1;
+    if (z >= 0x50 && z < 0x58 && nan64(x + 0x50) && nan64(y + 0x50)) ok = 1;
+    if (!ok) return 0;
+  }
+  return 1;
+#endif
+}
+"""
+HARNESS = HARNESS.replace("int main(void) {", NAN_EQUIV + "int main(void) {").replace(
+    "memcmp(a, R, sizeof a)", "!equiv(a, R)")
+assert "!equiv(a, R)" in HARNESS
 
 
 def st(k):
@@ -103,7 +142,16 @@ def build_program(rng, count=32):
             ops = [(mn, st(a), [st(a), st(b)])]
         elif roll < 0.68:    # FADDP-like: op then pop
             ops = [('FLOAT_ADD', st(1), [st(1), st(0)])] + list(POP)
-        elif roll < 0.72:    # partial view of a slot: ineligible
+        elif roll < 0.70:    # FLD m64 from raw register bits (may be a signalling NaN)
+            ops = list(PUSH) + [('FLOAT2FLOAT', st(0), [('r', rng.choice(regs), 8)])]
+        elif roll < 0.705:   # FLD m64 of a runtime signalling NaN (see SNAN_HARNESS)
+            ops = list(PUSH) + [('FLOAT2FLOAT', st(0), [('r', 0x58, 8)])]
+        elif roll < 0.715:   # FCHS / FABS keep signalling NaNs
+            ops = [(rng.choice(['FLOAT_NEG', 'FLOAT_ABS']), st(0), [st(0)])]
+        elif roll < 0.725:   # FST m64 / FCOM
+            ops = [('FLOAT2FLOAT', ('r', 0x50, 8), [st(rng.randrange(8))]),
+                   ('FLOAT_LESS', ('r', 0x72, 1), [st(0), st(1)])]
+        elif roll < 0.735:   # partial view of a slot: ineligible
             ops = [('COPY', ('r', 0x60, 2), [('r', SLOTS[rng.randrange(8)] + 8, 2)])]
         elif roll < 0.76:    # relative internal branch: ineligible
             ops = [('CBRANCH', None, [('c', 2, 4), ('r', 0x70, 1)]), ('COPY', st(0), [st(1)]),
@@ -136,12 +184,13 @@ class CompiledDifferentialTests(unittest.TestCase):
         removed_moves = 0
         try:
             with tempfile.TemporaryDirectory() as directory:
-                for seed in range(8):
+                for seed in range(12):
                     insns = build_program(random.Random(seed))
                     sources = []
-                    for ident, virtual in (("bas", False), ("can", True)):
+                    for ident, virtual in (("bas", 0), ("can", seed % 2 + 1)):
                         parts, _, unsupported = pcode2c.generate(
-                            insns, {}, pe, "T.exe", ident, parts=1, x87_virtual_stack=virtual)
+                            insns, {}, pe, "T.exe", ident, parts=1, x87_virtual_stack=virtual > 0,
+                            x87_value_cache=virtual == 2)
                         self.assertFalse(unsupported)
                         sources.append(parts[0])
                     moves = [len(re.findall(r'wr\(guest_regs\+0x11[0-7]0,10,', s)) for s in sources]
@@ -160,8 +209,8 @@ class CompiledDifferentialTests(unittest.TestCase):
                     source = Path(directory) / f"x{seed}.c"
                     source.write_text("\n".join(sources) + harness)
                     exe = Path(directory) / f"x{seed}.exe"
-                    for opt in ("-O0", "-O2"):
-                        p = subprocess.run([cc, opt, "-I" + str(ROOT / "tools/recomp"), str(source),
+                    for opt, strict in (("-O0", ["-DSTRICT"]), ("-O2", [])):
+                        p = subprocess.run([cc, opt, *strict, "-I" + str(ROOT / "tools/recomp"), str(source),
                                             "-lm", "-o", str(exe)], capture_output=True, text=True,
                                            timeout=120)
                         self.assertEqual(p.returncode, 0, p.stderr[:3000])
